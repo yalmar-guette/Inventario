@@ -34,7 +34,7 @@ const Layout = () => {
         { name: 'Registrar Ventas', path: '/pos', icon: ShoppingCart, roles: ['OWNER', 'EMPLOYEE'] },
         { name: 'Inventario', path: '/inventory', icon: Package, roles: ['OWNER', 'EMPLOYEE'] },
         { name: 'Deudores', path: '/debtors', icon: Users, roles: ['OWNER', 'EMPLOYEE'] },
-        { name: 'Reportes', path: '/reports', icon: FileText, roles: ['OWNER'] },
+        { name: 'Reportes', path: '/reports', icon: FileText, roles: ['OWNER', 'EMPLOYEE'] },
         { name: 'Configuración', path: '/settings', icon: Settings, roles: ['OWNER'] },
     ];
 
