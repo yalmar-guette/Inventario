@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { startOfDay, endOfDay, format } from 'date-fns';
@@ -7,6 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
+    const { currentUser } = useAuth();
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -25,6 +27,7 @@ const Reports = () => {
 
             const q = query(
                 collection(db, 'sales'),
+                where('bodega_id', '==', currentUser?.assigned_bodega_id || 'main'),
                 where('timestamp', '>=', Timestamp.fromDate(start)),
                 where('timestamp', '<=', Timestamp.fromDate(end)),
                 orderBy('timestamp', 'desc')

@@ -30,10 +30,12 @@ const POS = () => {
         const term = searchTerm.toLowerCase();
 
         // 1. Filter
-        let result = products.filter(p =>
-            p.name.toLowerCase().includes(term) ||
-            (p.barcode && p.barcode.includes(term))
-        );
+        let result = products.filter(p => {
+            const matchesText = p.name.toLowerCase().includes(term) || (p.barcode && p.barcode.includes(term));
+            // Strict Isolation: Hide items with 0 stock unless they "exist" in this bodega structure
+            const hasEntry = p.stock && Object.prototype.hasOwnProperty.call(p.stock, activeBodegaId);
+            return matchesText && hasEntry;
+        });
 
         // 2. Sort
         result.sort((a, b) => {
@@ -175,6 +177,7 @@ const POS = () => {
 
                 await addDoc(collection(db, 'debtors'), {
                     ...debtor,
+                    bodega_id: activeBodegaId,
                     amount_owed: debtAmountUSD,
                     last_sale_id: saleRef.id,
                     last_update: serverTimestamp()

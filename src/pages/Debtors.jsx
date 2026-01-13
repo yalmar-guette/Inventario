@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, deleteDoc, query, where } from 'firebase/firestore';
 import { User, CheckCircle, Phone } from 'lucide-react';
 
 const Debtors = () => {
+    const { currentUser } = useAuth();
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -13,7 +15,14 @@ const Debtors = () => {
 
     const fetchDebtors = async () => {
         try {
-            const snap = await getDocs(collection(db, 'debtors'));
+            const activeBodegaId = currentUser?.assigned_bodega_id || 'main'; // Assume context provides currentUser, need to check if Debtors has it.
+            // Wait, Debtors.jsx likely needs useAuth context if not present.
+            // Let's assume for now I need to add useAuth if missing.
+            const q = query(
+                collection(db, 'debtors'),
+                where('bodega_id', '==', activeBodegaId)
+            );
+            const snap = await getDocs(q);
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             setDebtors(data);
         } catch (err) {
