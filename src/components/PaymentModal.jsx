@@ -54,10 +54,21 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
         return sum + (method.isUsd ? val : (val / exchangeRate));
     }, 0);
 
-    const remainingUSD = Math.max(0, totalUSD - totalPaidUSD);
-    const remainingBs = remainingUSD * exchangeRate;
-    // Allow small float tolerance
-    const isCovered = totalPaidUSD >= totalUSD - 0.05;
+    const difference = totalUSD - totalPaidUSD;
+    const isExact = Math.abs(difference) < 0.01;
+    const isOverpaid = difference < -0.01;
+
+    // UI Display Values
+    const remainingInfo = {
+        label: isOverpaid ? 'Su Cambio / Vuelto' : (isExact ? 'Pago Completo' : 'Restante por Pagar'),
+        amountUSD: Math.abs(difference),
+        amountBs: Math.abs(difference * exchangeRate),
+        colorClass: isOverpaid ? 'text-blue-600' : (isExact ? 'text-emerald-600' : 'text-rose-500'),
+        bgClass: isOverpaid ? 'bg-blue-50 border-blue-200' : (isExact ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200')
+    };
+
+    // Allow small float tolerance for "Is Covered" (Proceed button)
+    const isCovered = totalPaidUSD >= totalUSD - 0.01;
 
     const hasFiado = rows.some(r => r.methodId === 'FIADO');
 
@@ -66,24 +77,24 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
         const newRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: '0' };
         const nextRows = [...rows, newRow];
 
-        // Auto-distribute
-        const distributed = getDistributedRows(nextRows, totalUSD);
-        setRows(distributed);
+        // If there's a remaining amount positive, pre-fill the new row with that
+        // If it's overpaid, just set to 0
+        if (!isOverpaid && !isExact) {
+            newRow.amount = difference.toFixed(2);
+            // We don't auto-distribute everything, just set the new row to what's missing for convenience
+            setRows([...rows, newRow]);
+        } else {
+            setRows(nextRows);
+        }
     };
 
     const removeRow = (id) => {
         if (rows.length === 1) {
-            // If only 1 row, reset to full total instead of clearing/removing
             const resetRow = { ...rows[0], amount: totalUSD.toFixed(2) };
             setRows([resetRow]);
             return;
         }
-        const filtered = rows.filter(r => r.id !== id);
-        // Optional: Re-distribute on remove? The user asked for "Add" logic. 
-        // Showing standard behavior on remove (just remove) is usually expected unless specified.
-        // But to be consistent with "Smart" logic, let's re-distribute remaining to cover total.
-        const distributed = getDistributedRows(filtered, totalUSD);
-        setRows(distributed);
+        setRows(rows.filter(r => r.id !== id));
     };
 
     const updateRow = (id, field, value) => {
@@ -135,7 +146,8 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             payments: validPayments,
             debtor: hasFiado ? debtorInfo : null,
             totalUSD,
-            totalBs
+            totalBs,
+            changeUSD: isOverpaid ? Math.abs(difference) : 0 // Pass change info
         });
     };
 
@@ -156,16 +168,16 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                             </div>
                         </div>
 
-                        <div className={clsx("p-4 rounded-xl border transition-colors",
-                            isCovered ? "bg-green-50 border-green-200" : "bg-rose-50 border-rose-200"
-                        )}>
-                            <p className={clsx("text-sm", isCovered ? "text-green-600" : "text-rose-500")}>Restante</p>
+                        <div className={clsx("p-4 rounded-xl border transition-colors", remainingInfo.bgClass)}>
+                            <p className={clsx("text-sm font-bold", remainingInfo.colorClass)}>
+                                {remainingInfo.label}
+                            </p>
                             <div className="flex justify-between items-baseline mt-1">
-                                <p className={clsx("text-xl font-bold", isCovered ? "text-green-600" : "text-rose-500")}>
-                                    ${remainingUSD.toFixed(2)}
+                                <p className={clsx("text-xl font-bold", remainingInfo.colorClass)}>
+                                    ${remainingInfo.amountUSD.toFixed(2)}
                                 </p>
-                                <p className={clsx("text-sm font-bold", isCovered ? "text-green-600" : "text-rose-500")}>
-                                    {remainingBs.toFixed(2)} Bs
+                                <p className={clsx("text-sm font-bold", remainingInfo.colorClass)}>
+                                    {remainingInfo.amountBs.toFixed(2)} Bs
                                 </p>
                             </div>
                         </div>
