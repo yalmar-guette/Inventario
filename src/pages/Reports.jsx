@@ -1,0 +1,183 @@
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { startOfDay, endOfDay, format } from 'date-fns';
+import { FileText, Download, Table } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const Reports = () => {
+    const [sales, setSales] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+    useEffect(() => {
+        fetchSales();
+    }, [date]);
+
+    const fetchSales = async () => {
+        setLoading(true);
+        try {
+            // Construct dates using local time explicitly to avoid UTC shifts
+            const [year, month, day] = date.split('-').map(Number);
+            const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+            const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+            const q = query(
+                collection(db, 'sales'),
+                where('timestamp', '>=', Timestamp.fromDate(start)),
+                where('timestamp', '<=', Timestamp.fromDate(end)),
+                orderBy('timestamp', 'desc')
+            );
+
+            const snap = await getDocs(q);
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setSales(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const exportPDF = () => {
+        const doc = new jsPDF();
+        doc.text(`Reporte de Ventas - ${date}`, 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Total Generado: $${sales.reduce((a, b) => a + b.totalUSD, 0).toFixed(2)}`, 14, 22);
+
+        const tableData = sales.map(s => [
+            format(s.timestamp.toDate(), 'HH:mm'),
+            s.id.substring(0, 8),
+            s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
+            `$${s.totalUSD.toFixed(2)}`,
+            `${s.totalBs.toFixed(2)} Bs`
+        ]);
+
+        autoTable(doc, {
+            startY: 25,
+            head: [['Hora', 'ID', 'Items', 'Total USD', 'Total Bs']],
+            body: tableData,
+        });
+
+        doc.save(`reporte_ventas_${date}.pdf`);
+    };
+
+    const exportExcel = () => {
+        let csv = "Fecha/Hora,ID Venta,Items,Total USD,Total Bs\n";
+        sales.forEach(s => {
+            const items = s.items.map(i => `${i.quantity}x ${i.name}`).join('; ');
+            const row = [
+                format(s.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
+                s.id,
+                `"${items}"`,
+                s.totalUSD.toFixed(2),
+                s.totalBs.toFixed(2)
+            ].join(",");
+            csv += row + "\n";
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte_ventas_${date}.csv`;
+        a.click();
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-50 p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header - Centered */}
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900">Informes</h1>
+                    <p className="text-slate-500 mt-2 text-sm">Historial de ventas y cierres</p>
+                </div>
+
+                {/* Date Picker */}
+                <div className="flex justify-center mb-6">
+                    <input
+                        type="date"
+                        className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                    />
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
+                        <h3 className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-2">Total del Día (USD)</h3>
+                        <p className="text-4xl font-bold text-slate-900">
+                            ${sales.reduce((acc, curr) => acc + curr.totalUSD, 0).toFixed(2)}
+                        </p>
+                    </div>
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
+                        <h3 className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-2">Transacciones</h3>
+                        <p className="text-4xl font-bold text-primary-500">{sales.length}</p>
+                    </div>
+                </div>
+
+                {/* Transactions Table */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
+                        <h2 className="text-lg font-bold text-slate-900">Detalle de Transacciones</h2>
+                        <div className="flex gap-2">
+                            <button onClick={exportPDF} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center gap-2">
+                                <FileText size={18} /> PDF
+                            </button>
+                            <button onClick={exportExcel} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center gap-2">
+                                <Table size={18} /> Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Hora</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Artículos</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total USD</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Bs</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {loading ? (
+                                    <tr><td colSpan="4" className="text-center py-12 text-slate-500">Cargando...</td></tr>
+                                ) : sales.length === 0 ? (
+                                    <tr><td colSpan="4" className="text-center py-12 text-slate-500">No hay ventas registradas</td></tr>
+                                ) : (
+                                    sales.map(sale => (
+                                        <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 text-slate-500 font-mono text-sm">
+                                                {format(sale.timestamp.toDate(), 'HH:mm aaa')}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-900">
+                                                <div className="flex flex-col">
+                                                    {sale.items.map((item, idx) => (
+                                                        <span key={idx} className="text-sm">
+                                                            {item.quantity} x {item.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right text-emerald-600 font-bold">
+                                                ${sale.totalUSD.toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-4 text-right text-primary-500 font-medium">
+                                                {sale.totalBs.toFixed(2)} Bs
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Reports;
