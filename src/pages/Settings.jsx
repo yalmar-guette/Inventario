@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, collection, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import app from '../firebase';
 
@@ -12,7 +12,7 @@ const secondaryApp = initializeApp(app.options, "Secondary");
 const secondaryAuth = getAuth(secondaryApp);
 
 const Settings = () => {
-    const { userRole } = useAuth();
+    const { userRole, currentUser } = useAuth();
     const { rate, updateRate, loading: configLoading } = useSystemConfig();
     const [newRate, setNewRate] = useState('');
     const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: 'bodega_1' });
@@ -74,6 +74,21 @@ const Settings = () => {
         } catch (error) {
             console.error(error);
             alert('Error al eliminar bodega');
+        }
+    };
+
+    const handleSelectBodega = async (bodegaId) => {
+        if (!currentUser) return;
+        try {
+            const userRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userRef, {
+                assigned_bodega_id: bodegaId
+            });
+            // Force reload to update context and views
+            window.location.reload();
+        } catch (error) {
+            console.error("Error updating bodega:", error);
+            alert("Error al cambiar de bodega");
         }
     };
 
@@ -201,33 +216,49 @@ const Settings = () => {
                                 No hay bodegas registradas. Crea la primera.
                             </div>
                         ) : (
-                            bodegas.map(bodega => (
-                                <div key={bodega.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 hover:border-primary-300 transition-all group">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600">
-                                                <Store size={20} />
+                            bodegas.map(bodega => {
+                                const isCurrent = currentUser?.assigned_bodega_id === bodega.id;
+                                return (
+                                    <div key={bodega.id} className={`p-4 rounded-2xl border transition-all group ${isCurrent ? 'bg-primary-50 border-primary-200' : 'bg-slate-50 border-slate-200 hover:border-primary-300'
+                                        }`}>
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-start gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCurrent ? 'bg-primary-500 text-white' : 'bg-white text-slate-400 border border-slate-200'
+                                                    }`}>
+                                                    <Store size={20} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className={`font-bold ${isCurrent ? 'text-primary-700' : 'text-slate-900'}`}>{bodega.name}</h3>
+                                                    <p className="text-xs text-slate-500 mt-1">{bodega.location}</p>
+
+                                                    {isCurrent ? (
+                                                        <span className="inline-flex items-center gap-1 mt-3 px-2.5 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary-600 animate-pulse" />
+                                                            Bodega Actual
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleSelectBodega(bodega.id)}
+                                                            className="mt-3 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 transition-colors shadow-sm"
+                                                        >
+                                                            Seleccionar
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-slate-900">{bodega.name}</h3>
-                                                <p className="text-xs text-slate-500 mt-1">{bodega.location}</p>
-                                                <span className="inline-block mt-2 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">
-                                                    Activa
-                                                </span>
-                                            </div>
+                                            {bodega.id !== 'bodega_1' && (
+                                                <button
+                                                    onClick={() => handleDeleteBodega(bodega.id)}
+                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                    title="Eliminar bodega"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
-                                        {bodega.id !== 'bodega_1' && (
-                                            <button
-                                                onClick={() => handleDeleteBodega(bodega.id)}
-                                                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                                title="Eliminar bodega"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        )}
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
