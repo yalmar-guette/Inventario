@@ -11,22 +11,29 @@ const Inventory = () => {
     const [sortOption, setSortOption] = useState('stock-asc'); // Default: Low stock first (actionable)
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+    const [showGlobalCatalog, setShowGlobalCatalog] = useState(false);
 
     // Filter & Sort
     const filteredProducts = useMemo(() => {
         if (!products) return [];
         const term = searchTerm.toLowerCase();
+        const targetBodega = currentUser?.assigned_bodega_id || 'main';
 
         // 1. Filter
-        let result = products.filter(product =>
-            product.name.toLowerCase().includes(term) ||
-            product.barcode?.includes(term)
-        );
+        let result = products.filter(product => {
+            // Text Search
+            const matchesText = product.name.toLowerCase().includes(term) || product.barcode?.includes(term);
+
+            // Bodega Visibility: Show if "Show Global" is ON OR if product has entry for this bodega
+            const hasBodegaEntry = product.stock && Object.prototype.hasOwnProperty.call(product.stock, targetBodega);
+            const isVisible = showGlobalCatalog || hasBodegaEntry;
+
+            return matchesText && isVisible;
+        });
 
         // 2. Sort
         result.sort((a, b) => {
             // Fallback to 'main' if user has no assigned bodega
-            const targetBodega = currentUser?.assigned_bodega_id || 'main';
             const stockA = a.stock?.[targetBodega] || 0;
             const stockB = b.stock?.[targetBodega] || 0;
             const priceA = parseFloat(a.price_usd) || 0;
@@ -46,7 +53,7 @@ const Inventory = () => {
         });
 
         return result;
-    }, [products, searchTerm, sortOption, currentUser]);
+    }, [products, searchTerm, sortOption, currentUser, showGlobalCatalog]);
 
     const handleSaveProduct = async (productData) => {
         try {
@@ -92,6 +99,22 @@ const Inventory = () => {
                         </span>
                     </div>
                 </div>
+
+                {/* Global Catalog Toggle */}
+                {currentUser?.assigned_bodega_id !== 'bodega_1' && currentUser?.assigned_bodega_id && (
+                    <div className="flex justify-end mb-2">
+                        <label className="inline-flex items-center cursor-pointer gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={showGlobalCatalog}
+                                onChange={(e) => setShowGlobalCatalog(e.target.checked)}
+                            />
+                            <div className="relative w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                            <span className="text-sm font-medium text-slate-600">Ver Catálogo Global (Importar)</span>
+                        </label>
+                    </div>
+                )}
 
                 {/* Search and Add Button */}
                 <div className="flex gap-4 items-center">
