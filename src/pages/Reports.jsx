@@ -42,9 +42,42 @@ const Reports = () => {
 
     const exportPDF = () => {
         const doc = new jsPDF();
-        doc.text(`Reporte de Ventas - ${date}`, 14, 15);
+
+        // Brand Colors
+        const primaryColor = [99, 102, 241]; // Indigo/Primary
+        const slateColor = [30, 41, 59];
+
+        // Header
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, 210, 40, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Reporte de Ventas", 14, 20);
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(date, 14, 28);
+
+        // Summary Box
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(14, 45, 180, 25, 3, 3, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, 45, 180, 25, 3, 3, 'S');
+
         doc.setFontSize(10);
-        doc.text(`Total Generado: $${sales.reduce((a, b) => a + b.totalUSD, 0).toFixed(2)}`, 14, 22);
+        doc.setTextColor(100, 116, 139);
+        doc.text("TOTAL GENERADO", 20, 55);
+
+        doc.setFontSize(16);
+        doc.setTextColor(...slateColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`$${sales.reduce((a, b) => a + b.totalUSD, 0).toFixed(2)}`, 20, 64);
+
+        doc.setTextColor(16, 185, 129); // Emerald
+        doc.setFontSize(12);
+        doc.text(`~ ${sales.reduce((a, b) => a + b.totalBs, 0).toFixed(2)} Bs`, 60, 64);
 
         const tableData = sales.map(s => [
             format(s.timestamp.toDate(), 'HH:mm'),
@@ -55,9 +88,30 @@ const Reports = () => {
         ]);
 
         autoTable(doc, {
-            startY: 25,
+            startY: 80,
             head: [['Hora', 'ID', 'Items', 'Total USD', 'Total Bs']],
             body: tableData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            bodyStyles: {
+                textColor: slateColor,
+                fontSize: 10,
+                cellPadding: 4
+            },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 20 },
+                3: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
+                4: { halign: 'right' }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            margin: { top: 80 }
         });
 
         doc.save(`reporte_ventas_${date}.pdf`);
