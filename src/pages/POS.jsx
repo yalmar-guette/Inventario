@@ -210,7 +210,7 @@ const POS = () => {
     // ... (existing filter code)
 
     return (
-        <div className="flex flex-col lg:flex-row h-[calc(100vh-theme(spacing.24))] gap-6 animate-fade-in relative notranslate" translate="no">
+        <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-theme(spacing.24))] gap-6 animate-fade-in relative notranslate" translate="no">
             {/* ... (Modals remain same) */}
             <PaymentModal
                 isOpen={isPaymentModalOpen}
@@ -288,7 +288,7 @@ const POS = () => {
                 </div>
 
                 {/* Product Grid */}
-                <div className="flex-1 glass-panel p-4 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 glass-panel p-4 lg:overflow-y-auto custom-scrollbar">
                     {filteredProducts.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400">
                             <p>No se encontraron productos</p>
@@ -354,7 +354,7 @@ const POS = () => {
                 </div>
 
                 {/* Cart Items */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50 custom-scrollbar">
+                <div className="flex-1 lg:flex-auto lg:overflow-y-auto min-h-[250px] p-3 space-y-2 bg-slate-50/50 custom-scrollbar">
                     {cart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
                             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center">
