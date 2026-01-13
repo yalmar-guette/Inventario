@@ -73,28 +73,26 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const hasFiado = rows.some(r => r.methodId === 'FIADO');
 
     // Row Operations
+    // Row Operations
     const addRow = () => {
         const newRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: '0' };
         const nextRows = [...rows, newRow];
 
-        // If there's a remaining amount positive, pre-fill the new row with that
-        // If it's overpaid, just set to 0
-        if (!isOverpaid && !isExact) {
-            newRow.amount = difference.toFixed(2);
-            // We don't auto-distribute everything, just set the new row to what's missing for convenience
-            setRows([...rows, newRow]);
-        } else {
-            setRows(nextRows);
-        }
+        // Auto-distribute
+        const distributed = getDistributedRows(nextRows, totalUSD);
+        setRows(distributed);
     };
 
     const removeRow = (id) => {
         if (rows.length === 1) {
+            // If only 1 row, reset to full total instead of clearing/removing
             const resetRow = { ...rows[0], amount: totalUSD.toFixed(2) };
             setRows([resetRow]);
             return;
         }
-        setRows(rows.filter(r => r.id !== id));
+        const filtered = rows.filter(r => r.id !== id);
+        const distributed = getDistributedRows(filtered, totalUSD);
+        setRows(distributed);
     };
 
     const updateRow = (id, field, value) => {
