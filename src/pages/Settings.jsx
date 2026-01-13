@@ -332,11 +332,16 @@ const Settings = () => {
                                 <select
                                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900"
                                     value={newUser.bodega_id}
-                                    onChange={e => setNewUser({ ...newUser, bodega_id: e.target.value })}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setNewUser(prev => ({ ...prev, bodega_id: val }));
+                                    }}
                                 >
                                     <option value="bodega_1">Bodega Principal (bodega_1)</option>
                                     {bodegas.map(bod => (
-                                        <option key={bod.id} value={bod.id}>{bod.name} - {bod.location}</option>
+                                        <option key={bod.id} value={bod.id}>
+                                            {bod.name} - {bod.location}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
