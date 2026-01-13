@@ -117,8 +117,8 @@ const Inventory = () => {
                 )}
 
                 {/* Search and Add Button */}
-                <div className="flex gap-4 items-center">
-                    <div className="relative flex-1">
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                    <div className="relative flex-1 w-full">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
                         <input
                             type="text"
@@ -129,21 +129,23 @@ const Inventory = () => {
                         />
                     </div>
 
-                    {/* Sort Dropdown */}
-                    <div className="glass-panel px-3 py-2 flex items-center gap-2 bg-white border border-slate-200 shadow-sm min-w-[170px]">
-                        <ArrowUpDown size={16} className="text-slate-400" />
-                        <select
-                            value={sortOption}
-                            onChange={(e) => setSortOption(e.target.value)}
-                            className="bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-600 cursor-pointer w-full outline-none"
-                        >
-                            <option value="stock-asc">📉 Menor Stock</option>
-                            <option value="stock-desc">📈 Mayor Stock</option>
-                            <option value="popularity-desc">🔥 Más Vendidos</option>
-                            <option value="price-desc">💰 Mayor Precio</option>
-                            <option value="price-asc">🪙 Menor Precio</option>
-                            <option value="name-asc">🔤 Nombre (A-Z)</option>
-                        </select>
+                    <div className="flex gap-4 w-full md:w-auto">
+                        {/* Sort Dropdown */}
+                        <div className="glass-panel px-3 py-2 flex items-center gap-2 bg-white border border-slate-200 shadow-sm flex-1 md:flex-none min-w-[170px]">
+                            <ArrowUpDown size={16} className="text-slate-400" />
+                            <select
+                                value={sortOption}
+                                onChange={(e) => setSortOption(e.target.value)}
+                                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-600 cursor-pointer w-full outline-none"
+                            >
+                                <option value="stock-asc">📉 Menor Stock</option>
+                                <option value="stock-desc">📈 Mayor Stock</option>
+                                <option value="popularity-desc">🔥 Más Vendidos</option>
+                                <option value="price-desc">💰 Mayor Precio</option>
+                                <option value="price-asc">🪙 Menor Precio</option>
+                                <option value="name-asc">🔤 Nombre (A-Z)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">

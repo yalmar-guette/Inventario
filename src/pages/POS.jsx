@@ -206,7 +206,7 @@ const POS = () => {
     };
 
     return (
-        <div className="flex h-[calc(100vh-theme(spacing.24))] gap-6 animate-fade-in relative notranslate" translate="no">
+        <div className="flex flex-col lg:flex-row h-[calc(100vh-theme(spacing.24))] gap-6 animate-fade-in relative notranslate" translate="no">
             {/* Modals */}
             <PaymentModal
                 isOpen={isPaymentModalOpen}
@@ -312,7 +312,7 @@ const POS = () => {
             </div>
 
             {/* Right Column: Cart */}
-            <div className="w-96 flex flex-col glass-panel overflow-hidden border-l border-white/60 shadow-xl">
+            <div className="w-full lg:w-96 flex flex-col glass-panel overflow-hidden border-l border-white/60 shadow-xl">
                 {/* Cart Header */}
                 <div className="p-5 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
                     <div className="flex items-center justify-between">
