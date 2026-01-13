@@ -96,10 +96,11 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     };
 
     const updateRow = (id, field, value) => {
-        setRows(currentRows => currentRows.map(r => {
+        // 1. Create the hypothetical updated state first
+        const nextRows = rows.map(r => {
             if (r.id !== id) return r;
 
-            // Handle Currency Conversion on Method Change
+            // Handle Currency Conversion on Method Change (Standard Logic)
             if (field === 'methodId') {
                 const oldMethod = PAYMENT_METHODS.find(m => m.id === r.methodId);
                 const newMethod = PAYMENT_METHODS.find(m => m.id === value);
@@ -107,20 +108,58 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 if (oldMethod && newMethod && r.amount) {
                     const val = parseFloat(r.amount);
                     if (!isNaN(val)) {
-                        // USD -> Bs
                         if (oldMethod.isUsd && !newMethod.isUsd) {
                             return { ...r, [field]: value, amount: (val * exchangeRate).toFixed(2) };
                         }
-                        // Bs -> USD
                         if (!oldMethod.isUsd && newMethod.isUsd) {
                             return { ...r, [field]: value, amount: (val / exchangeRate).toFixed(2) };
                         }
                     }
                 }
             }
-
             return { ...r, [field]: value };
-        }));
+        });
+
+        // 2. Smart Balance Logic (Only if strictly 2 rows)
+        // If we just updated one row, we want the OTHER row to auto-fill the remainder.
+        if (nextRows.length === 2 && (field === 'amount')) {
+            const editedRow = nextRows.find(r => r.id === id);
+            const otherRow = nextRows.find(r => r.id !== id);
+
+            // Only proceed if we have valid numbers
+            const val = parseFloat(value);
+            if (!isNaN(val)) {
+
+                // Calculate how much the edited row is worth in USD
+                const editedMethod = PAYMENT_METHODS.find(m => m.id === editedRow.methodId);
+                const isEditedUsd = editedMethod ? editedMethod.isUsd : true;
+                const editedAmountUSD = isEditedUsd ? val : (val / exchangeRate);
+
+                // Calculate Remaining needed
+                let remainingUSD = totalUSD - editedAmountUSD;
+
+                // If overpaid, the other row becomes 0 (and Change UI takes over)
+                if (remainingUSD < 0) remainingUSD = 0;
+
+                // Update the OTHER row
+                const otherMethod = PAYMENT_METHODS.find(m => m.id === otherRow.methodId);
+                const isOtherUsd = otherMethod ? otherMethod.isUsd : true;
+                const newOtherAmount = isOtherUsd ? remainingUSD : (remainingUSD * exchangeRate);
+
+                // Apply the update to the other row in the array
+                const finalRows = nextRows.map(r => {
+                    if (r.id === otherRow.id) {
+                        return { ...r, amount: newOtherAmount.toFixed(2) };
+                    }
+                    return r;
+                });
+
+                setRows(finalRows);
+                return;
+            }
+        }
+
+        setRows(nextRows);
     };
 
     const handleSubmit = () => {
