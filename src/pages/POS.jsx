@@ -205,7 +205,7 @@ const POS = () => {
         }
     };
 
-    const [viewMode, setViewMode] = useState('default'); // default, compact
+    const [viewMode, setViewMode] = useState('compact'); // default, compact
 
     // ... (existing filter code)
 
@@ -354,7 +354,7 @@ const POS = () => {
                 </div>
 
                 {/* Cart Items */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50 custom-scrollbar">
                     {cart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
                             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center">
@@ -368,34 +368,34 @@ const POS = () => {
                             const total = price * item.quantity;
 
                             return (
-                                <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm animate-slide-up">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h4 className="font-bold text-slate-800 pr-2 leading-tight">{item.name}</h4>
+                                <div key={item.id} className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm animate-slide-up">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h4 className="font-bold text-slate-800 pr-2 leading-tight text-sm line-clamp-1">{item.name}</h4>
                                         <button
                                             onClick={() => removeFromCart(item.id)}
                                             className="text-slate-300 hover:text-rose-500 transition-colors"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
-                                    <div className="flex justify-between items-end">
-                                        <div className="text-sm">
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-xs">
                                             <div className="text-slate-500">${price.toFixed(2)} x {item.quantity}</div>
-                                            <div className="font-bold text-emerald-600 text-lg">${total.toFixed(2)}</div>
+                                            <div className="font-bold text-emerald-600 text-base">${total.toFixed(2)}</div>
                                         </div>
-                                        <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-1 border border-slate-200">
+                                        <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-0.5 border border-slate-200">
                                             <button
                                                 onClick={() => updateQuantity(item.id, -1)}
-                                                className="w-8 h-8 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
+                                                className="w-7 h-7 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
                                             >
-                                                <Minus size={16} />
+                                                <Minus size={14} />
                                             </button>
-                                            <span className="font-bold w-4 text-center">{item.quantity}</span>
+                                            <span className="font-bold w-4 text-center text-sm">{item.quantity}</span>
                                             <button
                                                 onClick={() => updateQuantity(item.id, 1)}
-                                                className="w-8 h-8 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
+                                                className="w-7 h-7 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
                                             >
-                                                <Plus size={16} />
+                                                <Plus size={14} />
                                             </button>
                                         </div>
                                     </div>
