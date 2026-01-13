@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
 import AuthorizationModal from '../components/AuthorizationModal';
 import { db } from '../firebase';
@@ -205,9 +205,13 @@ const POS = () => {
         }
     };
 
+    const [viewMode, setViewMode] = useState('default'); // default, compact
+
+    // ... (existing filter code)
+
     return (
         <div className="flex flex-col lg:flex-row h-[calc(100vh-theme(spacing.24))] gap-6 animate-fade-in relative notranslate" translate="no">
-            {/* Modals */}
+            {/* ... (Modals remain same) */}
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
@@ -225,39 +229,58 @@ const POS = () => {
             {/* Left Column: Products */}
             <div className="flex-1 flex flex-col gap-4 min-w-0">
                 {/* Search Bar */}
-                <div className="glass-panel p-4 flex gap-4 items-center sticky top-0 z-10">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <div className="glass-panel p-4 flex gap-4 items-center sticky top-0 z-10 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
                         <input
                             type="text"
                             placeholder="Buscar producto..."
                             className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all shadow-sm"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            autoFocus
                         />
                     </div>
 
-                    {/* Sort Dropdown */}
-                    <div className="glass-panel px-3 py-2 flex items-center gap-2 bg-white/80 backdrop-blur-sm min-w-[160px]">
-                        <ArrowUpDown size={16} className="text-slate-400" />
-                        <select
-                            value={sortOption}
-                            onChange={(e) => setSortOption(e.target.value)}
-                            className="bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-600 cursor-pointer w-full outline-none"
-                        >
-                            <option value="popularity-desc">🔥 Más Vendidos</option>
-                            <option value="name-asc">🔤 Nombre (A-Z)</option>
-                            <option value="stock-asc">📉 Menor Stock</option>
-                            <option value="stock-desc">📈 Mayor Stock</option>
-                            <option value="price-desc">💰 Mayor Precio</option>
-                            <option value="price-asc">🪙 Menor Precio</option>
-                        </select>
+                    <div className="flex gap-2 items-center ml-auto">
+                        {/* View Mode Toggle */}
+                        <div className="glass-panel p-1 flex items-center bg-white border border-slate-200 shadow-sm">
+                            <button
+                                onClick={() => setViewMode('default')}
+                                className={`p-2 rounded-lg transition-all ${viewMode === 'default' ? 'bg-primary-100 text-primary-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                title="Vista Normal"
+                            >
+                                <LayoutGrid size={20} />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('compact')}
+                                className={`p-2 rounded-lg transition-all ${viewMode === 'compact' ? 'bg-primary-100 text-primary-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                title="Vista Compacta"
+                            >
+                                <Grid3x3 size={20} />
+                            </button>
+                        </div>
+
+                        {/* Sort Dropdown */}
+                        <div className="glass-panel px-3 py-2 flex items-center gap-2 bg-white/80 backdrop-blur-sm">
+                            <ArrowUpDown size={16} className="text-slate-400" />
+                            <select
+                                value={sortOption}
+                                onChange={(e) => setSortOption(e.target.value)}
+                                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-600 cursor-pointer outline-none w-32"
+                            >
+                                <option value="popularity-desc">🔥 Populares</option>
+                                <option value="name-asc">🔤 Nombre</option>
+                                <option value="stock-asc">📉 - Stock</option>
+                                <option value="stock-desc">📈 + Stock</option>
+                                <option value="price-desc">💰 + Precio</option>
+                                <option value="price-asc">🪙 - Precio</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Tasa Display */}
-                    <div className="glass-panel px-4 py-2 flex flex-col justify-center items-end min-w-[120px] shadow-sm bg-white/80 backdrop-blur-sm">
-                        <span className="text-xs text-text-muted font-medium">Tasa BCV/Paralelo</span>
+                    <div className="glass-panel px-4 py-2 flex flex-col justify-center items-end shadow-sm bg-white/80 backdrop-blur-sm hidden md:flex">
+                        <span className="text-xs text-text-muted font-medium">Tasa BCV</span>
                         <span className={`font-bold text-lg ${parseFloat(exchangeRate) > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                             {parseFloat(exchangeRate) > 0 ? `${parseFloat(exchangeRate).toFixed(2)} Bs/$` : 'SIN TASA'}
                         </span>
@@ -271,7 +294,10 @@ const POS = () => {
                             <p>No se encontraron productos</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className={`grid gap-4 transition-all duration-300 ${viewMode === 'compact'
+                            ? 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-6'
+                            : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                            }`}>
                             {filteredProducts.map(product => {
                                 const stock = product.stock?.[activeBodegaId] || 0;
                                 const price = parseFloat(product.price_usd);
@@ -282,23 +308,24 @@ const POS = () => {
                                         key={product.id}
                                         onClick={() => hasStock && addToCart(product)}
                                         disabled={!hasStock}
-                                        className={`relative p-4 rounded-xl border text-left transition-all duration-200 flex flex-col items-center group
+                                        className={`relative rounded-xl border text-left transition-all duration-200 flex flex-col items-center group
+                                            ${viewMode === 'compact' ? 'p-2' : 'p-4'}
                                             ${hasStock
                                                 ? 'bg-white border-slate-100 hover:border-primary-300 hover:shadow-lg hover:-translate-y-1'
                                                 : 'bg-slate-50 border-slate-100 opacity-60 cursor-not-allowed'}`}
                                     >
-                                        <div className="w-full aspect-square mb-3 bg-primary-50 rounded-lg flex items-center justify-center group-hover:bg-primary-100 transition-colors">
-                                            <span className="text-2xl font-bold text-primary-400 uppercase">
+                                        <div className={`w-full aspect-square mb-3 bg-primary-50 rounded-lg flex items-center justify-center group-hover:bg-primary-100 transition-colors ${viewMode === 'compact' ? 'mb-2' : 'mb-3'}`}>
+                                            <span className={`font-bold text-primary-400 uppercase ${viewMode === 'compact' ? 'text-lg' : 'text-2xl'}`}>
                                                 {product.name.slice(0, 2)}
                                             </span>
                                         </div>
                                         <div className="w-full">
-                                            <h3 className="font-bold text-text-main truncate text-center mb-1">{product.name}</h3>
+                                            <h3 className={`font-bold text-text-main truncate text-center mb-1 ${viewMode === 'compact' ? 'text-xs' : 'text-sm'}`}>{product.name}</h3>
                                             <div className="flex justify-between items-center w-full mt-2">
-                                                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-                                                    {stock} disp.
+                                                <span className={`font-medium text-slate-500 bg-slate-100 rounded-full ${viewMode === 'compact' ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'}`}>
+                                                    {stock}
                                                 </span>
-                                                <span className="text-lg font-bold text-primary-600">
+                                                <span className={`font-bold text-primary-600 ${viewMode === 'compact' ? 'text-sm' : 'text-lg'}`}>
                                                     ${price.toFixed(2)}
                                                 </span>
                                             </div>

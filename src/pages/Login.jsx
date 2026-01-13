@@ -21,11 +21,6 @@ const Login = () => {
             return;
         }
 
-        if (!email.includes('@')) {
-            setError('Por favor ingresa un correo electrónico válido');
-            return;
-        }
-
         setLoading(true);
 
         try {
@@ -33,90 +28,60 @@ const Login = () => {
             navigate('/');
         } catch (error) {
             console.error('Login error:', error);
-
-            switch (error.code) {
-                case 'auth/user-not-found':
-                    setError('❌ No existe una cuenta con este correo electrónico');
-                    break;
-                case 'auth/wrong-password':
-                    setError('❌ Contraseña incorrecta. Por favor intenta de nuevo');
-                    break;
-                case 'auth/invalid-email':
-                    setError('❌ Formato de correo electrónico inválido');
-                    break;
-                case 'auth/user-disabled':
-                    setError('❌ Esta cuenta ha sido desactivada. Contacta al administrador');
-                    break;
-                case 'auth/too-many-requests':
-                    setError('⚠️ Demasiados intentos fallidos. Intenta más tarde');
-                    break;
-                case 'auth/network-request-failed':
-                    setError('🌐 Error de conexión. Verifica tu internet');
-                    break;
-                case 'auth/invalid-credential':
-                    setError('❌ Credenciales incorrectas. Verifica tu usuario y contraseña');
-                    break;
-                default:
-                    setError('❌ Error al iniciar sesión. Intenta nuevamente');
-            }
+            setError('Credenciales incorrectas. Verifica tu información.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-            {/* Subtle gradients */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-200/20 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl"></div>
+        <div className="flex min-h-screen bg-stone-50">
+            {/* Left Side - Image */}
+            <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
+                <div className="absolute inset-0 bg-primary-900/10 z-10"></div>
+                <img
+                    src="/login_lifestyle_warm_1768270649037.png"
+                    alt="Lifestyle Abstract"
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 p-12 z-20 text-white">
+                    <h2 className="text-4xl font-bold mb-4">Gestión Inteligente, <br />Trato Humano.</h2>
+                    <p className="text-white/80 text-lg max-w-md">Tu sistema de confianza para mantener todo en orden, sin complicaciones.</p>
+                </div>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md relative z-10"
-            >
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-                    {/* Logo */}
-                    <div className="flex justify-center mb-6">
-                        <div className="w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-200">
-                            <Lock className="w-7 h-7 text-white" />
+            {/* Right Side - Form */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="w-full max-w-md space-y-8"
+                >
+                    <div className="text-center lg:text-left">
+                        <div className="w-12 h-12 bg-primary-100 rounded-2xl flex items-center justify-center mb-6 mx-auto lg:mx-0 text-primary-600">
+                            <Lock className="w-6 h-6" />
                         </div>
+                        <h1 className="text-3xl font-bold text-slate-900">¡Qué bueno verte! 👋</h1>
+                        <p className="text-slate-500 mt-2 text-lg">Ingresa para administrar tu bodega</p>
                     </div>
 
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <h2 className="text-2xl font-bold text-slate-900">Bienvenido</h2>
-                        <p className="text-slate-500 mt-2 text-sm">Sistema Administrativo Bodega</p>
-                    </div>
-
-                    {/* Error Alert */}
                     {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3"
-                        >
-                            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                            <span className="text-sm text-red-700">{error}</span>
-                        </motion.div>
+                        <div className="p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-sm font-medium animate-shake">
+                            <AlertCircle size={18} />
+                            {error}
+                        </div>
                     )}
 
-                    {/* Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Correo Electrónico
-                            </label>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 ml-1">Correo Electrónico</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                                 <input
                                     type="email"
-                                    required
-                                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all"
-                                    placeholder="admin@bodega.com"
+                                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all font-medium"
+                                    placeholder="tu@correo.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     disabled={loading}
@@ -124,16 +89,13 @@ const Login = () => {
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Contraseña
-                            </label>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 ml-1">Contraseña</label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                                 <input
                                     type="password"
-                                    required
-                                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all"
+                                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all font-medium"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -145,28 +107,17 @@ const Login = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full px-5 py-3 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow flex items-center gap-2 justify-center text-base"
+                            className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl shadow-lg shadow-primary-200 hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
                         >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Iniciando sesión...
-                                </>
-                            ) : (
-                                'Ingresar'
-                            )}
+                            {loading ? <Loader2 className="animate-spin" /> : 'Ingresar al Sistema'}
                         </button>
                     </form>
 
-                    {/* Demo credentials */}
-                    <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <p className="text-xs text-slate-600 text-center">
-                            <span className="font-semibold block mb-1">Cuenta Demo</span>
-                            <span className="text-slate-500">admin@bodega.com / admin123</span>
-                        </p>
-                    </div>
-                </div>
-            </motion.div>
+                    <p className="text-center text-slate-400 text-sm">
+                        ¿Olvidaste tu contraseña? <span className="text-primary-600 font-medium cursor-pointer hover:underline">Recuperar acceso</span>
+                    </p>
+                </motion.div>
+            </div>
         </div>
     );
 };
