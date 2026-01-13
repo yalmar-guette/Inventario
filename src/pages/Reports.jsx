@@ -80,8 +80,7 @@ const Reports = () => {
         doc.text(`~ ${sales.reduce((a, b) => a + b.totalBs, 0).toFixed(2)} Bs`, 60, 64);
 
         const tableData = sales.map(s => [
-            format(s.timestamp.toDate(), 'HH:mm'),
-            s.id.substring(0, 8),
+            format(s.timestamp.toDate(), 'hh:mm a'),
             s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
             `$${s.totalUSD.toFixed(2)}`,
             `${s.totalBs.toFixed(2)} Bs`
@@ -89,7 +88,7 @@ const Reports = () => {
 
         autoTable(doc, {
             startY: 80,
-            head: [['Hora', 'ID', 'Items', 'Total USD', 'Total Bs']],
+            head: [['Hora', 'Items', 'Total USD', 'Total Bs']],
             body: tableData,
             theme: 'grid',
             headStyles: {
@@ -104,9 +103,9 @@ const Reports = () => {
                 cellPadding: 4
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 20 },
-                3: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
-                4: { halign: 'right' }
+                0: { halign: 'center', cellWidth: 25 },
+                2: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
+                3: { halign: 'right' }
             },
             alternateRowStyles: {
                 fillColor: [248, 250, 252]
