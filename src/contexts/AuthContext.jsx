@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Fetch additional user details (role) from Firestore
+                // Obtener detalles adicionales del usuario (rol) desde Firestore
                 const userDocRef = doc(db, "users", user.uid);
                 try {
                     const userDoc = await getDoc(userDocRef);
@@ -26,9 +26,9 @@ export function AuthProvider({ children }) {
                         setCurrentUser({ ...user, ...userData });
                         setUserRole(userData.role);
                     } else {
-                        // Fallback if no firestore doc exists yet
+                        // Respaldo si no existe documento en Firestore todavía
                         setCurrentUser(user);
-                        setUserRole("EMPLOYEE"); // Default safety
+                        setUserRole("EMPLOYEE"); // Seguridad por defecto
                     }
                 } catch (error) {
                     console.error("Error fetching user role:", error);

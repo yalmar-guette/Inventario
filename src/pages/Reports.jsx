@@ -20,7 +20,7 @@ const Reports = () => {
     const fetchSales = async () => {
         setLoading(true);
         try {
-            // Construct dates using local time explicitly to avoid UTC shifts
+            // Construir fechas usando hora local explícitamente para evitar cambios UTC
             const [year, month, day] = date.split('-').map(Number);
             const start = new Date(year, month - 1, day, 0, 0, 0, 0);
             const end = new Date(year, month - 1, day, 23, 59, 59, 999);
@@ -46,11 +46,11 @@ const Reports = () => {
     const exportPDF = () => {
         const doc = new jsPDF();
 
-        // Brand Colors
+        // Colores de la Marca
         const primaryColor = [99, 102, 241]; // Indigo/Primary
         const slateColor = [30, 41, 59];
 
-        // Header
+        // Encabezado
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, 210, 40, 'F');
 
@@ -63,7 +63,7 @@ const Reports = () => {
         doc.setFont('helvetica', 'normal');
         doc.text(date, 14, 28);
 
-        // Summary Box
+        // Caja de Resumen
         doc.setFillColor(255, 255, 255);
         doc.roundedRect(14, 45, 180, 25, 3, 3, 'F');
         doc.setDrawColor(226, 232, 240);
@@ -144,13 +144,13 @@ const Reports = () => {
     return (
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header - Centered */}
+                {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Informes</h1>
                     <p className="text-slate-500 mt-2 text-sm">Historial de ventas y cierres</p>
                 </div>
 
-                {/* Date Picker */}
+                {/* Selector de Fecha */}
                 <div className="flex justify-center mb-6">
                     <input
                         type="date"
@@ -160,7 +160,7 @@ const Reports = () => {
                     />
                 </div>
 
-                {/* Summary Cards */}
+                {/* Tarjetas de Resumen */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
                         <h3 className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-2">Total del Día (USD)</h3>
@@ -174,7 +174,7 @@ const Reports = () => {
                     </div>
                 </div>
 
-                {/* Transactions Table */}
+                {/* Tabla de Transacciones */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
                         <h2 className="text-lg font-bold text-slate-900">Detalle de Transacciones</h2>

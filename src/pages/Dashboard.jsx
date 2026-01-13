@@ -96,7 +96,9 @@ const Dashboard = () => {
         <div className="min-h-screen bg-slate-50 p-8">
             <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-7xl mx-auto space-y-8">
 
-                {/* Header */}
+
+
+                {/* Encabezado */}
                 <motion.div variants={itemVariants} className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
@@ -111,10 +113,10 @@ const Dashboard = () => {
                     </div>
                 </motion.div>
 
-                {/* Metrics Grid */}
+                {/* Cuadrícula de Métricas */}
                 <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                    {/* Sales Card - GREEN */}
+                    {/* Tarjeta de Ventas - VERDE */}
                     <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all">
                         <div className="flex items-start justify-between mb-4">
                             <div className="p-3 bg-emerald-50 rounded-2xl">
@@ -141,7 +143,7 @@ const Dashboard = () => {
                         </p>
                     </motion.div>
 
-                    {/* Debtors Card - RED */}
+                    {/* Tarjeta de Deudores - ROJO */}
                     <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all">
                         <div className="flex items-start justify-between mb-4">
                             <div className="p-3 bg-red-50 rounded-2xl">
@@ -165,7 +167,7 @@ const Dashboard = () => {
                         </p>
                     </motion.div>
 
-                    {/* User Card - PURPLE */}
+                    {/* Tarjeta de Usuario - MORADO */}
                     <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all">
                         <div className="flex items-start justify-between mb-4">
                             <div className="p-3 bg-primary-50 rounded-2xl">
@@ -184,7 +186,7 @@ const Dashboard = () => {
                     </motion.div>
                 </motion.div>
 
-                {/* Debtors Table */}
+                {/* Tabla de Deudores */}
                 <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
                         <div className="flex items-center justify-between">

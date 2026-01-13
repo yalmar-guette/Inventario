@@ -8,7 +8,7 @@ export function useInventory(bodegaId) {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Subscribe to global products collection
+        // Suscribirse a la colección global de productos
         const unsubscribe = onSnapshot(collection(db, "products"),
             (snapshot) => {
                 const productsData = snapshot.docs.map(doc => ({
@@ -32,7 +32,7 @@ export function useInventory(bodegaId) {
         try {
             const { initialStock, ...restData } = productData;
 
-            // Initialize stock map with the current bodega
+            // Inicializar mapa de stock con la bodega actual
             const stockMap = {};
             if (bodegaId && initialStock) {
                 stockMap[bodegaId] = parseInt(initialStock) || 0;
@@ -54,7 +54,7 @@ export function useInventory(bodegaId) {
             const { initialStock, ...restData } = data;
             const docRef = doc(db, "products", id);
 
-            // If stock is being updated, update the stock map
+            // Si se actualiza el stock, actualizar el mapa de stock
             const updateData = { ...restData };
             if (initialStock !== undefined && bodegaId) {
                 updateData[`stock.${bodegaId}`] = parseInt(initialStock) || 0;

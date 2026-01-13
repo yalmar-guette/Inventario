@@ -42,16 +42,16 @@ const Layout = () => {
 
     return (
         <div className="flex h-screen bg-slate-50">
-            {/* Glassmorphism Sidebar - Desktop */}
+            {/* Sidebar con Glassmorphism - Escritorio */}
             <aside className="hidden md:flex flex-col w-64 glass-sidebar">
-                {/* Logo with pulsating status */}
+                {/* Logo con estado pulsante */}
                 <div className="p-6 border-b border-slate-200/60">
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary-200">
                                 B
                             </div>
-                            {/* Online Status Pulse */}
+                            {/* Pulso de Estado Online */}
                             <div className="absolute -top-1 -right-1 w-3 h-3">
                                 <Circle className="w-3 h-3 fill-emerald-500 text-emerald-500" />
                                 <Circle className="w-3 h-3 fill-emerald-500 text-emerald-500 absolute inset-0 animate-ping opacity-75" />
@@ -64,7 +64,7 @@ const Layout = () => {
                     </div>
                 </div>
 
-                {/* Navigation */}
+                {/* Navegación */}
                 <nav className="flex-1 px-3 py-4 space-y-1">
                     {filteredNavItems.map((item) => (
                         <NavLink
@@ -87,7 +87,7 @@ const Layout = () => {
                     ))}
                 </nav>
 
-                {/* User Profile with Glassmorphism Card */}
+                {/* Perfil de Usuario con Tarjeta Glassmorphism */}
                 <div className="p-4 border-t border-slate-200/60">
                     <div className="bg-slate-50/50 backdrop-blur-sm rounded-2xl p-3 mb-3">
                         <div className="flex items-center gap-3 mb-2">
@@ -113,9 +113,9 @@ const Layout = () => {
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* Contenido Principal */}
             <main className="flex-1 flex flex-col overflow-hidden">
-                {/* Mobile Header */}
+                {/* Cabecera Móvil */}
                 <div className="md:hidden flex items-center justify-between p-4 bg-white/80 backdrop-blur-xl border-b border-slate-200/60">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-bold shadow-lg">

@@ -11,11 +11,11 @@ const PAYMENT_METHODS = [
 ];
 
 const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPayment, cart = [] }) => {
-    // Default to one empty row
+    // Por defecto una fila vacía
     const [rows, setRows] = useState([{ id: Date.now(), methodId: 'EFECTIVO_USD', amount: '' }]);
     const [debtorInfo, setDebtorInfo] = useState({ name: '', phone: '' });
 
-    // Helper to distribute total equally among rows
+    // Helper para distribuir el total equitativamente entre filas
     const getDistributedRows = (currentRows, targetTotalUSD) => {
         const count = currentRows.length;
         if (count === 0) return [];
@@ -24,7 +24,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
         return currentRows.map(row => {
             const method = PAYMENT_METHODS.find(m => m.id === row.methodId);
-            const isUsd = method ? method.isUsd : true; // Default to USD if not found
+            const isUsd = method ? method.isUsd : true; // Por defecto USD si no se encuentra
             const val = isUsd ? splitUSD : (splitUSD * exchangeRate);
             return { ...row, amount: val.toFixed(2) };
         });
@@ -32,21 +32,21 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
     useEffect(() => {
         if (isOpen) {
-            // Initial: 1 Row with Full Amount
+            // Inicial: 1 Fila con el monto total
             const initialRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: totalUSD.toFixed(2) };
             setRows([initialRow]);
             setDebtorInfo({ name: '', phone: '' });
         }
-    }, [isOpen, totalUSD]); // Add totalUSD dependency to update if it changes
+    }, [isOpen, totalUSD]); // Agregar dependencia totalUSD para actualizar si cambia
 
     if (!isOpen) return null;
 
     const totalBs = totalUSD * exchangeRate;
 
-    // Calculate Totals based on Rows
+    // Calcular Totales basados en Filas
     const totalPaidUSD = rows.reduce((sum, row) => {
         const val = parseFloat(row.amount);
-        if (isNaN(val) || val < 0) return sum; // Allow 0, ignore negatives
+        if (isNaN(val) || val < 0) return sum; // Permitir 0, ignorar negativos
 
         const method = PAYMENT_METHODS.find(m => m.id === row.methodId);
         if (!method) return sum;
@@ -58,7 +58,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const isExact = Math.abs(difference) < 0.01;
     const isOverpaid = difference < -0.01;
 
-    // UI Display Values
+    // Valores de Visualización UI
     const remainingInfo = {
         label: isOverpaid ? 'Su Cambio / Vuelto' : (isExact ? 'Pago Completo' : 'Restante por Pagar'),
         amountUSD: Math.abs(difference),
@@ -67,25 +67,24 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
         bgClass: isOverpaid ? 'bg-blue-50 border-blue-200' : (isExact ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200')
     };
 
-    // Allow small float tolerance for "Is Covered" (Proceed button)
+    // Permitir pequeña tolerancia decimal para "Está Cubierto" (Botón proceder)
     const isCovered = totalPaidUSD >= totalUSD - 0.01;
 
     const hasFiado = rows.some(r => r.methodId === 'FIADO');
 
-    // Row Operations
-    // Row Operations
+    // Operaciones de Fila
     const addRow = () => {
         const newRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: '0' };
         const nextRows = [...rows, newRow];
 
-        // Auto-distribute
+        // Auto-distribuir
         const distributed = getDistributedRows(nextRows, totalUSD);
         setRows(distributed);
     };
 
     const removeRow = (id) => {
         if (rows.length === 1) {
-            // If only 1 row, reset to full total instead of clearing/removing
+            // Si solo hay 1 fila, restablecer al total completo en lugar de borrar/eliminar
             const resetRow = { ...rows[0], amount: totalUSD.toFixed(2) };
             setRows([resetRow]);
             return;
@@ -96,11 +95,11 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     };
 
     const updateRow = (id, field, value) => {
-        // 1. Create the hypothetical updated state first
+        // 1. Crear el estado actualizado hipotético primero
         const nextRows = rows.map(r => {
             if (r.id !== id) return r;
 
-            // Handle Currency Conversion on Method Change (Standard Logic)
+            // Manejar Conversión de Moneda al cambiar el Método (Lógica Estándar)
             if (field === 'methodId') {
                 const oldMethod = PAYMENT_METHODS.find(m => m.id === r.methodId);
                 const newMethod = PAYMENT_METHODS.find(m => m.id === value);
@@ -120,33 +119,33 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             return { ...r, [field]: value };
         });
 
-        // 2. Smart Balance Logic (Only if strictly 2 rows)
-        // If we just updated one row, we want the OTHER row to auto-fill the remainder.
+        // 2. Lógica de Balance Inteligente (Solo si hay estrictamente 2 filas)
+        // Si acabamos de actualizar una fila, queremos que la OTRA fila se auto-rellene con el resto.
         if (nextRows.length === 2 && (field === 'amount')) {
             const editedRow = nextRows.find(r => r.id === id);
             const otherRow = nextRows.find(r => r.id !== id);
 
-            // Only proceed if we have valid numbers
+            // Solo proceder si tenemos números válidos
             const val = parseFloat(value);
             if (!isNaN(val)) {
 
-                // Calculate how much the edited row is worth in USD
+                // Calcular cuánto vale la fila editada en USD
                 const editedMethod = PAYMENT_METHODS.find(m => m.id === editedRow.methodId);
                 const isEditedUsd = editedMethod ? editedMethod.isUsd : true;
                 const editedAmountUSD = isEditedUsd ? val : (val / exchangeRate);
 
-                // Calculate Remaining needed
+                // Calcular Restante necesario
                 let remainingUSD = totalUSD - editedAmountUSD;
 
-                // If overpaid, the other row becomes 0 (and Change UI takes over)
+                // Si se pagó de más, la otra fila se vuelve 0 (y la UI de Cambio toma el control)
                 if (remainingUSD < 0) remainingUSD = 0;
 
-                // Update the OTHER row
+                // Actualizar la OTRA fila
                 const otherMethod = PAYMENT_METHODS.find(m => m.id === otherRow.methodId);
                 const isOtherUsd = otherMethod ? otherMethod.isUsd : true;
                 const newOtherAmount = isOtherUsd ? remainingUSD : (remainingUSD * exchangeRate);
 
-                // Apply the update to the other row in the array
+                // Aplicar la actualización a la otra fila en el array
                 const finalRows = nextRows.map(r => {
                     if (r.id === otherRow.id) {
                         return { ...r, amount: newOtherAmount.toFixed(2) };
@@ -165,7 +164,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const handleSubmit = () => {
         if (!isCovered) return;
 
-        // Compile valid payments
+        // Compilar pagos válidos
         const validPayments = rows
             .filter(r => parseFloat(r.amount) > 0)
             .map(r => {
@@ -184,7 +183,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             debtor: hasFiado ? debtorInfo : null,
             totalUSD,
             totalBs,
-            changeUSD: isOverpaid ? Math.abs(difference) : 0 // Pass change info
+            changeUSD: isOverpaid ? Math.abs(difference) : 0 // Pasar información del cambio
         });
     };
 

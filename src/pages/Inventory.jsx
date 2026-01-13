@@ -8,32 +8,32 @@ const Inventory = () => {
     const { currentUser, userRole } = useAuth();
     const { products, loading, addProduct, updateProduct, deleteProduct } = useInventory(currentUser?.assigned_bodega_id);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortOption, setSortOption] = useState('stock-asc'); // Default: Low stock first (actionable)
+    const [sortOption, setSortOption] = useState('stock-asc'); // Por defecto: Poco stock primero (accionable)
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [showGlobalCatalog, setShowGlobalCatalog] = useState(false);
 
-    // Filter & Sort
+    // Filtrar y Ordenar
     const filteredProducts = useMemo(() => {
         if (!products) return [];
         const term = searchTerm.toLowerCase();
         const targetBodega = currentUser?.assigned_bodega_id || 'main';
 
-        // 1. Filter
+        // 1. Filtrar
         let result = products.filter(product => {
-            // Text Search
+            // Búsqueda de Texto
             const matchesText = product.name.toLowerCase().includes(term) || product.barcode?.includes(term);
 
-            // Bodega Visibility: Show if "Show Global" is ON OR if product has entry for this bodega
+            // Visibilidad de Bodega: Mostrar si "Mostrar Global" está ACTIVADO O si el producto tiene entrada para esta bodega
             const hasBodegaEntry = product.stock && Object.prototype.hasOwnProperty.call(product.stock, targetBodega);
             const isVisible = showGlobalCatalog || hasBodegaEntry;
 
             return matchesText && isVisible;
         });
 
-        // 2. Sort
+        // 2. Ordenar
         result.sort((a, b) => {
-            // Fallback to 'main' if user has no assigned bodega
+            // Respaldo 'main' si el usuario no tiene bodega asignada
             const stockA = a.stock?.[targetBodega] || 0;
             const stockB = b.stock?.[targetBodega] || 0;
             const priceA = parseFloat(a.price_usd) || 0;
@@ -89,7 +89,7 @@ const Inventory = () => {
     return (
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header - Centered */}
+                {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Inventario</h1>
                     <p className="text-slate-500 mt-2 text-sm">Gestión de productos y existencias</p>
@@ -100,7 +100,7 @@ const Inventory = () => {
                     </div>
                 </div>
 
-                {/* Global Catalog Toggle */}
+                {/* Alternar Catálogo Global */}
                 {currentUser?.assigned_bodega_id !== 'bodega_1' && currentUser?.assigned_bodega_id && (
                     <div className="flex justify-end mb-2">
                         <label className="inline-flex items-center cursor-pointer gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">

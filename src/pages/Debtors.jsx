@@ -11,7 +11,7 @@ const Debtors = () => {
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Modal State
+    // Estado del Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDebtor, setSelectedDebtor] = useState(null);
     const [paymentAmount, setPaymentAmount] = useState('');
@@ -53,14 +53,14 @@ const Debtors = () => {
         const amountInput = parseFloat(paymentAmount);
         if (isNaN(amountInput) || amountInput <= 0) return;
 
-        // Calculate amount in USD
+        // Calcular monto en USD
         const amountInUSD = isUsd ? amountInput : (amountInput / rate);
 
         try {
             const newDebt = selectedDebtor.amount_owed - amountInUSD;
             const ref = doc(db, 'debtors', selectedDebtor.id);
 
-            // 1. Update/Delete Debtor Record
+            // 1. Actualizar/Eliminar Registro de Deudor
             if (newDebt <= 0.01) {
                 await deleteDoc(ref);
                 alert('Deuda pagada por completo. Cliente eliminado de lista.');
@@ -72,8 +72,8 @@ const Debtors = () => {
                 alert('Abono registrado exitosamente.');
             }
 
-            // 2. Optional: Record the payment transaction if you had a 'payments' collection
-            // For now, we just update the debt as requested.
+            // 2. Opcional: Registrar la transacción de pago si tuvieras una colección 'payments'
+            // Por ahora, solo actualizamos la deuda según lo solicitado.
 
             setIsModalOpen(false);
             fetchDebtors();
@@ -86,7 +86,7 @@ const Debtors = () => {
     return (
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header - Centered */}
+                {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Deudores</h1>
                     <p className="text-slate-500 mt-2 text-sm">Gestión de cuentas por cobrar (Fiados)</p>
@@ -142,11 +142,11 @@ const Debtors = () => {
                     )}
                 </div>
 
-                {/* LOGIC-LIKE PAYMENT MODAL */}
+                {/* MODAL DE PAGO LOGIC-LIKE */}
                 {isModalOpen && selectedDebtor && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
                         <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
-                            {/* Header */}
+                            {/* Encabezado */}
                             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <div>
                                     <h3 className="font-bold text-lg text-slate-800">Registrar Abono</h3>
@@ -158,7 +158,7 @@ const Debtors = () => {
                             </div>
 
                             <form onSubmit={handleProcessPayment} className="p-6 space-y-6">
-                                {/* Debt Info */}
+                                {/* Info Deuda */}
                                 <div className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
                                     <span className="text-red-600 font-medium text-sm">Deuda Actual</span>
                                     <div className="text-right">
@@ -167,7 +167,7 @@ const Debtors = () => {
                                     </div>
                                 </div>
 
-                                {/* Amount Input */}
+                                {/* Compra de Monto */}
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700">Monto a abonar</label>
                                     <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all">
@@ -197,7 +197,7 @@ const Debtors = () => {
                                             </button>
                                         </div>
                                     </div>
-                                    {/* Conversion Preview */}
+                                    {/* Vista Previa de Conversión */}
                                     {paymentAmount && (
                                         <div className="text-right text-sm font-medium animate-in fade-in slide-in-from-top-1">
                                             {isUsd ? (
@@ -219,8 +219,8 @@ const Debtors = () => {
                                                 type="button"
                                                 onClick={() => setPaymentMethod(method)}
                                                 className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${paymentMethod === method
-                                                        ? 'bg-slate-900 text-white border-slate-900'
-                                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                                     }`}
                                             >
                                                 {method}

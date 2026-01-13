@@ -9,35 +9,35 @@ import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 
 const POS = () => {
-    // Contexts
+    // Contextos
     const { currentUser, userRole } = useAuth();
-    // Fallback to 'main' if assigned_bodega_id is missing/undefined
+    // Usar 'main' como respaldo si assigned_bodega_id no está definido
     const activeBodegaId = currentUser?.assigned_bodega_id || 'main';
     const { products } = useInventory(activeBodegaId);
     const { rate: exchangeRate } = useSystemConfig();
 
-    // Local State
+    // Estado Local
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortOption, setSortOption] = useState('popularity-desc'); // Default: Most popular
+    const [sortOption, setSortOption] = useState('popularity-desc'); // Por defecto: Más populares
     const [cart, setCart] = useState([]);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [pendingAction, setPendingAction] = useState(null);
 
-    // Filter & Sort Products
+    // Filtrar y Ordenar Productos
     const filteredProducts = useMemo(() => {
         if (!products) return [];
         const term = searchTerm.toLowerCase();
 
-        // 1. Filter
+        // 1. Filtrar
         let result = products.filter(p => {
             const matchesText = p.name.toLowerCase().includes(term) || (p.barcode && p.barcode.includes(term));
-            // Strict Isolation: Hide items with 0 stock unless they "exist" in this bodega structure
+            // Aislamiento Estricto: Ocultar items con stock 0 a menos que "existan" en la estructura de esta bodega
             const hasEntry = p.stock && Object.prototype.hasOwnProperty.call(p.stock, activeBodegaId);
             return matchesText && hasEntry;
         });
 
-        // 2. Sort
+        // 2. Ordenar
         result.sort((a, b) => {
             const stockA = a.stock?.[activeBodegaId] || 0;
             const stockB = b.stock?.[activeBodegaId] || 0;
@@ -60,7 +60,7 @@ const POS = () => {
         return result;
     }, [products, searchTerm, sortOption, activeBodegaId]);
 
-    // Cart Operations
+    // Operaciones del Carrito
     const addToCart = (product) => {
         setCart(currentCart => {
             const existingItem = currentCart.find(item => item.id === product.id);
@@ -90,7 +90,7 @@ const POS = () => {
             if (item.id === productId) {
                 const availableStock = item.stock?.[activeBodegaId] || 0;
 
-                // Block increasing if stock reached
+                // Bloquear incremento si se alcanza el stock
                 if (change > 0 && item.quantity >= availableStock) {
                     alert(`Stock máximo alcanzado (${availableStock})`);
                     return item;
@@ -123,20 +123,20 @@ const POS = () => {
         setPendingAction(null);
     };
 
-    // Calculate Total - IMPERATIVE LOOP STYLE
+    // Calcular Total - ESTILO BUCLE IMPERATIVO
     let finalCartTotal = 0;
     let totalItems = 0;
 
 
-    // Using a basic loop to avoid any reduce weirdness
+    // Usando un bucle básico para evitar rarezas con reduce
     for (const item of cart) {
-        // Ensure values are numbers
+        // Asegurar que los valores son números
         const pRaw = item.price_usd;
         const qRaw = item.quantity;
         const p = parseFloat(pRaw);
         const q = parseInt(qRaw);
 
-        // Only add if valid
+        // Solo sumar si es válido
         if (!isNaN(p) && !isNaN(q)) {
             finalCartTotal += (p * q);
             totalItems += q;
@@ -146,7 +146,7 @@ const POS = () => {
     const validRate = parseFloat(exchangeRate) || 0;
     const subtotalBs = finalCartTotal * validRate;
 
-    // Payment Processing
+    // Procesamiento de Pagos
     const handleProcessPayment = async ({ payments, debtor, totalUSD, totalBs }) => {
         try {
             const saleData = {
@@ -166,10 +166,10 @@ const POS = () => {
                 status: 'COMPLETED'
             };
 
-            // 1. Create Sale Record
+            // 1. Crear Registro de Venta
             const saleRef = await addDoc(collection(db, 'sales'), saleData);
 
-            // 2. Handle Debtor (if applicable)
+            // 2. Manejar Deudor (si aplica)
             if (debtor) {
                 const debtPayments = payments.filter(p => p.method === 'FIADO');
                 const debtAmountUSD = debtPayments.reduce((sum, p) =>
@@ -184,7 +184,7 @@ const POS = () => {
                 });
             }
 
-            // 3. Update Inventory & Sales Count
+            // 3. Actualizar Inventario y Conteo de Ventas
             const batchPromises = cart.map(item => {
                 const productRef = doc(db, 'products', item.id);
                 const stockField = `stock.${activeBodegaId}`;
@@ -205,9 +205,9 @@ const POS = () => {
         }
     };
 
-    const [viewMode, setViewMode] = useState('compact'); // default, compact
+    const [viewMode, setViewMode] = useState('compact'); // por defecto, compacto
 
-    // ... (existing filter code)
+    // ... (código de filtro existente)
 
     return (
         <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-theme(spacing.24))] gap-6 animate-fade-in relative notranslate" translate="no">
