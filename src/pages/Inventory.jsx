@@ -86,6 +86,11 @@ const Inventory = () => {
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Inventario</h1>
                     <p className="text-slate-500 mt-2 text-sm">Gestión de productos y existencias</p>
+                    <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-primary-50 rounded-full border border-primary-100">
+                        <span className="text-xs font-bold text-primary-700 uppercase">
+                            Bodega: {currentUser?.assigned_bodega_id === 'bodega_1' || !currentUser?.assigned_bodega_id ? 'Principal' : 'Sucursal ' + currentUser.assigned_bodega_id.slice(0, 4)}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Search and Add Button */}
