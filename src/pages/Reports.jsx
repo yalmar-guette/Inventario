@@ -10,16 +10,28 @@ import autoTable from 'jspdf-autotable';
 const Reports = () => {
     const { currentUser } = useAuth();
     const [sales, setSales] = useState([]);
+    const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
     useEffect(() => {
-        fetchSales();
+        fetchData();
     }, [date]);
 
-    const fetchSales = async () => {
+    const fetchData = async () => {
         setLoading(true);
         try {
+            // 1. Fetch Users Cache (Optimizado: solo ids necesarios o todos si son pocos)
+            // Asumimos que son pocos usuarios, traemos todos para el mapa
+            const usersSnap = await getDocs(collection(db, 'users'));
+            const uMap = {};
+            usersSnap.forEach(doc => {
+                const u = doc.data();
+                uMap[doc.id] = u.name || u.email || 'Usuario';
+            });
+            setUsersMap(uMap);
+
+            // 2. Fetch Sales
             // Construir fechas usando hora local explícitamente para evitar cambios UTC
             const [year, month, day] = date.split('-').map(Number);
             const start = new Date(year, month - 1, day, 0, 0, 0, 0);
@@ -41,6 +53,12 @@ const Reports = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const getCashierName = (sale) => {
+        if (sale.cashier_name) return sale.cashier_name;
+        if (sale.cashier_id && usersMap[sale.cashier_id]) return usersMap[sale.cashier_id];
+        return 'Desconocido';
     };
 
     const exportPDF = () => {
@@ -84,6 +102,7 @@ const Reports = () => {
 
         const tableData = sales.map(s => [
             format(s.timestamp.toDate(), 'hh:mm a'),
+            getCashierName(s),
             s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
             `$${s.totalUSD.toFixed(2)}`,
             `${s.totalBs.toFixed(2)} Bs`
@@ -91,7 +110,7 @@ const Reports = () => {
 
         autoTable(doc, {
             startY: 80,
-            head: [['Hora', 'Items', 'Total USD', 'Total Bs']],
+            head: [['Hora', 'Usuario', 'Items', 'Total USD', 'Total Bs']],
             body: tableData,
             theme: 'grid',
             headStyles: {
@@ -106,9 +125,9 @@ const Reports = () => {
                 cellPadding: 4
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 25 },
-                2: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
-                3: { halign: 'right' }
+                0: { halign: 'center', cellWidth: 20 },
+                3: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
+                4: { halign: 'right' }
             },
             alternateRowStyles: {
                 fillColor: [248, 250, 252]
@@ -120,11 +139,12 @@ const Reports = () => {
     };
 
     const exportExcel = () => {
-        let csv = "Fecha/Hora,ID Venta,Items,Total USD,Total Bs\n";
+        let csv = "Fecha/Hora,Usuario,ID Venta,Items,Total USD,Total Bs\n";
         sales.forEach(s => {
             const items = s.items.map(i => `${i.quantity}x ${i.name}`).join('; ');
             const row = [
                 format(s.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
+                getCashierName(s),
                 s.id,
                 `"${items}"`,
                 s.totalUSD.toFixed(2),
@@ -193,6 +213,7 @@ const Reports = () => {
                             <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Hora</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Artículos</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total USD</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Bs</th>
@@ -200,14 +221,17 @@ const Reports = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {loading ? (
-                                    <tr><td colSpan="4" className="text-center py-12 text-slate-500">Cargando...</td></tr>
+                                    <tr><td colSpan="5" className="text-center py-12 text-slate-500">Cargando...</td></tr>
                                 ) : sales.length === 0 ? (
-                                    <tr><td colSpan="4" className="text-center py-12 text-slate-500">No hay ventas registradas</td></tr>
+                                    <tr><td colSpan="5" className="text-center py-12 text-slate-500">No hay ventas registradas</td></tr>
                                 ) : (
                                     sales.map(sale => (
                                         <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4 text-slate-500 font-mono text-sm">
                                                 {format(sale.timestamp.toDate(), 'HH:mm aaa')}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-700 text-sm font-medium">
+                                                {getCashierName(sale)}
                                             </td>
                                             <td className="px-6 py-4 text-slate-900">
                                                 <div className="flex flex-col">
