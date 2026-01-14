@@ -217,7 +217,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     <div className="space-y-4 mb-auto">
                         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                             <p className="text-text-muted text-sm">Total a Pagar</p>
-                            <div className="flex justify-between items-baseline mt-1">
+                            <div className="flex flex-col xl:flex-row xl:justify-between xl:items-baseline mt-1 gap-1">
                                 <p className="text-2xl font-bold text-text-main">${totalUSD.toFixed(2)}</p>
                                 <p className="text-lg font-bold text-emerald-600">{totalBs.toFixed(2)} Bs</p>
                             </div>
@@ -227,7 +227,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                             <p className={clsx("text-sm font-bold", remainingInfo.colorClass)}>
                                 {remainingInfo.label}
                             </p>
-                            <div className="flex justify-between items-baseline mt-1">
+                            <div className="flex flex-col xl:flex-row xl:justify-between xl:items-baseline mt-1 gap-1">
                                 <p className={clsx("text-xl font-bold", remainingInfo.colorClass)}>
                                     ${remainingInfo.amountUSD.toFixed(2)}
                                 </p>
