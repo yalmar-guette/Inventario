@@ -152,6 +152,7 @@ const POS = () => {
             const saleData = {
                 bodega_id: activeBodegaId,
                 cashier_id: currentUser?.uid,
+                cashier_name: currentUser?.name || currentUser?.email || 'Desconocido',
                 items: cart.map(item => ({
                     id: item.id,
                     name: item.name,
