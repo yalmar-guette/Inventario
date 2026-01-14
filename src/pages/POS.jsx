@@ -297,49 +297,21 @@ const POS = () => {
                     </div>
                 </div>
                 className={`p-2 rounded-lg transition-all ${viewMode === 'default' ? 'bg-primary-100 text-primary-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                title="Vista Normal"
-                        >
-                <LayoutGrid size={20} />
-            </button>
-            <button
-                onClick={() => setViewMode('compact')}
-                className={`p-2 rounded-lg transition-all ${viewMode === 'compact' ? 'bg-primary-100 text-primary-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                title="Vista Compacta"
-            >
-                <Grid3x3 size={20} />
-            </button>
+            </div>
+
+            {/* Tasa Display */}
+            <div className="glass-panel px-4 py-2 flex flex-col justify-center items-end shadow-sm bg-white/80 backdrop-blur-sm hidden md:flex">
+                <span className="text-xs text-text-muted font-medium">Tasa BCV</span>
+                <span className={`font-bold text-lg ${parseFloat(exchangeRate) > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    {parseFloat(exchangeRate) > 0 ? `${parseFloat(exchangeRate).toFixed(2)} Bs/$` : 'SIN TASA'}
+                </span>
+            </div>
         </div>
 
-                    {/* Sort Dropdown */ }
-    <div className="glass-panel px-3 py-2 flex items-center gap-2 bg-white/80 backdrop-blur-sm">
-        <ArrowUpDown size={16} className="text-slate-400" />
-        <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-600 cursor-pointer outline-none w-32"
-        >
-            <option value="popularity-desc">🔥 Populares</option>
-            <option value="name-asc">🔤 Nombre</option>
-            <option value="stock-asc">📉 - Stock</option>
-            <option value="stock-desc">📈 + Stock</option>
-            <option value="price-desc">💰 + Precio</option>
-            <option value="price-asc">🪙 - Precio</option>
-        </select>
-    </div>
-                </div >
-
-    {/* Tasa Display */ }
-    < div className = "glass-panel px-4 py-2 flex flex-col justify-center items-end shadow-sm bg-white/80 backdrop-blur-sm hidden md:flex" >
-                    <span className="text-xs text-text-muted font-medium">Tasa BCV</span>
-                    <span className={`font-bold text-lg ${parseFloat(exchangeRate) > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                        {parseFloat(exchangeRate) > 0 ? `${parseFloat(exchangeRate).toFixed(2)} Bs/$` : 'SIN TASA'}
-                    </span>
-                </div >
-            </div >
-
-    {/* Product Grid */ }
-    < div className = "flex-1 glass-panel p-4 lg:overflow-y-auto custom-scrollbar" >
-    {
+            {/* Product Grid */ }
+            <div className="flex-1 glass-panel p-4 lg:overflow-y-auto custom-scrollbar">
+                {
+                    filteredProducts.length === 0 ? (
         filteredProducts.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400">
                 <p>No se encontraron productos</p>
