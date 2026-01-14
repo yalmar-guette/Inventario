@@ -62,21 +62,24 @@ const Reports = () => {
                 q = query(
                     collection(db, 'sales'),
                     where('timestamp', '>=', Timestamp.fromDate(start)),
-                    where('timestamp', '<=', Timestamp.fromDate(end)),
-                    orderBy('timestamp', 'desc')
+                    where('timestamp', '<=', Timestamp.fromDate(end))
+                    // orderBy removed to avoid Index issues
                 );
             } else {
                 q = query(
                     collection(db, 'sales'),
                     where('bodega_id', '==', queryBodega),
                     where('timestamp', '>=', Timestamp.fromDate(start)),
-                    where('timestamp', '<=', Timestamp.fromDate(end)),
-                    orderBy('timestamp', 'desc')
+                    where('timestamp', '<=', Timestamp.fromDate(end))
                 );
             }
 
             const snap = await getDocs(q);
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Client-side sort
+            const data = snap.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .sort((a, b) => b.timestamp - a.timestamp);
+
             setSales(data);
 
         } catch (err) {
@@ -277,7 +280,10 @@ const Reports = () => {
                 {/* DEBUG: Últimas 5 Ventas Globales */}
                 {userRole === 'OWNER' && latestDebugSales.length > 0 && (
                     <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
-                        <h3 className="text-orange-800 font-bold text-sm mb-2">🕵️ Últimas 5 Ventas (Auditoría Global - Sin Filtros)</h3>
+                        <h3 className="text-orange-800 font-bold text-sm mb-2">🕵️ Auditoría: {date}</h3>
+                        <div className="text-xs text-orange-700 mb-2">
+                            (Mostrando lo que hay realmente en la BD, sin filtros de fecha)
+                        </div>
                         <div className="space-y-2">
                             {latestDebugSales.map(s => (
                                 <div key={s.id} className="text-xs flex gap-2 text-orange-900 border-b border-orange-100 pb-1">
