@@ -75,9 +75,10 @@ const Reports = () => {
             }
 
             const snap = await getDocs(q);
-            // Client-side sort
+            // Client-side sort and filter
             const data = snap.docs
                 .map(d => ({ id: d.id, ...d.data() }))
+                .filter(s => s.items && s.items.length > 0 && s.totalUSD != null) // Only keep valid sales
                 .sort((a, b) => b.timestamp - a.timestamp);
 
             setSales(data);
@@ -103,8 +104,9 @@ const Reports = () => {
     }, [userRole, sales]); // Update whenever main sales update
 
     const getCashierName = (sale) => {
+        if (!sale) return 'N/A';
         if (sale.cashier_name) return sale.cashier_name;
-        if (sale.cashier_id && usersMap[sale.cashier_id]) return usersMap[sale.cashier_id];
+        if (usersMap && sale.cashier_id && usersMap[sale.cashier_id]) return usersMap[sale.cashier_id];
         return 'Desconocido';
     };
 
