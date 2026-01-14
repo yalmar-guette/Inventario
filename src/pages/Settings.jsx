@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -59,11 +60,11 @@ const Settings = () => {
         if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
         try {
             await deleteDoc(doc(db, 'users', userId));
-            alert('Usuario eliminado correctamente de la base de datos.');
+            toast.success('Usuario eliminado correctamente.');
             fetchUsers();
         } catch (error) {
             console.error(error);
-            alert('Error al eliminar usuario');
+            toast.error('Error al eliminar usuario');
         }
     };
 
@@ -71,19 +72,24 @@ const Settings = () => {
         e.preventDefault();
         setCreatingBodega(true);
         try {
+            const finalId = newBodega.name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 1000);
+
+            // Using setDoc with custom ID strategy or addDoc is fine, but addDoc is safer for now.
+            // Let's stick to addDoc but maybe we want readable IDs? 
+            // The original used addDoc. Let's keep it but just add toast.
             await addDoc(collection(db, 'bodegas'), {
                 name: newBodega.name,
                 location: newBodega.location,
                 createdAt: new Date(),
                 active: true
             });
-            alert('Bodega creada exitosamente');
+            toast.success('Bodega creada exitosamente');
             setNewBodega({ name: '', location: '' });
             setShowBodegaForm(false);
             fetchBodegas();
         } catch (error) {
             console.error(error);
-            alert('Error al crear bodega');
+            toast.error('Error al crear bodega');
         } finally {
             setCreatingBodega(false);
         }
@@ -93,11 +99,11 @@ const Settings = () => {
         if (!window.confirm(`¿Estás seguro de eliminar la bodega "${name}"? Esta acción no se puede deshacer.`)) return;
         try {
             await deleteDoc(doc(db, 'bodegas', id));
-            alert('Bodega eliminada correctamente');
+            toast.success('Bodega eliminada correctamente');
             fetchBodegas();
         } catch (error) {
             console.error(error);
-            alert('Error al eliminar bodega');
+            toast.error('Error al eliminar bodega');
         }
     };
 
@@ -122,15 +128,16 @@ const Settings = () => {
         return <div className="text-slate-900 text-center mt-20 font-medium">Acceso Restringido</div>;
     }
 
+    const toast = useToast();
     const handleUpdateRate = async (e) => {
         e.preventDefault();
         if (!newRate) return;
         try {
             await updateRate(newRate);
             setNewRate('');
-            alert('Tasa actualizada correctamente');
+            toast.success('Tasa actualizada correctamente');
         } catch (error) {
-            alert('Error al actualizar tasa');
+            toast.error('Error al actualizar tasa');
         }
     };
 
@@ -149,15 +156,37 @@ const Settings = () => {
                 createdAt: new Date()
             });
 
-            alert(`Usuario ${newUser.email} creado exitosamente.`);
+            toast.success(`Usuario ${newUser.email} creado exitosamente.`);
             setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: 'bodega_1' });
             await secondaryAuth.signOut();
+            fetchUsers(); // Refresh list
 
         } catch (error) {
             console.error(error);
-            alert("Error al crear usuario: " + error.message);
+            toast.error("Error al crear usuario: " + error.message);
         } finally {
             setCreatingUser(false);
+        }
+    };
+
+    // Placeholder for update user logic
+    const handleUpdateUserRole = async (userId, newRole) => {
+        try {
+            await updateDoc(doc(db, 'users', userId), { role: newRole });
+            toast.success('Rol actualizado');
+            fetchUsers();
+        } catch (error) {
+            toast.error('Error al actualizar rol');
+        }
+    };
+
+    const handleUpdateUserBodega = async (userId, newBodegaId) => {
+        try {
+            await updateDoc(doc(db, 'users', userId), { assigned_bodega_id: newBodegaId });
+            toast.success('Bodega asignada actualizada');
+            fetchUsers();
+        } catch (error) {
+            toast.error('Error al reasignar bodega');
         }
     };
 
@@ -442,13 +471,30 @@ const Settings = () => {
                                             <td className="px-6 py-4 font-medium text-slate-900">{u.name || 'Sin nombre'}</td>
                                             <td className="px-6 py-4 text-slate-600">{u.email}</td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${u.role === 'OWNER' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
-                                                    }`}>
-                                                    {u.role}
-                                                </span>
+                                                <select
+                                                    className={`px-2 py-1 rounded-full text-xs font-bold border-none focus:ring-2 focus:ring-primary-500 cursor-pointer ${u.role === 'OWNER' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}
+                                                    value={u.role}
+                                                    onChange={(e) => handleUpdateUserRole(u.id, e.target.value)}
+                                                >
+                                                    <option value="EMPLOYEE">Empleado</option>
+                                                    <option value="OWNER">Dueño</option>
+                                                </select>
                                             </td>
                                             <td className="px-6 py-4 text-slate-600 text-sm">
-                                                {assignedBodega ? `${assignedBodega.name} (${assignedBodega.location})` : u.assigned_bodega_id || 'N/A'}
+                                                <select
+                                                    className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-primary-500 focus:outline-none text-sm py-1 transition-colors"
+                                                    value={u.assigned_bodega_id || ''}
+                                                    onChange={(e) => handleUpdateUserBodega(u.id, e.target.value)}
+                                                >
+                                                    <option value="" disabled>Seleccionar...</option>
+                                                    {bodegas.length === 0 && <option value="bodega_1">Bodega Principal</option>}
+                                                    {bodegas.map(b => (
+                                                        <option key={b.id} value={b.id}>
+                                                            {b.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {assignedBodega && <div className="text-[10px] text-slate-400 mt-0.5">{assignedBodega.location}</div>}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 {u.role !== 'OWNER' && (
