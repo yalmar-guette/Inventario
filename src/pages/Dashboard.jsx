@@ -27,54 +27,40 @@ const Dashboard = () => {
 
     useEffect(() => {
         const fetchStats = async () => {
+            if (!currentUser || !userRole || rate <= 0) return;
+
             try {
                 const todayStart = startOfDay(new Date());
                 const todayEnd = endOfDay(new Date());
+                const sevenDaysAgo = subDays(new Date(), 7);
 
+                const salesRef = collection(db, 'sales');
+                const debtorsRef = collection(db, 'debtors');
                 const userBodegaId = currentUser?.bodega_id || currentUser?.assigned_bodega_id;
-                console.log("🕵️ DEBUG Dashboard:", {
-                    userRole,
-                    userEmail: currentUser?.email,
-                    userBodegaId,
-                    fullUser: currentUser,
-                    todayStart: todayStart.toISOString(),
-                    todayEnd: todayEnd.toISOString()
-                });
 
+                // 1. Cargar Ventas
+                let qSales;
                 if (userRole === 'OWNER') {
-                    // El dueño ve todas las ventas por defecto
                     qSales = query(
                         salesRef,
                         where('timestamp', '>=', Timestamp.fromDate(todayStart)),
                         where('timestamp', '<=', Timestamp.fromDate(todayEnd))
                     );
-                } else {
-                    // Empleados solo ven su bodega asignada
-                    if (!userBodegaId) {
-                        console.warn("⚠️ Empleado sin bodega asignada:", currentUser?.email);
-                        setStats(prev => ({ ...prev, todaySalesUSD: 0, todaySalesBs: 0 }));
-                        // No podemos hacer query sin bodega si es empleado
-                    } else {
-                        qSales = query(
-                            salesRef,
-                            where('bodega_id', '==', userBodegaId),
-                            where('timestamp', '>=', Timestamp.fromDate(todayStart)),
-                            where('timestamp', '<=', Timestamp.fromDate(todayEnd))
-                        );
-                    }
+                } else if (userBodegaId) {
+                    qSales = query(
+                        salesRef,
+                        where('bodega_id', '==', userBodegaId),
+                        where('timestamp', '>=', Timestamp.fromDate(todayStart)),
+                        where('timestamp', '<=', Timestamp.fromDate(todayEnd))
+                    );
                 }
 
                 if (qSales) {
                     const salesSnap = await getDocs(qSales);
-                    console.log(`📡 Ventas Query Result: ${salesSnap.size} documentos encontrados para bodega ${userBodegaId}`);
-
                     let totalUSD = 0;
                     salesSnap.forEach(doc => {
-                        const data = doc.data();
-                        totalUSD += data.totalUSD || 0;
-                        console.log(`   - Venta ID: ${doc.id}, Total: ${data.totalUSD}, Bodega: ${data.bodega_id}`);
+                        totalUSD += doc.data().totalUSD || 0;
                     });
-
                     setStats(prev => ({
                         ...prev,
                         todaySalesUSD: totalUSD,
@@ -82,8 +68,8 @@ const Dashboard = () => {
                     }));
                 }
 
-                const sevenDaysAgo = subDays(new Date(), 7);
-                const debtorsRef = collection(db, 'debtors');
+                // 2. Cargar Deudores
+                let qDebtors;
                 if (userRole === 'OWNER') {
                     qDebtors = query(debtorsRef, where('amount_owed', '>', 0));
                 } else if (userBodegaId) {
@@ -104,7 +90,6 @@ const Dashboard = () => {
                             lateList.push({ id: doc.id, ...d });
                         }
                     });
-
                     setStats(prev => ({
                         ...prev,
                         debtorsCount: lateList.length,
@@ -112,14 +97,12 @@ const Dashboard = () => {
                     }));
                 }
 
-                console.log(`📊 Dashboard: Datos actualizados para ${userRole}`);
-
             } catch (error) {
                 console.error("Error loading dashboard", error);
             }
         };
 
-        if (rate > 0 && userRole) fetchStats();
+        fetchStats();
     }, [rate, currentUser, userRole]);
 
     const containerVariants = {
