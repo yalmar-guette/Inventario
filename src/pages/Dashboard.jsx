@@ -62,27 +62,26 @@ const Dashboard = () => {
                 let qDebtors;
 
                 if (userRole === 'OWNER') {
-                    qDebtors = query(
-                        debtorsRef,
-                        where('amount_owed', '>', 0),
-                        where('last_update', '<', Timestamp.fromDate(sevenDaysAgo))
-                    );
+                    qDebtors = query(debtorsRef, where('amount_owed', '>', 0));
                 } else {
                     qDebtors = query(
                         debtorsRef,
                         where('bodega_id', '==', currentUser?.assigned_bodega_id || 'bodega_1'),
-                        where('amount_owed', '>', 0),
-                        where('last_update', '<', Timestamp.fromDate(sevenDaysAgo))
+                        where('amount_owed', '>', 0)
                     );
                 }
 
                 const debtorsSnap = await getDocs(qDebtors);
                 const lateList = [];
                 debtorsSnap.forEach(doc => {
-                    lateList.push({ id: doc.id, ...doc.data() });
+                    const d = doc.data();
+                    const lastUpdate = d.last_update?.toDate();
+                    if (lastUpdate && lastUpdate < sevenDaysAgo) {
+                        lateList.push({ id: doc.id, ...d });
+                    }
                 });
 
-                console.log(`📊 Dashboard: Encontradas ${salesSnap.size} ventas hoy para rol ${userRole}`);
+                console.log(`📊 Dashboard: Encontradas ${salesSnap.size} ventas hoy y ${lateList.length} deudores morosos`);
 
                 setStats({
                     todaySalesUSD: totalUSD,
