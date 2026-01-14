@@ -32,7 +32,7 @@ const Dashboard = () => {
                 const todayEnd = endOfDay(new Date());
 
                 const salesRef = collection(db, 'sales');
-                let qSales;
+                const userBodegaId = currentUser?.bodega_id || currentUser?.assigned_bodega_id;
 
                 if (userRole === 'OWNER') {
                     // El dueño ve todas las ventas por defecto
@@ -43,52 +43,65 @@ const Dashboard = () => {
                     );
                 } else {
                     // Empleados solo ven su bodega asignada
-                    qSales = query(
-                        salesRef,
-                        where('bodega_id', '==', currentUser?.assigned_bodega_id || 'bodega_1'),
-                        where('timestamp', '>=', Timestamp.fromDate(todayStart)),
-                        where('timestamp', '<=', Timestamp.fromDate(todayEnd))
-                    );
+                    if (!userBodegaId) {
+                        console.warn("⚠️ Empleado sin bodega asignada:", currentUser?.email);
+                        setStats(prev => ({ ...prev, todaySalesUSD: 0, todaySalesBs: 0 }));
+                        // No podemos hacer query sin bodega si es empleado
+                    } else {
+                        qSales = query(
+                            salesRef,
+                            where('bodega_id', '==', userBodegaId),
+                            where('timestamp', '>=', Timestamp.fromDate(todayStart)),
+                            where('timestamp', '<=', Timestamp.fromDate(todayEnd))
+                        );
+                    }
                 }
 
-                const salesSnap = await getDocs(qSales);
-                let totalUSD = 0;
-                salesSnap.forEach(doc => {
-                    totalUSD += doc.data().totalUSD || 0;
-                });
+                if (qSales) {
+                    const salesSnap = await getDocs(qSales);
+                    let totalUSD = 0;
+                    salesSnap.forEach(doc => {
+                        totalUSD += doc.data().totalUSD || 0;
+                    });
+
+                    setStats(prev => ({
+                        ...prev,
+                        todaySalesUSD: totalUSD,
+                        todaySalesBs: totalUSD * rate
+                    }));
+                }
 
                 const sevenDaysAgo = subDays(new Date(), 7);
                 const debtorsRef = collection(db, 'debtors');
-                let qDebtors;
-
                 if (userRole === 'OWNER') {
                     qDebtors = query(debtorsRef, where('amount_owed', '>', 0));
-                } else {
+                } else if (userBodegaId) {
                     qDebtors = query(
                         debtorsRef,
-                        where('bodega_id', '==', currentUser?.assigned_bodega_id || 'bodega_1'),
+                        where('bodega_id', '==', userBodegaId),
                         where('amount_owed', '>', 0)
                     );
                 }
 
-                const debtorsSnap = await getDocs(qDebtors);
-                const lateList = [];
-                debtorsSnap.forEach(doc => {
-                    const d = doc.data();
-                    const lastUpdate = d.last_update?.toDate();
-                    if (lastUpdate && lastUpdate < sevenDaysAgo) {
-                        lateList.push({ id: doc.id, ...d });
-                    }
-                });
+                if (qDebtors) {
+                    const debtorsSnap = await getDocs(qDebtors);
+                    const lateList = [];
+                    debtorsSnap.forEach(doc => {
+                        const d = doc.data();
+                        const lastUpdate = d.last_update?.toDate();
+                        if (lastUpdate && lastUpdate < sevenDaysAgo) {
+                            lateList.push({ id: doc.id, ...d });
+                        }
+                    });
 
-                console.log(`📊 Dashboard: Encontradas ${salesSnap.size} ventas hoy y ${lateList.length} deudores morosos`);
+                    setStats(prev => ({
+                        ...prev,
+                        debtorsCount: lateList.length,
+                        lateDebtors: lateList
+                    }));
+                }
 
-                setStats({
-                    todaySalesUSD: totalUSD,
-                    todaySalesBs: totalUSD * rate,
-                    debtorsCount: lateList.length,
-                    lateDebtors: lateList
-                });
+                console.log(`📊 Dashboard: Datos actualizados para ${userRole}`);
 
             } catch (error) {
                 console.error("Error loading dashboard", error);
