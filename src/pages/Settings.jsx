@@ -89,6 +89,18 @@ const Settings = () => {
         }
     };
 
+    const handleDeleteBodega = async (id, name) => {
+        if (!window.confirm(`¿Estás seguro de eliminar la bodega "${name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await deleteDoc(doc(db, 'bodegas', id));
+            alert('Bodega eliminada correctamente');
+            fetchBodegas();
+        } catch (error) {
+            console.error(error);
+            alert('Error al eliminar bodega');
+        }
+    };
+
     const handleDeleteBodega = async (bodegaId) => {
         if (!window.confirm('¿Estás seguro de eliminar esta bodega? Esta acción no se puede deshacer.')) {
             return;
