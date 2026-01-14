@@ -91,7 +91,8 @@ const Reports = () => {
                 .sort((a, b) => b.timestamp - a.timestamp);
 
             console.log('📊 Sales obtenidas:', data.length);
-            console.log('📦 Primera venta (ejemplo):', data[0]);
+            console.log('📦 Primera venta ID:', data[0]?.id, 'Bodega ID en venta:', data[0]?.bodega_id);
+            console.log('🔍 Bodega seleccionada en filtro:', queryBodega);
             setSales(data);
 
         } catch (err) {

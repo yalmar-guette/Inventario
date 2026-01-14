@@ -22,7 +22,8 @@ const Dashboard = () => {
         todaySalesUSD: 0,
         todaySalesBs: 0,
         debtorsCount: 0,
-        lateDebtors: []
+        lateDebtors: [],
+        bodegaName: ''
     });
 
     useEffect(() => {
@@ -37,6 +38,17 @@ const Dashboard = () => {
                 const salesRef = collection(db, 'sales');
                 const debtorsRef = collection(db, 'debtors');
                 const userBodegaId = currentUser?.bodega_id || currentUser?.assigned_bodega_id;
+
+                // Obtener nombre de la bodega
+                if (userBodegaId) {
+                    const bDoc = await getDocs(query(collection(db, 'bodegas')));
+                    const bData = bDoc.docs.find(d => d.id === userBodegaId)?.data();
+                    if (bData) {
+                        setStats(prev => ({ ...prev, bodegaName: bData.name }));
+                    }
+                } else if (userRole === 'OWNER') {
+                    setStats(prev => ({ ...prev, bodegaName: 'Global (Todas)' }));
+                }
 
                 // 1. Cargar Ventas (Filtrado de bodega en cliente para evitar error de Index)
                 const qSales = query(
@@ -199,7 +211,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center gap-2 mt-4">
                             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                            <p className="text-xs text-slate-400">En línea • Caja Principal</p>
+                            <p className="text-xs text-slate-400">En línea • {stats.bodegaName || 'Carga Global'}</p>
                         </div>
                     </motion.div>
                 </motion.div>
