@@ -287,42 +287,12 @@ const Reports = () => {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Artículos</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total USD</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Bs</th>
+                                    {selectedBodega === 'all' && <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Bodega</th>}
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {loading ? (
-                                    <tr><td colSpan={userRole === 'OWNER' ? 5 : 4} className="text-center py-12 text-slate-500">Cargando...</td></tr>
-                                ) : sales.length === 0 ? (
-                                    <tr><td colSpan={userRole === 'OWNER' ? 5 : 4} className="text-center py-12 text-slate-500">No hay ventas registradas</td></tr>
-                                ) : (
-                                    sales.map(sale => (
-                                        <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-6 py-4 text-slate-500 font-mono text-sm">
-                                                {format(sale.timestamp.toDate(), 'HH:mm aaa')}
-                                            </td>
-                                            {userRole === 'OWNER' && (
-                                                <td className="px-6 py-4 text-slate-700 text-sm font-medium">
-                                                    {getCashierName(sale)}
-                                                </td>
-                                            )}
-                                            <td className="px-6 py-4 text-slate-900">
-                                                <div className="flex flex-col">
-                                                    {sale.items.map((item, idx) => (
-                                                        <span key={idx} className="text-sm">
-                                                            {item.quantity} x {item.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right text-emerald-600 font-bold">
-                                                ${sale.totalUSD.toFixed(2)}
-                                            </td>
-                                            <td className="px-6 py-4 text-right text-primary-500 font-medium">
-                                                {sale.totalBs.toFixed(2)} Bs
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                                {renderSalesList()}
                             </tbody>
                         </table>
                     </div>
@@ -330,6 +300,84 @@ const Reports = () => {
             </div>
         </div>
     );
+
+    function renderSalesList() {
+        // Calculate colSpan dynamically
+        const baseCols = 4; // Hora, Artículos, Total USD, Total Bs, (empty action col)
+        const ownerCol = userRole === 'OWNER' ? 1 : 0; // Usuario
+        const bodegaCol = selectedBodega === 'all' ? 1 : 0; // Bodega
+        const totalCols = baseCols + ownerCol + bodegaCol + 1; // +1 for the action column
+
+        if (loading) {
+            return (
+                <tr>
+                    <td colSpan={totalCols} className="px-6 py-8 text-center text-slate-400">
+                        <div className="flex justify-center items-center gap-2">
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                        </div>
+                    </td>
+                </tr>
+            );
+        }
+
+        if (sales.length === 0) {
+            return (
+                <tr>
+                    <td colSpan={totalCols} className="px-6 py-8 text-center text-slate-400">
+                        No hay ventas registradas
+                    </td>
+                </tr>
+            );
+        }
+
+        return sales.map((sale) => {
+            const saleBodega = bodegas.find(b => b.id === sale.bodega_id);
+            const bodegaName = saleBodega ? saleBodega.name : (sale.bodega_id === 'main' ? 'Bodega Principal (main)' : sale.bodega_id);
+
+            return (
+                <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-slate-500 font-mono text-sm">
+                        {format(sale.timestamp.toDate(), 'HH:mm aaa')}
+                    </td>
+                    {userRole === 'OWNER' && (
+                        <td className="px-6 py-4 text-slate-700 text-sm font-medium">
+                            {getCashierName(sale)}
+                        </td>
+                    )}
+                    <td className="px-6 py-4 text-slate-900">
+                        <div className="flex flex-col">
+                            {sale.items.map((item, idx) => (
+                                <span key={idx} className="text-sm">
+                                    {item.quantity} x {item.name}
+                                </span>
+                            ))}
+                        </div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-emerald-600 font-bold">
+                        ${sale.totalUSD.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 text-right text-primary-500 font-medium">
+                        {sale.totalBs.toFixed(2)} Bs
+                    </td>
+                    {selectedBodega === 'all' && (
+                        <td className="px-6 py-4 text-xs text-slate-500">
+                            {bodegaName}
+                        </td>
+                    )}
+                    <td className="px-6 py-4 text-right">
+                        <button
+                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                            title="Ver detalles"
+                        >
+                            <ExternalLink size={16} />
+                        </button>
+                    </td>
+                </tr>
+            );
+        });
+    }
 };
 
 export default Reports;
