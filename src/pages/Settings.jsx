@@ -9,6 +9,7 @@ import { doc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from '
 import { db } from '../firebase';
 import app from '../firebase';
 import { migrarBodegas } from '../utils/migrarBodegas';
+import { DiagnosticoButton } from '../components/DiagnosticoButton';
 
 const secondaryApp = initializeApp(app.options, "Secondary");
 const secondaryAuth = getAuth(secondaryApp);
@@ -261,6 +262,9 @@ const Settings = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Botón de Diagnóstico - Temporal */}
+                <DiagnosticoButton />
 
                 {/* Bodegas Section - Full Width */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
