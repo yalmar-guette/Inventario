@@ -11,6 +11,16 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login, currentUser } = useAuth();
     const navigate = useNavigate();
+    const [justLoggedOut, setJustLoggedOut] = useState(false);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('loggedOut')) {
+            setJustLoggedOut(true);
+            // Limpiar el parámetro de la URL sin recargar
+            window.history.replaceState({}, document.title, "/login");
+        }
+    }, []);
 
     useEffect(() => {
         if (currentUser) {
@@ -76,6 +86,17 @@ const Login = () => {
                             <AlertCircle size={18} />
                             {error}
                         </div>
+                    )}
+
+                    {justLoggedOut && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-4 bg-blue-50 text-blue-600 rounded-2xl flex items-center gap-3 text-sm font-medium border border-blue-100"
+                        >
+                            <AlertCircle size={18} className="rotate-180" />
+                            Sesión cerrada exitosamente. ¡Vuelve pronto!
+                        </motion.div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">

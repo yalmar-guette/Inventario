@@ -23,16 +23,16 @@ const Layout = () => {
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
-        try {
-            await logout();
-            // Dar tiempo para la animación, luego navegar
-            setTimeout(() => {
-                navigate('/login');
-            }, 600);
-        } catch (error) {
-            console.error("Failed to log out", error);
-            setIsLoggingOut(false);
-        }
+        // Mostrar la animación de despedida por 1.5 segundos antes de invalidar la sesión
+        setTimeout(async () => {
+            try {
+                await logout();
+                navigate('/login?loggedOut=true');
+            } catch (error) {
+                console.error("Failed to log out", error);
+                setIsLoggingOut(false);
+            }
+        }, 1500);
     };
 
     const navItems = [
