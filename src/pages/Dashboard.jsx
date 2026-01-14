@@ -32,12 +32,24 @@ const Dashboard = () => {
                 const todayEnd = endOfDay(new Date());
 
                 const salesRef = collection(db, 'sales');
-                const qSales = query(
-                    salesRef,
-                    where('bodega_id', '==', currentUser?.assigned_bodega_id || 'bodega_1'),
-                    where('timestamp', '>=', Timestamp.fromDate(todayStart)),
-                    where('timestamp', '<=', Timestamp.fromDate(todayEnd))
-                );
+                let qSales;
+
+                if (userRole === 'OWNER') {
+                    // El dueño ve todas las ventas por defecto
+                    qSales = query(
+                        salesRef,
+                        where('timestamp', '>=', Timestamp.fromDate(todayStart)),
+                        where('timestamp', '<=', Timestamp.fromDate(todayEnd))
+                    );
+                } else {
+                    // Empleados solo ven su bodega asignada
+                    qSales = query(
+                        salesRef,
+                        where('bodega_id', '==', currentUser?.assigned_bodega_id || 'bodega_1'),
+                        where('timestamp', '>=', Timestamp.fromDate(todayStart)),
+                        where('timestamp', '<=', Timestamp.fromDate(todayEnd))
+                    );
+                }
 
                 const salesSnap = await getDocs(qSales);
                 let totalUSD = 0;
@@ -47,12 +59,22 @@ const Dashboard = () => {
 
                 const sevenDaysAgo = subDays(new Date(), 7);
                 const debtorsRef = collection(db, 'debtors');
-                const qDebtors = query(
-                    debtorsRef,
-                    where('bodega_id', '==', currentUser?.assigned_bodega_id || 'bodega_1'),
-                    where('amount_owed', '>', 0),
-                    where('last_update', '<', Timestamp.fromDate(sevenDaysAgo))
-                );
+                let qDebtors;
+
+                if (userRole === 'OWNER') {
+                    qDebtors = query(
+                        debtorsRef,
+                        where('amount_owed', '>', 0),
+                        where('last_update', '<', Timestamp.fromDate(sevenDaysAgo))
+                    );
+                } else {
+                    qDebtors = query(
+                        debtorsRef,
+                        where('bodega_id', '==', currentUser?.assigned_bodega_id || 'bodega_1'),
+                        where('amount_owed', '>', 0),
+                        where('last_update', '<', Timestamp.fromDate(sevenDaysAgo))
+                    );
+                }
 
                 const debtorsSnap = await getDocs(qDebtors);
                 const lateList = [];

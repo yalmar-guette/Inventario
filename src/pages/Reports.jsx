@@ -161,17 +161,34 @@ const Reports = () => {
         doc.text(`~ ${sales.reduce((a, b) => a + b.totalBs, 0).toFixed(2)} Bs`, 60, 64);
 
         const headRow = userRole === 'OWNER'
-            ? [['Hora', 'Usuario', 'Items', 'Total USD', 'Total Bs']]
-            : [['Hora', 'Items', 'Total USD', 'Total Bs']];
+            ? [['Hora', 'Usuario', 'Items', 'Total USD', 'Total Bs', 'Pago', ...(selectedBodega === 'all' ? ['Bodega'] : [])]]
+            : [['Hora', 'Items', 'Total USD', 'Total Bs', 'Pago']];
 
         const tableData = sales.map(s => {
+            // Lógica para el método de pago (igual a la tabla UI)
+            const paymentsSize = s.payments?.length || 0;
+            let paymentStr = 'N/A';
+            if (paymentsSize > 1) {
+                paymentStr = 'Mixto';
+            } else if (paymentsSize === 1) {
+                const p = s.payments[0];
+                if (p.method === 'EFECTIVO_USD') paymentStr = 'Efectivo $';
+                else if (p.method === 'EFECTIVO_BS') paymentStr = 'Efectivo Bs';
+                else if (p.method === 'PAGO_MOVIL') paymentStr = 'Pago Móvil';
+                else if (p.method === 'PUNTO') paymentStr = 'Punto';
+                else if (p.method === 'FIADO') paymentStr = 'Fiado';
+                else paymentStr = p.method;
+            }
+
             const row = [
                 format(s.timestamp.toDate(), 'hh:mm a'),
                 // Conditional User Column
                 ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
                 s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
-                `$${s.totalUSD.toFixed(2)}`,
-                `${s.totalBs.toFixed(2)} Bs`
+                `$${(s.totalUSD || 0).toFixed(2)}`,
+                `${(s.totalBs || 0).toFixed(2)} Bs`,
+                paymentStr,
+                ...(selectedBodega === 'all' ? [bodegas.find(b => b.id === s.bodega_id)?.name || s.bodega_id] : [])
             ];
             return row;
         });
@@ -180,11 +197,14 @@ const Reports = () => {
         const colStyles = userRole === 'OWNER' ? {
             0: { halign: 'center', cellWidth: 20 },
             3: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
-            4: { halign: 'right' }
+            4: { halign: 'right' },
+            5: { halign: 'center', fontSize: 8 }, // Pago
+            6: { halign: 'center', fontSize: 8 }  // Bodega
         } : {
             0: { halign: 'center', cellWidth: 25 },
             2: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
-            3: { halign: 'right' }
+            3: { halign: 'right' },
+            4: { halign: 'center', fontSize: 8 } // Pago
         };
 
         autoTable(doc, {
@@ -271,29 +291,52 @@ const Reports = () => {
             });
         }
 
-        doc.save(`reporte_ventas_${date}.pdf`);
     };
 
     const exportExcel = () => {
         let header = "Fecha/Hora,";
         if (userRole === 'OWNER') header += "Usuario,";
-        header += "ID Venta,Items,Total USD,Total Bs\n";
+        header += "ID Venta,Items,Total USD,Total Bs,Metodo de Pago";
+        if (selectedBodega === 'all') header += ",Bodega";
+        header += "\n";
 
         let csv = header;
 
         sales.forEach(s => {
             const items = s.items.map(i => `${i.quantity}x ${i.name}`).join('; ');
+
+            // Lógica para el método de pago
+            const paymentsSize = s.payments?.length || 0;
+            let paymentStr = 'N/A';
+            if (paymentsSize > 1) {
+                paymentStr = 'Mixto';
+            } else if (paymentsSize === 1) {
+                const p = s.payments[0];
+                if (p.method === 'EFECTIVO_USD') paymentStr = 'Efectivo $';
+                else if (p.method === 'EFECTIVO_BS') paymentStr = 'Efectivo Bs';
+                else if (p.method === 'PAGO_MOVIL') paymentStr = 'Pago Movil';
+                else if (p.method === 'PUNTO') paymentStr = 'Punto';
+                else if (p.method === 'FIADO') paymentStr = 'Fiado';
+                else paymentStr = p.method;
+            }
+
             const rowParts = [
                 format(s.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
                 // Conditional User Column
                 ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
                 s.id,
                 `"${items}"`,
-                s.totalUSD.toFixed(2),
-                s.totalBs.toFixed(2)
+                (s.totalUSD || 0).toFixed(2),
+                (s.totalBs || 0).toFixed(2),
+                paymentStr
             ];
-            const row = rowParts.join(",");
-            csv += row + "\n";
+
+            if (selectedBodega === 'all') {
+                const bName = bodegas.find(b => b.id === s.bodega_id)?.name || s.bodega_id;
+                rowParts.push(bName);
+            }
+
+            csv += rowParts.join(',') + "\n";
         });
 
         const blob = new Blob([csv], { type: 'text/csv' });
@@ -512,7 +555,6 @@ const Reports = () => {
                 return null;
             }
         }).filter(Boolean);
-
     }
 };
 
