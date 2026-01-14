@@ -31,8 +31,15 @@ const Dashboard = () => {
                 const todayStart = startOfDay(new Date());
                 const todayEnd = endOfDay(new Date());
 
-                const salesRef = collection(db, 'sales');
                 const userBodegaId = currentUser?.bodega_id || currentUser?.assigned_bodega_id;
+                console.log("🕵️ DEBUG Dashboard:", {
+                    userRole,
+                    userEmail: currentUser?.email,
+                    userBodegaId,
+                    fullUser: currentUser,
+                    todayStart: todayStart.toISOString(),
+                    todayEnd: todayEnd.toISOString()
+                });
 
                 if (userRole === 'OWNER') {
                     // El dueño ve todas las ventas por defecto
@@ -59,9 +66,13 @@ const Dashboard = () => {
 
                 if (qSales) {
                     const salesSnap = await getDocs(qSales);
+                    console.log(`📡 Ventas Query Result: ${salesSnap.size} documentos encontrados para bodega ${userBodegaId}`);
+
                     let totalUSD = 0;
                     salesSnap.forEach(doc => {
-                        totalUSD += doc.data().totalUSD || 0;
+                        const data = doc.data();
+                        totalUSD += data.totalUSD || 0;
+                        console.log(`   - Venta ID: ${doc.id}, Total: ${data.totalUSD}, Bodega: ${data.bodega_id}`);
                     });
 
                     setStats(prev => ({
