@@ -368,7 +368,7 @@ const Settings = () => {
                                         setNewUser(prev => ({ ...prev, bodega_id: val }));
                                     }}
                                 >
-                                    <option value="bodega_1">Bodega Principal (bodega_1)</option>
+                                    {bodegas.length === 0 && <option value="bodega_1">Bodega Principal (bodega_1)</option>}
                                     {bodegas.map(bod => (
                                         <option key={bod.id} value={bod.id}>
                                             {bod.name} - {bod.location}
