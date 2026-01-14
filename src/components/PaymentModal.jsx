@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle } from 'lucide-react';
+import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Calculator, Zap } from 'lucide-react';
 import clsx from 'clsx';
 
 const PAYMENT_METHODS = [
@@ -14,6 +14,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     // Por defecto una fila vacía
     const [rows, setRows] = useState([{ id: Date.now(), methodId: 'EFECTIVO_USD', amount: '' }]);
     const [debtorInfo, setDebtorInfo] = useState({ name: '', phone: '' });
+    const [isManualMode, setIsManualMode] = useState(false); // Nuevo estado para el modo de calculadora
 
     // Helper para distribuir el total equitativamente entre filas
     const getDistributedRows = (currentRows, targetTotalUSD) => {
@@ -36,6 +37,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             const initialRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: totalUSD.toFixed(2) };
             setRows([initialRow]);
             setDebtorInfo({ name: '', phone: '' });
+            setIsManualMode(false); // Resetear a modo inteligente al abrir
         }
     }, [isOpen, totalUSD]); // Agregar dependencia totalUSD para actualizar si cambia
 
@@ -74,24 +76,41 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
     // Operaciones de Fila
     const addRow = () => {
-        const newRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: '0' };
+        // En modo manual, añadimos una fila con 0. En inteligente, distribuimos.
+        const newRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: isManualMode ? '0' : '0' };
         const nextRows = [...rows, newRow];
 
-        // Auto-distribuir
-        const distributed = getDistributedRows(nextRows, totalUSD);
-        setRows(distributed);
+        if (isManualMode) {
+            setRows(nextRows);
+        } else {
+            // Auto-distribuir solo en modo inteligente
+            const distributed = getDistributedRows(nextRows, totalUSD);
+            setRows(distributed);
+        }
     };
 
     const removeRow = (id) => {
         if (rows.length === 1) {
-            // Si solo hay 1 fila, restablecer al total completo en lugar de borrar/eliminar
-            const resetRow = { ...rows[0], amount: totalUSD.toFixed(2) };
-            setRows([resetRow]);
+            // Si solo hay 1 fila, restablecer al total completo (Inteligente) o 0 (Manual)? 
+            // Mejor restablecer al total completo por seguridad, o dejarlo como estaba.
+            // Si es manual, quizás el usuario quiera borrarlo para poner 0.
+            if (isManualMode) {
+                const resetRow = { ...rows[0], amount: '0' };
+                setRows([resetRow]);
+            } else {
+                const resetRow = { ...rows[0], amount: totalUSD.toFixed(2) };
+                setRows([resetRow]);
+            }
             return;
         }
         const filtered = rows.filter(r => r.id !== id);
-        const distributed = getDistributedRows(filtered, totalUSD);
-        setRows(distributed);
+
+        if (isManualMode) {
+            setRows(filtered);
+        } else {
+            const distributed = getDistributedRows(filtered, totalUSD);
+            setRows(distributed);
+        }
     };
 
     const updateRow = (id, field, value) => {
@@ -99,7 +118,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
         const nextRows = rows.map(r => {
             if (r.id !== id) return r;
 
-            // Manejar Conversión de Moneda al cambiar el Método (Lógica Estándar)
+            // Manejar Conversión de Moneda al cambiar el Método (Lógica Estándar - Se mantiene en ambos modos para comodidad)
             if (field === 'methodId') {
                 const oldMethod = PAYMENT_METHODS.find(m => m.id === r.methodId);
                 const newMethod = PAYMENT_METHODS.find(m => m.id === value);
@@ -119,9 +138,9 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             return { ...r, [field]: value };
         });
 
-        // 2. Lógica de Balance Inteligente (Solo si hay estrictamente 2 filas)
+        // 2. Lógica de Balance Inteligente (Solo si hay estrictamente 2 filas Y NO estamos en modo manual)
         // Si acabamos de actualizar una fila, queremos que la OTRA fila se auto-rellene con el resto.
-        if (nextRows.length === 2 && (field === 'amount')) {
+        if (!isManualMode && nextRows.length === 2 && (field === 'amount')) {
             const editedRow = nextRows.find(r => r.id === id);
             const otherRow = nextRows.find(r => r.id !== id);
 
@@ -254,7 +273,32 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                         <X size={24} />
                     </button>
 
-                    <h3 className="text-lg font-bold text-text-main mb-6">Detalles del Pago</h3>
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-text-main">Detalles del Pago</h3>
+
+                        <button
+                            onClick={() => setIsManualMode(!isManualMode)}
+                            className={clsx(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm active:scale-95",
+                                isManualMode
+                                    ? "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                                    : "bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
+                            )}
+                            title={isManualMode ? "Cambiar a modo inteligente (Auto-balance)" : "Cambiar a modo manual (Control total)"}
+                        >
+                            {isManualMode ? (
+                                <>
+                                    <Calculator size={14} />
+                                    <span>Modo Manual</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Zap size={14} />
+                                    <span>Modo Inteligente</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
 
                     <div className="space-y-4 mb-6">
                         {rows.map((row, index) => {
