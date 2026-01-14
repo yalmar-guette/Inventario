@@ -184,8 +184,18 @@ const Reports = () => {
                 else paymentStr = p.method;
             }
 
+            // Timestamp safety
+            let timeStr = 'N/A';
+            if (s.timestamp?.toDate) {
+                timeStr = format(s.timestamp.toDate(), 'hh:mm a');
+            } else if (s.timestamp) {
+                try {
+                    timeStr = format(new Date(s.timestamp), 'hh:mm a');
+                } catch (e) { timeStr = 'Error'; }
+            }
+
             const row = [
-                format(s.timestamp.toDate(), 'hh:mm a'),
+                timeStr,
                 // Conditional User Column
                 ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
                 s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
@@ -297,7 +307,7 @@ const Reports = () => {
                 }
             });
         }
-
+        doc.save(`reporte_ventas_${date}.pdf`);
     };
 
     const exportExcel = () => {
