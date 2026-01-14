@@ -407,9 +407,36 @@ const Reports = () => {
                             {(sale?.totalBs || 0).toFixed(2)} Bs
                         </td>
                         <td className="px-6 py-4 text-center">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                {sale?.paymentMethod === 'cash' ? '💵 Efectivo' : sale?.paymentMethod === 'zelle' ? '💳 Zelle' : sale?.paymentMethod === 'mixed' ? '🔀 Mixto' : '❓ N/A'}
-                            </span>
+                            {(() => {
+                                // Analizar el array de payments para determinar el método
+                                const payments = sale?.payments || [];
+
+                                if (payments.length === 0) {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">❓ N/A</span>;
+                                }
+
+                                // Si hay múltiples métodos de pago
+                                if (payments.length > 1) {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🔀 Mixto</span>;
+                                }
+
+                                // Un solo método de pago
+                                const method = payments[0].method;
+
+                                if (method === 'EFECTIVO_USD') {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">💵 Efectivo $</span>;
+                                } else if (method === 'EFECTIVO_BS') {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">💵 Efectivo Bs</span>;
+                                } else if (method === 'PAGO_MOVIL') {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">📱 Pago Móvil</span>;
+                                } else if (method === 'PUNTO') {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">💳 Punto</span>;
+                                } else if (method === 'FIADO') {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">📋 Fiado</span>;
+                                } else {
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">❓ {method}</span>;
+                                }
+                            })()}
                         </td>
                         {selectedBodega === 'all' && (
                             <td className="px-6 py-4 text-xs text-slate-500">
