@@ -208,6 +208,67 @@ const Reports = () => {
             margin: { top: 80 }
         });
 
+        // NUEVA SECCIÓN: Calcular totales por método de pago
+        const paymentTotals = {};
+
+        sales.forEach(sale => {
+            const payments = sale.payments || [];
+            payments.forEach(payment => {
+                const method = payment.method;
+                const amountUSD = payment.isUsd ? payment.amount : (payment.amount / exchangeRate);
+
+                if (!paymentTotals[method]) {
+                    paymentTotals[method] = { totalUSD: 0, totalBs: 0, name: payment.name };
+                }
+
+                paymentTotals[method].totalUSD += amountUSD;
+                paymentTotals[method].totalBs += (payment.isUsd ? payment.amount * exchangeRate : payment.amount);
+            });
+        });
+
+        // Agregar sección de Resumen por Método de Pago
+        const finalY = doc.lastAutoTable.finalY || 210;
+
+        if (Object.keys(paymentTotals).length > 0) {
+            doc.setFontSize(14);
+            doc.setTextColor(...slateColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Resumen por Método de Pago', 14, finalY + 15);
+
+            // Crear tabla de métodos de pago
+            const paymentTableData = Object.entries(paymentTotals).map(([method, data]) => [
+                data.name || method,
+                `$${data.totalUSD.toFixed(2)}`,
+                `${data.totalBs.toFixed(2)} Bs`
+            ]);
+
+            autoTable(doc, {
+                startY: finalY + 20,
+                head: [['Método de Pago', 'Total USD', 'Total Bs']],
+                body: paymentTableData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [99, 102, 241],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    textColor: slateColor,
+                    fontSize: 10,
+                    cellPadding: 3
+                },
+                columnStyles: {
+                    0: { halign: 'left', fontStyle: 'bold' },
+                    1: { halign: 'right', textColor: [16, 185, 129], fontStyle: 'bold' },
+                    2: { halign: 'right', textColor: [99, 102, 241] }
+                },
+                alternateRowStyles: {
+                    fillColor: [248, 250, 252]
+                }
+            });
+        }
+
         doc.save(`reporte_ventas_${date}.pdf`);
     };
 
