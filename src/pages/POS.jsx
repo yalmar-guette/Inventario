@@ -16,7 +16,7 @@ const POS = () => {
     const activeBodegaId = currentUser?.assigned_bodega_id || 'main';
     const { products } = useInventory(activeBodegaId);
     const { rate: exchangeRate } = useSystemConfig();
-    const { toast } = useToast();
+    const toast = useToast();
 
     // Fetch Bodega Name for UI
     const [bodegaName, setBodegaName] = useState('Cargando...');
