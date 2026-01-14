@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Calculator, Zap } from 'lucide-react';
+import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle } from 'lucide-react';
 import clsx from 'clsx';
 
 const PAYMENT_METHODS = [
@@ -277,7 +277,15 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                         <h3 className="text-lg font-bold text-text-main">Detalles del Pago</h3>
 
                         <button
-                            onClick={() => setIsManualMode(!isManualMode)}
+                            onClick={() => {
+                                const newMode = !isManualMode;
+                                setIsManualMode(newMode);
+                                // Si volvemos a Inteligente, re-balancear inmediatamente
+                                if (!newMode) {
+                                    const distributed = getDistributedRows(rows, totalUSD);
+                                    setRows(distributed);
+                                }
+                            }}
                             className={clsx(
                                 "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm active:scale-95",
                                 isManualMode
@@ -288,13 +296,11 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                         >
                             {isManualMode ? (
                                 <>
-                                    <Calculator size={14} />
-                                    <span>Modo Manual</span>
+                                    <span>🧮 Modo Manual</span>
                                 </>
                             ) : (
                                 <>
-                                    <Zap size={14} />
-                                    <span>Modo Inteligente</span>
+                                    <span>⚡ Modo Inteligente</span>
                                 </>
                             )}
                         </button>

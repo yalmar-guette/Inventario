@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, userRole } = useAuth();
     const [sales, setSales] = useState([]);
     const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);
@@ -100,17 +100,36 @@ const Reports = () => {
         doc.setFontSize(12);
         doc.text(`~ ${sales.reduce((a, b) => a + b.totalBs, 0).toFixed(2)} Bs`, 60, 64);
 
-        const tableData = sales.map(s => [
-            format(s.timestamp.toDate(), 'hh:mm a'),
-            getCashierName(s),
-            s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
-            `$${s.totalUSD.toFixed(2)}`,
-            `${s.totalBs.toFixed(2)} Bs`
-        ]);
+        const headRow = userRole === 'OWNER'
+            ? [['Hora', 'Usuario', 'Items', 'Total USD', 'Total Bs']]
+            : [['Hora', 'Items', 'Total USD', 'Total Bs']];
+
+        const tableData = sales.map(s => {
+            const row = [
+                format(s.timestamp.toDate(), 'hh:mm a'),
+                // Conditional User Column
+                ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
+                s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
+                `$${s.totalUSD.toFixed(2)}`,
+                `${s.totalBs.toFixed(2)} Bs`
+            ];
+            return row;
+        });
+
+        // Dynamic Column Styles
+        const colStyles = userRole === 'OWNER' ? {
+            0: { halign: 'center', cellWidth: 20 },
+            3: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
+            4: { halign: 'right' }
+        } : {
+            0: { halign: 'center', cellWidth: 25 },
+            2: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
+            3: { halign: 'right' }
+        };
 
         autoTable(doc, {
             startY: 80,
-            head: [['Hora', 'Usuario', 'Items', 'Total USD', 'Total Bs']],
+            head: headRow,
             body: tableData,
             theme: 'grid',
             headStyles: {
@@ -124,11 +143,7 @@ const Reports = () => {
                 fontSize: 10,
                 cellPadding: 4
             },
-            columnStyles: {
-                0: { halign: 'center', cellWidth: 20 },
-                3: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] }, // Emerald amount
-                4: { halign: 'right' }
-            },
+            columnStyles: colStyles,
             alternateRowStyles: {
                 fillColor: [248, 250, 252]
             },
@@ -139,17 +154,24 @@ const Reports = () => {
     };
 
     const exportExcel = () => {
-        let csv = "Fecha/Hora,Usuario,ID Venta,Items,Total USD,Total Bs\n";
+        let header = "Fecha/Hora,";
+        if (userRole === 'OWNER') header += "Usuario,";
+        header += "ID Venta,Items,Total USD,Total Bs\n";
+
+        let csv = header;
+
         sales.forEach(s => {
             const items = s.items.map(i => `${i.quantity}x ${i.name}`).join('; ');
-            const row = [
+            const rowParts = [
                 format(s.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
-                getCashierName(s),
+                // Conditional User Column
+                ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
                 s.id,
                 `"${items}"`,
                 s.totalUSD.toFixed(2),
                 s.totalBs.toFixed(2)
-            ].join(",");
+            ];
+            const row = rowParts.join(",");
             csv += row + "\n";
         });
 
@@ -213,7 +235,9 @@ const Reports = () => {
                             <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Hora</th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario</th>
+                                    {userRole === 'OWNER' && (
+                                        <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario</th>
+                                    )}
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Artículos</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total USD</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Bs</th>
@@ -221,18 +245,20 @@ const Reports = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {loading ? (
-                                    <tr><td colSpan="5" className="text-center py-12 text-slate-500">Cargando...</td></tr>
+                                    <tr><td colSpan={userRole === 'OWNER' ? 5 : 4} className="text-center py-12 text-slate-500">Cargando...</td></tr>
                                 ) : sales.length === 0 ? (
-                                    <tr><td colSpan="5" className="text-center py-12 text-slate-500">No hay ventas registradas</td></tr>
+                                    <tr><td colSpan={userRole === 'OWNER' ? 5 : 4} className="text-center py-12 text-slate-500">No hay ventas registradas</td></tr>
                                 ) : (
                                     sales.map(sale => (
                                         <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4 text-slate-500 font-mono text-sm">
                                                 {format(sale.timestamp.toDate(), 'HH:mm aaa')}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-700 text-sm font-medium">
-                                                {getCashierName(sale)}
-                                            </td>
+                                            {userRole === 'OWNER' && (
+                                                <td className="px-6 py-4 text-slate-700 text-sm font-medium">
+                                                    {getCashierName(sale)}
+                                                </td>
+                                            )}
                                             <td className="px-6 py-4 text-slate-900">
                                                 <div className="flex flex-col">
                                                     {sale.items.map((item, idx) => (
