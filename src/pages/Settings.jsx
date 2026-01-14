@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { useAuth } from '../contexts/AuthContext';
-import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2 } from 'lucide-react';
+import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
@@ -24,9 +24,13 @@ const Settings = () => {
     const [newBodega, setNewBodega] = useState({ name: '', location: '' });
     const [creatingBodega, setCreatingBodega] = useState(false);
 
+    // User Mgmt State
+    const [usersList, setUsersList] = useState([]);
+
     useEffect(() => {
         if (userRole === 'OWNER') {
             fetchBodegas();
+            fetchUsers();
         }
     }, [userRole]);
 
@@ -38,6 +42,28 @@ const Settings = () => {
         } catch (error) {
             console.error("Error loading bodegas:", error);
             setBodegas([]);
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            const snap = await getDocs(collection(db, 'users'));
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setUsersList(data);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+        }
+    };
+
+    const handleDeleteUser = async (userId, userEmail) => {
+        if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
+        try {
+            await deleteDoc(doc(db, 'users', userId));
+            alert('Usuario eliminado correctamente de la base de datos.');
+            fetchUsers();
+        } catch (error) {
+            console.error(error);
+            alert('Error al eliminar usuario');
         }
     };
 
@@ -382,6 +408,71 @@ const Settings = () => {
                                 Crear Usuario
                             </button>
                         </form>
+                    </div>
+                </div>
+
+                {/* Users List Section */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                            <Users size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900">Usuarios del Sistema</h2>
+                            <p className="text-slate-500 text-sm">Lista de empleados y permisos</p>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Nombre</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Email</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Rol</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Bodega Asignada</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {usersList.map(u => {
+                                    const assignedBodega = bodegas.find(b => b.id === u.assigned_bodega_id);
+                                    return (
+                                        <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 font-medium text-slate-900">{u.name || 'Sin nombre'}</td>
+                                            <td className="px-6 py-4 text-slate-600">{u.email}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${u.role === 'OWNER' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                    {u.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600 text-sm">
+                                                {assignedBodega ? `${assignedBodega.name} (${assignedBodega.location})` : u.assigned_bodega_id || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                {u.role !== 'OWNER' && (
+                                                    <button
+                                                        onClick={() => handleDeleteUser(u.id, u.email)}
+                                                        className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all"
+                                                        title="Eliminar usuario"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {usersList.length === 0 && (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-8 text-center text-slate-400">
+                                            No se encontraron usuarios.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
