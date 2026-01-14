@@ -8,10 +8,6 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import app from '../firebase';
-import { migrarBodegas } from '../utils/migrarBodegas';
-import { migrarVentasABodega1 } from '../utils/migrarVentas';
-import { actualizarUsuariosABodega1 } from '../utils/actualizarUsuarios';
-import { DiagnosticoButton } from '../components/DiagnosticoButton';
 
 const secondaryApp = initializeApp(app.options, "Secondary");
 const secondaryAuth = getAuth(secondaryApp);
@@ -28,11 +24,6 @@ const Settings = () => {
     const [showBodegaForm, setShowBodegaForm] = useState(false);
     const [newBodega, setNewBodega] = useState({ name: '', location: '' });
     const [creatingBodega, setCreatingBodega] = useState(false);
-
-    // Estado para migración
-    const [migrating, setMigrating] = useState(false);
-    const [migratingVentas, setMigratingVentas] = useState(false);
-    const [actualizandoUsuarios, setActualizandoUsuarios] = useState(false);
 
     // User Mgmt State
     const [usersList, setUsersList] = useState([]);
@@ -204,81 +195,6 @@ const Settings = () => {
         }
     };
 
-    const handleMigrarBodegas = async () => {
-        if (!window.confirm('⚠️ Esta acción consolidará todas las bodegas y usuarios a usar "main" como bodega principal.\n\n¿Deseas continuar?')) return;
-
-        setMigrating(true);
-        try {
-            const result = await migrarBodegas();
-            toast.success(`✅ Migración completada: ${result.usersActualizados} usuarios y ${result.ventasActualizadas} ventas actualizadas`);
-
-            // Recargar datos
-            await fetchBodegas();
-            await fetchUsers();
-
-            // Mostrar mensaje para recargar
-            setTimeout(() => {
-                if (window.confirm('La migración fue exitosa. ¿Deseas recargar la página para ver los cambios?')) {
-                    window.location.reload();
-                }
-            }, 2000);
-
-        } catch (error) {
-            console.error(error);
-            toast.error('Error durante la migración: ' + error.message);
-        } finally {
-            setMigrating(false);
-        }
-    };
-
-    const handleMigrarVentas = async () => {
-        if (!window.confirm('⚠️ Esto actualizará todas las ventas con bodega_id "main" a "bodega_1".\n\n¿Continuar?')) return;
-
-        setMigratingVentas(true);
-        try {
-            const result = await migrarVentasABodega1();
-            toast.success(`✅ ${result.ventasActualizadas} venta(s) actualizadas correctamente`);
-
-            // Mostrar mensaje para recargar
-            setTimeout(() => {
-                if (window.confirm('Migración completada. ¿Recargar la página para ver los cambios?')) {
-                    window.location.reload();
-                }
-            }, 1500);
-
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al migrar ventas: ' + error.message);
-        } finally {
-            setMigratingVentas(false);
-        }
-    };
-
-    const handleActualizarUsuarios = async () => {
-        if (!window.confirm('⚠️ Esto actualizará TODOS los usuarios con bodega "main" a "bodega_1".\n\n¿Continuar?')) return;
-
-        setActualizandoUsuarios(true);
-        try {
-            const result = await actualizarUsuariosABodega1();
-            toast.success(`✅ ${result.usuariosActualizados} usuario(s) actualizados`);
-
-            await fetchUsers(); // Refrescar la lista
-
-            setTimeout(() => {
-                if (window.confirm('¡Listo! Ahora CIERRA SESIÓN y vuelve a entrar para que los cambios tengan efecto.\n\n¿Cerrar sesión ahora?')) {
-                    // Refrescar para forzar re-login
-                    window.location.reload();
-                }
-            }, 1500);
-
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al actualizar usuarios: ' + error.message);
-        } finally {
-            setActualizandoUsuarios(false);
-        }
-    };
-
     return (
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -286,105 +202,6 @@ const Settings = () => {
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
                     <p className="text-slate-500 mt-2 text-sm">Ajustes generales y gestión de personal</p>
-                </div>
-
-                {/* Alerta de Migración - Temporal */}
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-2xl p-6 shadow-sm">
-                    <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
-                            <RefreshCw size={20} />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-bold text-amber-900 mb-2">🔧 Consolidación de Bodegas</h3>
-                            <p className="text-amber-800 text-sm mb-4">
-                                Si aparecen dos bodegas en los reportes cuando solo deberías tener una, ejecuta esta migración <strong>una sola vez</strong> para consolidar todas las referencias a la bodega principal.
-                            </p>
-                            <button
-                                onClick={handleMigrarBodegas}
-                                disabled={migrating}
-                                className="px-5 py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                            >
-                                {migrating ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={20} />
-                                        Migrando...
-                                    </>
-                                ) : (
-                                    <>
-                                        <RefreshCw size={20} />
-                                        Ejecutar Migración
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Botón de Diagnóstico - Temporal */}
-                <DiagnosticoButton />
-
-                {/* Banner de Migración de Ventas */}
-                <div className="bg-gradient-to-r from-emerald-50 to-green-50 border-l-4 border-emerald-500 rounded-2xl p-6 shadow-sm">
-                    <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
-                            <RefreshCw size={20} />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-bold text-emerald-900 mb-2">🛒 Migrar Ventas a Bodega Principal</h3>
-                            <p className="text-emerald-800 text-sm mb-4">
-                                Si eliminaste la bodega "main" y tus ventas no aparecen en los reportes, ejecuta esta migración <strong>una sola vez</strong> para actualizar todas las ventas a tu bodega actual.
-                            </p>
-                            <button
-                                onClick={handleMigrarVentas}
-                                disabled={migratingVentas}
-                                className="px-5 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                            >
-                                {migratingVentas ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={20} />
-                                        Migrando Ventas...
-                                    </>
-                                ) : (
-                                    <>
-                                        <RefreshCw size={20} />
-                                        Migrar Ventas a bodega_1
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Banner de Actualización de Usuarios */}
-                <div className="bg-gradient-to-r from-purple-50 to-violet-50 border-l-4 border-purple-500 rounded-2xl p-6 shadow-sm">
-                    <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
-                            <Users size={20} />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-bold text-purple-900 mb-2">👥 Actualizar Usuarios a Bodega Principal</h3>
-                            <p className="text-purple-800 text-sm mb-4">
-                                Si tus usuarios tienen asignada la bodega "main" que ya no existe, ejecuta esto <strong>UNA VEZ</strong>. Deberás cerrar sesión después.
-                            </p>
-                            <button
-                                onClick={handleActualizarUsuarios}
-                                disabled={actualizandoUsuarios}
-                                className="px-5 py-2.5 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg"
-                            >
-                                {actualizandoUsuarios ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={20} />
-                                        Actualizando...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Users size={20} />
-                                        Actualizar Usuarios
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Bodegas Section - Full Width */}

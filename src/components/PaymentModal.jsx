@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle } from 'lucide-react';
+import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 
 const PAYMENT_METHODS = [
@@ -15,6 +15,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const [rows, setRows] = useState([{ id: Date.now(), methodId: 'EFECTIVO_USD', amount: '' }]);
     const [debtorInfo, setDebtorInfo] = useState({ name: '', phone: '' });
     const [isManualMode, setIsManualMode] = useState(false); // Nuevo estado para el modo de calculadora
+    const [isProcessing, setIsProcessing] = useState(false); // Estado de procesamiento
 
     // Helper para distribuir el total equitativamente entre filas
     const getDistributedRows = (currentRows, targetTotalUSD) => {
@@ -180,30 +181,37 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
         setRows(nextRows);
     };
 
-    const handleSubmit = () => {
-        if (!isCovered) return;
+    const handleSubmit = async () => {
+        if (!isCovered || isProcessing) return;
 
-        // Compilar pagos válidos
-        const validPayments = rows
-            .filter(r => parseFloat(r.amount) > 0)
-            .map(r => {
-                const method = PAYMENT_METHODS.find(m => m.id === r.methodId);
-                return {
-                    id: r.id,
-                    method: r.methodId,
-                    name: method.name,
-                    amount: parseFloat(r.amount),
-                    isUsd: method.isUsd
-                };
+        setIsProcessing(true);
+        try {
+            // Compilar pagos válidos
+            const validPayments = rows
+                .filter(r => parseFloat(r.amount) > 0)
+                .map(r => {
+                    const method = PAYMENT_METHODS.find(m => m.id === r.methodId);
+                    return {
+                        id: r.id,
+                        method: r.methodId,
+                        name: method.name,
+                        amount: parseFloat(r.amount),
+                        isUsd: method.isUsd
+                    };
+                });
+
+            await onProcessPayment({
+                payments: validPayments,
+                debtor: hasFiado ? debtorInfo : null,
+                totalUSD,
+                totalBs,
+                changeUSD: isOverpaid ? Math.abs(difference) : 0
             });
-
-        onProcessPayment({
-            payments: validPayments,
-            debtor: hasFiado ? debtorInfo : null,
-            totalUSD,
-            totalBs,
-            changeUSD: isOverpaid ? Math.abs(difference) : 0 // Pasar información del cambio
-        });
+        } catch (error) {
+            console.error('Error al procesar pago:', error);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -385,16 +393,25 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     <div className="mt-auto pt-6 border-t border-slate-100">
                         <button
                             onClick={handleSubmit}
-                            disabled={!isCovered}
+                            disabled={!isCovered || isProcessing}
                             className={clsx(
                                 "w-full py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-3 transition-all",
-                                isCovered
-                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200"
-                                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                (isCovered && !isProcessing)
+                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200 active:scale-[0.98]"
+                                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
                             )}
                         >
-                            <Check size={24} />
-                            Finalizar Venta
+                            {isProcessing ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={24} />
+                                    Procesando...
+                                </>
+                            ) : (
+                                <>
+                                    <Check size={24} />
+                                    Finalizar Venta
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
