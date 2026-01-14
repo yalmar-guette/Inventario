@@ -165,13 +165,17 @@ const Reports = () => {
             : [['Hora', 'Items', 'Total USD', 'Total Bs', 'Pago']];
 
         const tableData = sales.map(s => {
+            const payments = s.payments || [];
+            const hasUsd = payments.some(p => p.isUsd);
+            const hasBs = payments.some(p => !p.isUsd);
+
             // Lógica para el método de pago (igual a la tabla UI)
-            const paymentsSize = s.payments?.length || 0;
+            const paymentsSize = payments.length;
             let paymentStr = 'N/A';
             if (paymentsSize > 1) {
                 paymentStr = 'Mixto';
             } else if (paymentsSize === 1) {
-                const p = s.payments[0];
+                const p = payments[0];
                 if (p.method === 'EFECTIVO_USD') paymentStr = 'Efectivo $';
                 else if (p.method === 'EFECTIVO_BS') paymentStr = 'Efectivo Bs';
                 else if (p.method === 'PAGO_MOVIL') paymentStr = 'Pago Móvil';
@@ -185,8 +189,8 @@ const Reports = () => {
                 // Conditional User Column
                 ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
                 s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
-                `$${(s.totalUSD || 0).toFixed(2)}`,
-                `${(s.totalBs || 0).toFixed(2)} Bs`,
+                hasUsd ? `$${(s.totalUSD || 0).toFixed(2)}` : '-',
+                hasBs ? `${(s.totalBs || 0).toFixed(2)} Bs` : '-',
                 paymentStr,
                 ...(selectedBodega === 'all' ? [bodegas.find(b => b.id === s.bodega_id)?.name || s.bodega_id] : [])
             ];
@@ -258,11 +262,14 @@ const Reports = () => {
             doc.text('Resumen por Método de Pago', 14, finalY + 15);
 
             // Crear tabla de métodos de pago
-            const paymentTableData = Object.entries(paymentTotals).map(([method, data]) => [
-                data.name || method,
-                `$${data.totalUSD.toFixed(2)}`,
-                `${data.totalBs.toFixed(2)} Bs`
-            ]);
+            const paymentTableData = Object.entries(paymentTotals).map(([method, data]) => {
+                const isUsdMethod = ['EFECTIVO_USD', 'FIADO'].includes(method);
+                return [
+                    data.name || method,
+                    isUsdMethod ? `$${data.totalUSD.toFixed(2)}` : '-',
+                    !isUsdMethod ? `${data.totalBs.toFixed(2)} Bs` : '-'
+                ];
+            });
 
             autoTable(doc, {
                 startY: finalY + 20,
