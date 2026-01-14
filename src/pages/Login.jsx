@@ -12,6 +12,12 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    useEffect(() => {
+        if (currentUser) {
+            navigate('/');
+        }
+    }, [currentUser, navigate]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -25,11 +31,10 @@ const Login = () => {
 
         try {
             await login(email, password);
-            navigate('/');
+            // La navegación ahora es manejada por el useEffect cuando cambia currentUser
         } catch (error) {
             console.error('Login error:', error);
             setError('Credenciales incorrectas. Verifica tu información.');
-        } finally {
             setLoading(false);
         }
     };
