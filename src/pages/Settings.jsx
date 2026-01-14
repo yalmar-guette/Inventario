@@ -475,6 +475,59 @@ const Settings = () => {
                         </table>
                     </div>
                 </div>
+
+                {/* Bodegas Management Section */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 mt-6">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                            <Store size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900">Gestión de Bodegas</h2>
+                            <p className="text-slate-500 text-sm">Administra tus sucursales y ubicaciones</p>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Nombre</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Ubicación</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">ID Sistema</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {bodegas.map(b => (
+                                    <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-slate-900">{b.name}</td>
+                                        <td className="px-6 py-4 text-slate-600">{b.location}</td>
+                                        <td className="px-6 py-4 text-xs font-mono text-slate-400">{b.id}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            {b.id !== 'main' && b.id !== 'bodega_1' && (
+                                                <button
+                                                    onClick={() => handleDeleteBodega(b.id, b.name)}
+                                                    className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all"
+                                                    title="Eliminar bodega"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {bodegas.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" className="px-6 py-8 text-center text-slate-400">
+                                            No se encontraron bodegas.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     );
