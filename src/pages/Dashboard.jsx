@@ -82,6 +82,8 @@ const Dashboard = () => {
                     lateList.push({ id: doc.id, ...doc.data() });
                 });
 
+                console.log(`📊 Dashboard: Encontradas ${salesSnap.size} ventas hoy para rol ${userRole}`);
+
                 setStats({
                     todaySalesUSD: totalUSD,
                     todaySalesBs: totalUSD * rate,
@@ -94,8 +96,8 @@ const Dashboard = () => {
             }
         };
 
-        if (rate > 0) fetchStats();
-    }, [rate, currentUser]);
+        if (rate > 0 && userRole) fetchStats();
+    }, [rate, currentUser, userRole]);
 
     const containerVariants = {
         hidden: { opacity: 0 },
