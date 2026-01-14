@@ -16,7 +16,7 @@ const Reports = () => {
 
     // Filtro de Bodega (Solo Owner)
     const [bodegas, setBodegas] = useState([]);
-    const [selectedBodega, setSelectedBodega] = useState(currentUser?.assigned_bodega_id || 'bodega_1');
+    const [selectedBodega, setSelectedBodega] = useState('all'); // Por defecto mostrar TODAS las bodegas
 
     useEffect(() => {
         if (userRole === 'OWNER') {
@@ -55,7 +55,7 @@ const Reports = () => {
             const start = new Date(year, month - 1, day, 0, 0, 0, 0);
             const end = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-            const queryBodega = userRole === 'OWNER' ? selectedBodega : (currentUser?.assigned_bodega_id || 'bodega_1');
+            const queryBodega = selectedBodega; // Usar la bodega seleccionada en el dropdown
 
             let q;
             if (queryBodega === 'all') {
