@@ -218,18 +218,6 @@ const Reports = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 p-8">
-            {/* DEBUG PANEL */}
-            {userRole === 'OWNER' && (
-                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs font-mono text-yellow-800">
-                    <p><strong>DEBUG INFO:</strong></p>
-                    <p>Bodega Seleccionada: {selectedBodega}</p>
-                    <p>Fecha: {date}</p>
-                    <p>Ventas Encontradas: {sales.length}</p>
-                    <p>Cargando: {loading ? 'Sí' : 'No'}</p>
-                    <p>Bodegas Disponibles: {bodegas.map(b => `${b.name} (${b.id})`).join(', ')}</p>
-                </div>
-            )}
-
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
@@ -252,7 +240,8 @@ const Reports = () => {
                             onChange={(e) => setSelectedBodega(e.target.value)}
                             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
                         >
-                            <option value="all">Ver Todas</option>
+                            <option value="all">👁️ Ver Todas las Bodegas</option>
+                            <option value="main">🔹 Bodega Principal (Sistema)</option>
                             {bodegas.map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
