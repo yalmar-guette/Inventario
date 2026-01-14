@@ -370,115 +370,117 @@ const POS = () => {
                         )
                     }
 
-                </div >
+                </div>
+            </div>
 
-                <div className="w-full lg:w-96 flex flex-col glass-panel overflow-hidden border-l border-white/60 shadow-xl">
-                    {/* Cart Header */}
-                    <div className="p-5 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 text-text-main font-bold text-xl">
-                                <div className="p-2 bg-primary-100 text-primary-600 rounded-lg">
-                                    <ShoppingCart size={20} />
-                                </div>
-                                <span>Carrito ({totalItems})</span>
+            {/* Cart Column */}
+            <div className="w-full lg:w-96 flex flex-col glass-panel overflow-hidden border-l border-white/60 shadow-xl">
+                {/* Cart Header */}
+                <div className="p-5 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-text-main font-bold text-xl">
+                            <div className="p-2 bg-primary-100 text-primary-600 rounded-lg">
+                                <ShoppingCart size={20} />
                             </div>
-                            <span className="text-[10px] text-gray-300">v3-LOOP</span>
+                            <span>Carrito ({totalItems})</span>
                         </div>
-                    </div>
-
-                    {/* Cart Items */}
-                    <div className="flex-1 lg:flex-auto lg:overflow-y-auto min-h-[250px] p-3 space-y-2 bg-slate-50/50 custom-scrollbar">
-                        {cart.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
-                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center">
-                                    <ShoppingCart size={40} className="opacity-50" />
-                                </div>
-                                <p className="font-medium">El carrito está vacío</p>
-                            </div>
-                        ) : (
-                            cart.map(item => {
-                                const price = parseFloat(item.price_usd);
-                                const total = price * item.quantity;
-
-                                return (
-                                    <div key={item.id} className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm animate-slide-up">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <h4 className="font-bold text-slate-800 pr-2 leading-tight text-sm line-clamp-1">{item.name}</h4>
-                                            <button
-                                                onClick={() => removeFromCart(item.id)}
-                                                className="text-slate-300 hover:text-rose-500 transition-colors"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <div className="text-xs">
-                                                <div className="text-slate-500">${price.toFixed(2)} x {item.quantity}</div>
-                                                <div className="font-bold text-emerald-600 text-base">${total.toFixed(2)}</div>
-                                            </div>
-                                            <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-0.5 border border-slate-200">
-                                                <button
-                                                    onClick={() => updateQuantity(item.id, -1)}
-                                                    className="w-7 h-7 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
-                                                >
-                                                    <Minus size={14} />
-                                                </button>
-                                                <span className="font-bold w-4 text-center text-sm">{item.quantity}</span>
-                                                <button
-                                                    onClick={() => updateQuantity(item.id, 1)}
-                                                    className="w-7 h-7 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
-                                                >
-                                                    <Plus size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-
-                    {/* Cart Footer */}
-                    <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
-                        <div className="space-y-3 mb-6">
-                            <div className="flex justify-between text-slate-500 font-medium">
-                                <span>Subtotal (USD)</span>
-                                <span className="font-bold text-emerald-600">${finalCartTotal.toFixed(2)}</span>
-                            </div>
-                            <div className="w-full h-px bg-slate-100" />
-                            <div className="flex justify-between items-end">
-                                <span className="text-lg font-bold text-slate-800">Total a Pagar</span>
-                                <div className="text-right">
-                                    <div className="text-3xl font-black text-slate-900 leading-tight">
-                                        ${finalCartTotal.toFixed(2)}
-                                    </div>
-                                    <div className="text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-1">
-                                        ~ {subtotalBs.toFixed(2)} Bs
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-4 gap-3">
-                            <button
-                                onClick={requestClearCart}
-                                disabled={cart.length === 0}
-                                className="col-span-1 flex items-center justify-center bg-rose-50 text-rose-500 border border-rose-100 rounded-xl hover:bg-rose-100 transition-colors disabled:opacity-50"
-                            >
-                                <Trash2 size={24} />
-                            </button>
-                            <button
-                                onClick={() => setIsPaymentModalOpen(true)}
-                                disabled={cart.length === 0}
-                                className="col-span-3 btn-primary text-lg py-4 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 disabled:shadow-none"
-                            >
-                                Procesar Pago
-                            </button>
-                        </div>
+                        <span className="text-[10px] text-gray-300">v3-LOOP</span>
                     </div>
                 </div>
-            </div >
-            );
+
+                {/* Cart Items */}
+                <div className="flex-1 lg:flex-auto lg:overflow-y-auto min-h-[250px] p-3 space-y-2 bg-slate-50/50 custom-scrollbar">
+                    {cart.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
+                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center">
+                                <ShoppingCart size={40} className="opacity-50" />
+                            </div>
+                            <p className="font-medium">El carrito está vacío</p>
+                        </div>
+                    ) : (
+                        cart.map(item => {
+                            const price = parseFloat(item.price_usd);
+                            const total = price * item.quantity;
+
+                            return (
+                                <div key={item.id} className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm animate-slide-up">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h4 className="font-bold text-slate-800 pr-2 leading-tight text-sm line-clamp-1">{item.name}</h4>
+                                        <button
+                                            onClick={() => removeFromCart(item.id)}
+                                            className="text-slate-300 hover:text-rose-500 transition-colors"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-xs">
+                                            <div className="text-slate-500">${price.toFixed(2)} x {item.quantity}</div>
+                                            <div className="font-bold text-emerald-600 text-base">${total.toFixed(2)}</div>
+                                        </div>
+                                        <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-0.5 border border-slate-200">
+                                            <button
+                                                onClick={() => updateQuantity(item.id, -1)}
+                                                className="w-7 h-7 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <span className="font-bold w-4 text-center text-sm">{item.quantity}</span>
+                                            <button
+                                                onClick={() => updateQuantity(item.id, 1)}
+                                                className="w-7 h-7 flex items-center justify-center bg-white shadow-sm rounded-md text-slate-600 hover:text-primary-600 active:scale-95"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Cart Footer */}
+                <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+                    <div className="space-y-3 mb-6">
+                        <div className="flex justify-between text-slate-500 font-medium">
+                            <span>Subtotal (USD)</span>
+                            <span className="font-bold text-emerald-600">${finalCartTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="w-full h-px bg-slate-100" />
+                        <div className="flex justify-between items-end">
+                            <span className="text-lg font-bold text-slate-800">Total a Pagar</span>
+                            <div className="text-right">
+                                <div className="text-3xl font-black text-slate-900 leading-tight">
+                                    ${finalCartTotal.toFixed(2)}
+                                </div>
+                                <div className="text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                                    ~ {subtotalBs.toFixed(2)} Bs
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                        <button
+                            onClick={requestClearCart}
+                            disabled={cart.length === 0}
+                            className="col-span-1 flex items-center justify-center bg-rose-50 text-rose-500 border border-rose-100 rounded-xl hover:bg-rose-100 transition-colors disabled:opacity-50"
+                        >
+                            <Trash2 size={24} />
+                        </button>
+                        <button
+                            onClick={() => setIsPaymentModalOpen(true)}
+                            disabled={cart.length === 0}
+                            className="col-span-3 btn-primary text-lg py-4 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 disabled:shadow-none"
+                        >
+                            Procesar Pago
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div >
+    );
 };
 
-            export default POS;
+export default POS;
