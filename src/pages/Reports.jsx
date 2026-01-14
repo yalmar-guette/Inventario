@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSystemConfig } from '../hooks/useSystemConfig';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { startOfDay, endOfDay, format } from 'date-fns';
@@ -9,6 +10,7 @@ import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
     const { currentUser, userRole } = useAuth();
+    const { rate: exchangeRate } = useSystemConfig();
     const [sales, setSales] = useState([]);
     const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);
