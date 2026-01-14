@@ -41,8 +41,7 @@ const Reports = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // 1. Fetch Users Cache (Optimizado: solo ids necesarios o todos si son pocos)
-            // Asumimos que son pocos usuarios, traemos todos para el mapa
+            // 1. Fetch Users Cache
             const usersSnap = await getDocs(collection(db, 'users'));
             const uMap = {};
             usersSnap.forEach(doc => {
@@ -51,13 +50,11 @@ const Reports = () => {
             });
             setUsersMap(uMap);
 
-            // 2. Fetch Sales
-            // Construir fechas usando hora local explícitamente para evitar cambios UTC
+            // 2. Fetch Sales (Filtered by Date/Bodega)
             const [year, month, day] = date.split('-').map(Number);
             const start = new Date(year, month - 1, day, 0, 0, 0, 0);
             const end = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-            // Determinar qué bodega consultar
             const queryBodega = userRole === 'OWNER' ? selectedBodega : (currentUser?.assigned_bodega_id || 'main');
 
             let q;
@@ -81,12 +78,26 @@ const Reports = () => {
             const snap = await getDocs(q);
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             setSales(data);
+
         } catch (err) {
             console.error(err);
         } finally {
             setLoading(false);
         }
     };
+
+    // DEBUG: Fetch absolute latest sales regardless of filter
+    const [latestDebugSales, setLatestDebugSales] = useState([]);
+    useEffect(() => {
+        if (userRole === 'OWNER') {
+            const fetchDebug = async () => {
+                const q = query(collection(db, 'sales'), orderBy('timestamp', 'desc'), limit(5));
+                const s = await getDocs(q);
+                setLatestDebugSales(s.docs.map(d => ({ id: d.id, ...d.data() })));
+            };
+            fetchDebug();
+        }
+    }, [userRole, sales]); // Update whenever main sales update
 
     const getCashierName = (sale) => {
         if (sale.cashier_name) return sale.cashier_name;
@@ -262,6 +273,23 @@ const Reports = () => {
                         <p className="text-4xl font-bold text-primary-500">{sales.length}</p>
                     </div>
                 </div>
+
+                {/* DEBUG: Últimas 5 Ventas Globales */}
+                {userRole === 'OWNER' && latestDebugSales.length > 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+                        <h3 className="text-orange-800 font-bold text-sm mb-2">🕵️ Últimas 5 Ventas (Auditoría Global - Sin Filtros)</h3>
+                        <div className="space-y-2">
+                            {latestDebugSales.map(s => (
+                                <div key={s.id} className="text-xs flex gap-2 text-orange-900 border-b border-orange-100 pb-1">
+                                    <span className="font-mono">{s.timestamp?.toDate ? format(s.timestamp.toDate(), 'dd/MM HH:mm') : 'N/A'}</span>
+                                    <span className="font-bold">{s.bodega_id}</span>
+                                    <span>${s.totalUSD.toFixed(2)}</span>
+                                    <span className="truncate flex-1">{(s.items || []).map(i => i.name).join(', ')}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Tabla de Transacciones */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
