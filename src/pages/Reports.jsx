@@ -241,8 +241,6 @@ const Reports = () => {
                             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
                         >
                             <option value="all">Ver Todas</option>
-                            <option value="main">Bodega Principal (main)</option>
-                            <option value="bodega_1">Bodega (bodega_1)</option>
                             {bodegas.map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
