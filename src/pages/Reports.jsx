@@ -33,6 +33,13 @@ const Reports = () => {
             const snap = await getDocs(collection(db, 'bodegas'));
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             setBodegas(data);
+
+            // Auto-seleccionar: Si solo hay 1 bodega, seleccionarla directamente
+            if (data.length === 1) {
+                setSelectedBodega(data[0].id);
+            } else if (data.length > 1) {
+                setSelectedBodega('all'); // Si hay múltiples, mostrar "Ver Todo"
+            }
         } catch (err) {
             console.error(err);
         }
@@ -258,7 +265,8 @@ const Reports = () => {
                             onChange={(e) => setSelectedBodega(e.target.value)}
                             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
                         >
-                            <option value="all">👁️ Ver Todas las Bodegas</option>
+                            {/* Solo mostrar "Ver Todo" si hay más de 1 bodega */}
+                            {bodegas.length > 1 && <option value="all">👁️ Ver Todas las Bodegas</option>}
                             {/* Mostrar todas las bodegas sin filtrar main */}
                             {bodegas.map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
