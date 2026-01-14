@@ -370,15 +370,25 @@ const Reports = () => {
 
         return sales.map((sale) => {
             try {
-                const saleBodega = bodegas.find(b => b.id === sale.bodega_id);
-                const bodegaName = saleBodega ? saleBodega.name : (sale.bodega_id === 'main' ? 'Bodega Principal (main)' : sale.bodega_id);
-                // Safety check for timestamp
-                const dateStr = sale.timestamp?.toDate ? format(sale.timestamp.toDate(), 'HH:mm aaa') : 'Hora inválida';
-                // Safety check for items
-                const itemsList = Array.isArray(sale.items) ? sale.items : [];
+                // Defensive access to all properties
+                const saleBodega = bodegas.find(b => b.id === sale?.bodega_id);
+                const bodegaName = saleBodega ? saleBodega.name : ((sale?.bodega_id === 'main' ? 'Inventario General' : sale?.bodega_id) || 'N/A');
+
+                // Timestamp safety
+                let dateStr = 'Hora desconocida';
+                if (sale?.timestamp?.toDate) {
+                    dateStr = format(sale.timestamp.toDate(), 'HH:mm aaa');
+                } else if (sale?.timestamp && typeof sale.timestamp.toDate !== 'function') {
+                    // Handle case where timestamp might be a string or date object manually
+                    dateStr = 'Fecha inválida';
+                }
+
+                // Items safety - filter out nulls first
+                const rawItems = Array.isArray(sale?.items) ? sale.items : [];
+                const validItems = rawItems.filter(i => i); // remove null/undefined
 
                 return (
-                    <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={sale.id || Math.random()} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 text-slate-500 font-mono text-sm">
                             {dateStr}
                         </td>
@@ -389,22 +399,22 @@ const Reports = () => {
                         )}
                         <td className="px-6 py-4 text-slate-900">
                             <div className="flex flex-col">
-                                {itemsList.length > 0 ? itemsList.map((item, idx) => (
+                                {validItems.length > 0 ? validItems.map((item, idx) => (
                                     <span key={idx} className="text-sm">
-                                        {(item.quantity || 0)} x {(item.name || 'Item desconocido')}
+                                        {(item?.quantity || 0)} x {(item?.name || 'Item desconocido')}
                                     </span>
-                                )) : <span className="text-red-400 text-xs text-center block">- Sin items -</span>}
+                                )) : <span className="text-slate-400 text-xs italic">- Datos de items perdidos -</span>}
                             </div>
                         </td>
                         <td className="px-6 py-4 text-right text-emerald-600 font-bold">
-                            ${(sale.totalUSD || 0).toFixed(2)}
+                            ${(sale?.totalUSD || 0).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 text-right text-primary-500 font-medium">
-                            {(sale.totalBs || 0).toFixed(2)} Bs
+                            {(sale?.totalBs || 0).toFixed(2)} Bs
                         </td>
                         {selectedBodega === 'all' && (
                             <td className="px-6 py-4 text-xs text-slate-500">
-                                {bodegaName || 'Desconocida'}
+                                {bodegaName}
                             </td>
                         )}
                         <td className="px-6 py-4 text-right">
@@ -418,10 +428,13 @@ const Reports = () => {
                     </tr>
                 );
             } catch (error) {
-                console.error("Error rendering row:", error);
+                console.error("Critical error rendering row:", error);
+                // Fallback minimal row
                 return (
-                    <tr key={sale.id}>
-                        <td colSpan="100%" className="text-red-500 text-xs p-2">Error al mostrar venta {sale.id}</td>
+                    <tr key={sale?.id || Math.random()} className="bg-red-50">
+                        <td className="px-6 py-4 text-red-500 text-xs font-mono" colSpan="100%">
+                            Data corrupta: {sale?.id || 'No ID'}
+                        </td>
                     </tr>
                 );
             }
