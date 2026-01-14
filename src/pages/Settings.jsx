@@ -10,6 +10,7 @@ import { db } from '../firebase';
 import app from '../firebase';
 import { migrarBodegas } from '../utils/migrarBodegas';
 import { migrarVentasABodega1 } from '../utils/migrarVentas';
+import { actualizarUsuariosABodega1 } from '../utils/actualizarUsuarios';
 import { DiagnosticoButton } from '../components/DiagnosticoButton';
 
 const secondaryApp = initializeApp(app.options, "Secondary");
@@ -31,6 +32,7 @@ const Settings = () => {
     // Estado para migración
     const [migrating, setMigrating] = useState(false);
     const [migratingVentas, setMigratingVentas] = useState(false);
+    const [actualizandoUsuarios, setActualizandoUsuarios] = useState(false);
 
     // User Mgmt State
     const [usersList, setUsersList] = useState([]);
@@ -252,6 +254,31 @@ const Settings = () => {
         }
     };
 
+    const handleActualizarUsuarios = async () => {
+        if (!window.confirm('⚠️ Esto actualizará TODOS los usuarios con bodega "main" a "bodega_1".\n\n¿Continuar?')) return;
+
+        setActualizandoUsuarios(true);
+        try {
+            const result = await actualizarUsuariosABodega1();
+            toast.success(`✅ ${result.usuariosActualizados} usuario(s) actualizados`);
+
+            await fetchUsers(); // Refrescar la lista
+
+            setTimeout(() => {
+                if (window.confirm('¡Listo! Ahora CIERRA SESIÓN y vuelve a entrar para que los cambios tengan efecto.\n\n¿Cerrar sesión ahora?')) {
+                    // Refrescar para forzar re-login
+                    window.location.reload();
+                }
+            }, 1500);
+
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al actualizar usuarios: ' + error.message);
+        } finally {
+            setActualizandoUsuarios(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -321,6 +348,38 @@ const Settings = () => {
                                     <>
                                         <RefreshCw size={20} />
                                         Migrar Ventas a bodega_1
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Banner de Actualización de Usuarios */}
+                <div className="bg-gradient-to-r from-purple-50 to-violet-50 border-l-4 border-purple-500 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
+                            <Users size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-purple-900 mb-2">👥 Actualizar Usuarios a Bodega Principal</h3>
+                            <p className="text-purple-800 text-sm mb-4">
+                                Si tus usuarios tienen asignada la bodega "main" que ya no existe, ejecuta esto <strong>UNA VEZ</strong>. Deberás cerrar sesión después.
+                            </p>
+                            <button
+                                onClick={handleActualizarUsuarios}
+                                disabled={actualizandoUsuarios}
+                                className="px-5 py-2.5 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg"
+                            >
+                                {actualizandoUsuarios ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={20} />
+                                        Actualizando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Users size={20} />
+                                        Actualizar Usuarios
                                     </>
                                 )}
                             </button>
