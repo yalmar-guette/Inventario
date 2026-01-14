@@ -308,6 +308,7 @@ const Reports = () => {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Artículos</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total USD</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Bs</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Método de Pago</th>
                                     {selectedBodega === 'all' && <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Bodega</th>}
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right"></th>
                                 </tr>
@@ -324,7 +325,7 @@ const Reports = () => {
 
     function renderSalesList() {
         // Calculate colSpan dynamically
-        const baseCols = 4; // Hora, Artículos, Total USD, Total Bs, (empty action col)
+        const baseCols = 5; // Hora, Artículos, Total USD, Total Bs, Método de Pago, (empty action col)
         const ownerCol = userRole === 'OWNER' ? 1 : 0; // Usuario
         const bodegaCol = selectedBodega === 'all' ? 1 : 0; // Bodega
         const totalCols = baseCols + ownerCol + bodegaCol + 1; // +1 for the action column
@@ -396,6 +397,11 @@ const Reports = () => {
                         </td>
                         <td className="px-6 py-4 text-right text-primary-500 font-medium">
                             {(sale?.totalBs || 0).toFixed(2)} Bs
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                {sale?.paymentMethod === 'cash' ? '💵 Efectivo' : sale?.paymentMethod === 'zelle' ? '💳 Zelle' : sale?.paymentMethod === 'mixed' ? '🔀 Mixto' : '❓ N/A'}
+                            </span>
                         </td>
                         {selectedBodega === 'all' && (
                             <td className="px-6 py-4 text-xs text-slate-500">
