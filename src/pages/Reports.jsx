@@ -218,6 +218,18 @@ const Reports = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 p-8">
+            {/* DEBUG PANEL */}
+            {userRole === 'OWNER' && (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs font-mono text-yellow-800">
+                    <p><strong>DEBUG INFO:</strong></p>
+                    <p>Bodega Seleccionada: {selectedBodega}</p>
+                    <p>Fecha: {date}</p>
+                    <p>Ventas Encontradas: {sales.length}</p>
+                    <p>Cargando: {loading ? 'Sí' : 'No'}</p>
+                    <p>Bodegas Disponibles: {bodegas.map(b => `${b.name} (${b.id})`).join(', ')}</p>
+                </div>
+            )}
+
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
@@ -338,46 +350,50 @@ const Reports = () => {
 
             return (
                 <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-slate-500 font-mono text-sm">
-                        {format(sale.timestamp.toDate(), 'HH:mm aaa')}
-                    </td>
-                    {userRole === 'OWNER' && (
-                        <td className="px-6 py-4 text-slate-700 text-sm font-medium">
-                            {getCashierName(sale)}
+                    const dateStr = sale.timestamp?.toDate ? format(sale.timestamp.toDate(), 'HH:mm aaa') : 'Hora inválida';
+
+                    return (
+                    <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 text-slate-500 font-mono text-sm">
+                            {dateStr}
                         </td>
-                    )}
-                    <td className="px-6 py-4 text-slate-900">
-                        <div className="flex flex-col">
-                            {sale.items.map((item, idx) => (
-                                <span key={idx} className="text-sm">
-                                    {item.quantity} x {item.name}
-                                </span>
-                            ))}
-                        </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-emerald-600 font-bold">
-                        ${sale.totalUSD.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-right text-primary-500 font-medium">
-                        {sale.totalBs.toFixed(2)} Bs
-                    </td>
-                    {selectedBodega === 'all' && (
-                        <td className="px-6 py-4 text-xs text-slate-500">
-                            {bodegaName}
+                        {userRole === 'OWNER' && (
+                            <td className="px-6 py-4 text-slate-700 text-sm font-medium">
+                                {getCashierName(sale)}
+                            </td>
+                        )}
+                        <td className="px-6 py-4 text-slate-900">
+                            <div className="flex flex-col">
+                                {Array.isArray(sale.items) ? sale.items.map((item, idx) => (
+                                    <span key={idx} className="text-sm">
+                                        {item.quantity} x {item.name}
+                                    </span>
+                                )) : <span className="text-red-400 text-xs">Error en datos de items</span>}
+                            </div>
                         </td>
-                    )}
-                    <td className="px-6 py-4 text-right">
-                        <button
-                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-                            title="Ver detalles"
-                        >
-                            <ExternalLink size={16} />
-                        </button>
-                    </td>
-                </tr>
-            );
+                        <td className="px-6 py-4 text-right text-emerald-600 font-bold">
+                            ${(sale.totalUSD || 0).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 text-right text-primary-500 font-medium">
+                            {sale.totalBs.toFixed(2)} Bs
+                        </td>
+                        {selectedBodega === 'all' && (
+                            <td className="px-6 py-4 text-xs text-slate-500">
+                                {bodegaName}
+                            </td>
+                        )}
+                        <td className="px-6 py-4 text-right">
+                            <button
+                                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                                title="Ver detalles"
+                            >
+                                <ExternalLink size={16} />
+                            </button>
+                        </td>
+                    </tr>
+                    );
         });
     }
 };
 
-export default Reports;
+                    export default Reports;
