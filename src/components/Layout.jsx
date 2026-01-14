@@ -19,13 +19,18 @@ const Layout = () => {
     const { currentUser, userRole, logout } = useAuth();
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const handleLogout = async () => {
+        setIsLoggingOut(true);
         try {
+            // Pequeña pausa para mostrar la animación
+            await new Promise(resolve => setTimeout(resolve, 800));
             await logout();
             navigate('/login');
         } catch (error) {
             console.error("Failed to log out", error);
+            setIsLoggingOut(false);
         }
     };
 
@@ -174,6 +179,28 @@ const Layout = () => {
                     <Outlet />
                 </div>
             </main>
+
+            {/* Overlay de Cierre de Sesión */}
+            {isLoggingOut && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="fixed inset-0 z-[9999] bg-gradient-to-br from-primary-600 to-primary-800 flex flex-col items-center justify-center"
+                >
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-center"
+                    >
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <LogOut className="w-10 h-10 text-white animate-pulse" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-2">Cerrando sesión...</h2>
+                        <p className="text-white/80 text-sm">Hasta pronto 👋</p>
+                    </motion.div>
+                </motion.div>
+            )}
         </div>
     );
 };

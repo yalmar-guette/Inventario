@@ -379,7 +379,6 @@ const Reports = () => {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Bs</th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Método de Pago</th>
                                     {selectedBodega === 'all' && <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Bodega</th>}
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -504,14 +503,6 @@ const Reports = () => {
                                 {bodegaName}
                             </td>
                         )}
-                        <td className="px-6 py-4 text-right">
-                            <button
-                                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-                                title="Ver detalles"
-                            >
-                                <ExternalLink size={16} />
-                            </button>
-                        </td>
                     </tr>
                 );
             } catch (error) {
