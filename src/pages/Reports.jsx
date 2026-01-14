@@ -16,7 +16,7 @@ const Reports = () => {
 
     // Filtro de Bodega (Solo Owner)
     const [bodegas, setBodegas] = useState([]);
-    const [selectedBodega, setSelectedBodega] = useState(currentUser?.assigned_bodega_id || 'main');
+    const [selectedBodega, setSelectedBodega] = useState(currentUser?.assigned_bodega_id || 'bodega_1');
 
     useEffect(() => {
         if (userRole === 'OWNER') {
@@ -55,7 +55,7 @@ const Reports = () => {
             const start = new Date(year, month - 1, day, 0, 0, 0, 0);
             const end = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-            const queryBodega = userRole === 'OWNER' ? selectedBodega : (currentUser?.assigned_bodega_id || 'main');
+            const queryBodega = userRole === 'OWNER' ? selectedBodega : (currentUser?.assigned_bodega_id || 'bodega_1');
 
             let q;
             if (queryBodega === 'all') {
@@ -257,9 +257,8 @@ const Reports = () => {
                             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
                         >
                             <option value="all">👁️ Ver Todas las Bodegas</option>
-                            <option value="main">� Inventario General (Sistema)</option>
-                            {/* Filter out bodegas that might have same ID as main or rename strict main */}
-                            {bodegas.filter(b => b.id !== 'main').map(b => (
+                            {/* Mostrar todas las bodegas sin filtrar main */}
+                            {bodegas.map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
@@ -356,7 +355,7 @@ const Reports = () => {
             try {
                 // Defensive access to all properties
                 const saleBodega = bodegas.find(b => b.id === sale?.bodega_id);
-                const bodegaName = saleBodega ? saleBodega.name : ((sale?.bodega_id === 'main' ? 'Inventario General' : sale?.bodega_id) || 'N/A');
+                const bodegaName = saleBodega ? saleBodega.name : (sale?.bodega_id || 'N/A');
 
                 // Timestamp safety
                 let dateStr = 'Hora desconocida';

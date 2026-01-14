@@ -18,7 +18,7 @@ const Settings = () => {
     const { userRole, currentUser } = useAuth();
     const { rate, updateRate, loading: configLoading } = useSystemConfig();
     const [newRate, setNewRate] = useState('');
-    const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: 'main' });
+    const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: 'bodega_1' });
     const [creatingUser, setCreatingUser] = useState(false);
 
     // Bodegas state
@@ -490,7 +490,7 @@ const Settings = () => {
                                         setNewUser(prev => ({ ...prev, bodega_id: val }));
                                     }}
                                 >
-                                    <option value="main">🏪 Inventario General (Principal)</option>
+                                    <option value="bodega_1">🏪 Bodega Principal</option>
                                     {bodegas.map(bod => (
                                         <option key={bod.id} value={bod.id}>
                                             {bod.name} - {bod.location}
@@ -554,7 +554,7 @@ const Settings = () => {
                                                     onChange={(e) => handleUpdateUserBodega(u.id, e.target.value)}
                                                 >
                                                     <option value="" disabled>Seleccionar...</option>
-                                                    <option value="main">🏪 Inventario General (Principal)</option>
+                                                    <option value="bodega_1">🏪 Bodega Principal</option>
                                                     {bodegas.map(b => (
                                                         <option key={b.id} value={b.id}>
                                                             {b.name}

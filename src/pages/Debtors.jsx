@@ -24,7 +24,7 @@ const Debtors = () => {
 
     const fetchDebtors = async () => {
         try {
-            const activeBodegaId = currentUser?.assigned_bodega_id || 'main';
+            const activeBodegaId = currentUser?.assigned_bodega_id || 'bodega_1';
             const q = query(
                 collection(db, 'debtors'),
                 where('bodega_id', '==', activeBodegaId)

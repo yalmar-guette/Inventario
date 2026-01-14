@@ -12,8 +12,8 @@ import { useToast } from '../contexts/ToastContext';
 const POS = () => {
     // Contextos
     const { currentUser, userRole } = useAuth();
-    // Usar 'main' como respaldo si assigned_bodega_id no está definido
-    const activeBodegaId = currentUser?.assigned_bodega_id || 'main';
+    // Usar 'bodega_1' como respaldo si assigned_bodega_id no está definido
+    const activeBodegaId = currentUser?.assigned_bodega_id || 'bodega_1';
     const { products } = useInventory(activeBodegaId);
     const { rate: exchangeRate } = useSystemConfig();
     const toast = useToast();
@@ -22,8 +22,8 @@ const POS = () => {
     const [bodegaName, setBodegaName] = useState('Cargando...');
     React.useEffect(() => {
         const fetchBodegaName = async () => {
-            if (activeBodegaId === 'main') {
-                setBodegaName('Bodega Principal (Main)');
+            if (activeBodegaId === 'bodega_1') {
+                setBodegaName('Bodega Principal');
                 return;
             }
             try {

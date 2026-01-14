@@ -17,7 +17,7 @@ const Inventory = () => {
     const filteredProducts = useMemo(() => {
         if (!products) return [];
         const term = searchTerm.toLowerCase();
-        const targetBodega = currentUser?.assigned_bodega_id || 'main';
+        const targetBodega = currentUser?.assigned_bodega_id || 'bodega_1';
 
         // 1. Filtrar
         let result = products.filter(product => {
@@ -33,7 +33,7 @@ const Inventory = () => {
 
         // 2. Ordenar
         result.sort((a, b) => {
-            // Respaldo 'main' si el usuario no tiene bodega asignada
+            // Respaldo 'bodega_1' si el usuario no tiene bodega asignada
             const stockA = a.stock?.[targetBodega] || 0;
             const stockB = b.stock?.[targetBodega] || 0;
             const priceA = parseFloat(a.price_usd) || 0;
@@ -179,8 +179,8 @@ const Inventory = () => {
                                     <tr><td colSpan="5" className="text-center py-10 text-text-muted">No se encontraron productos</td></tr>
                                 ) : (
                                     filteredProducts.map(product => {
-                                        // Fallback to 'main' if user has no assigned bodega
-                                        const targetBodega = currentUser?.assigned_bodega_id || 'main';
+                                        // Fallback to 'bodega_1' if user has no assigned bodega
+                                        const targetBodega = currentUser?.assigned_bodega_id || 'bodega_1';
                                         const stock = product.stock?.[targetBodega] || 0;
                                         const isLow = stock < 5; // Alert threshold
 
