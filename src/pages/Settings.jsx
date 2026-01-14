@@ -8,6 +8,7 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import app from '../firebase';
+import { migrarBodegas } from '../utils/migrarBodegas';
 
 const secondaryApp = initializeApp(app.options, "Secondary");
 const secondaryAuth = getAuth(secondaryApp);
@@ -16,7 +17,7 @@ const Settings = () => {
     const { userRole, currentUser } = useAuth();
     const { rate, updateRate, loading: configLoading } = useSystemConfig();
     const [newRate, setNewRate] = useState('');
-    const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: 'bodega_1' });
+    const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: 'main' });
     const [creatingUser, setCreatingUser] = useState(false);
 
     // Bodegas state
@@ -24,6 +25,9 @@ const Settings = () => {
     const [showBodegaForm, setShowBodegaForm] = useState(false);
     const [newBodega, setNewBodega] = useState({ name: '', location: '' });
     const [creatingBodega, setCreatingBodega] = useState(false);
+
+    // Estado para migración
+    const [migrating, setMigrating] = useState(false);
 
     // User Mgmt State
     const [usersList, setUsersList] = useState([]);
@@ -190,6 +194,33 @@ const Settings = () => {
         }
     };
 
+    const handleMigrarBodegas = async () => {
+        if (!window.confirm('⚠️ Esta acción consolidará todas las bodegas y usuarios a usar "main" como bodega principal.\n\n¿Deseas continuar?')) return;
+
+        setMigrating(true);
+        try {
+            const result = await migrarBodegas();
+            toast.success(`✅ Migración completada: ${result.usersActualizados} usuarios y ${result.ventasActualizadas} ventas actualizadas`);
+
+            // Recargar datos
+            await fetchBodegas();
+            await fetchUsers();
+
+            // Mostrar mensaje para recargar
+            setTimeout(() => {
+                if (window.confirm('La migración fue exitosa. ¿Deseas recargar la página para ver los cambios?')) {
+                    window.location.reload();
+                }
+            }, 2000);
+
+        } catch (error) {
+            console.error(error);
+            toast.error('Error durante la migración: ' + error.message);
+        } finally {
+            setMigrating(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -197,6 +228,38 @@ const Settings = () => {
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
                     <p className="text-slate-500 mt-2 text-sm">Ajustes generales y gestión de personal</p>
+                </div>
+
+                {/* Alerta de Migración - Temporal */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
+                            <RefreshCw size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-amber-900 mb-2">🔧 Consolidación de Bodegas</h3>
+                            <p className="text-amber-800 text-sm mb-4">
+                                Si aparecen dos bodegas en los reportes cuando solo deberías tener una, ejecuta esta migración <strong>una sola vez</strong> para consolidar todas las referencias a la bodega principal.
+                            </p>
+                            <button
+                                onClick={handleMigrarBodegas}
+                                disabled={migrating}
+                                className="px-5 py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            >
+                                {migrating ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={20} />
+                                        Migrando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RefreshCw size={20} />
+                                        Ejecutar Migración
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Bodegas Section - Full Width */}
@@ -301,7 +364,7 @@ const Settings = () => {
                                                     )}
                                                 </div>
                                             </div>
-                                            {bodega.id !== 'bodega_1' && (
+                                            {bodega.id !== 'main' && bodega.id !== 'bodega_1' && (
                                                 <button
                                                     onClick={() => handleDeleteBodega(bodega.id)}
                                                     className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
@@ -423,7 +486,7 @@ const Settings = () => {
                                         setNewUser(prev => ({ ...prev, bodega_id: val }));
                                     }}
                                 >
-                                    {bodegas.length === 0 && <option value="bodega_1">Bodega Principal (bodega_1)</option>}
+                                    <option value="main">🏪 Inventario General (Principal)</option>
                                     {bodegas.map(bod => (
                                         <option key={bod.id} value={bod.id}>
                                             {bod.name} - {bod.location}
@@ -487,7 +550,7 @@ const Settings = () => {
                                                     onChange={(e) => handleUpdateUserBodega(u.id, e.target.value)}
                                                 >
                                                     <option value="" disabled>Seleccionar...</option>
-                                                    {bodegas.length === 0 && <option value="bodega_1">Bodega Principal</option>}
+                                                    <option value="main">🏪 Inventario General (Principal)</option>
                                                     {bodegas.map(b => (
                                                         <option key={b.id} value={b.id}>
                                                             {b.name}
