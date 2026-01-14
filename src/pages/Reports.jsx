@@ -255,8 +255,9 @@ const Reports = () => {
                             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
                         >
                             <option value="all">👁️ Ver Todas las Bodegas</option>
-                            <option value="main">🔹 Bodega Principal (Sistema)</option>
-                            {bodegas.map(b => (
+                            <option value="main">� Inventario General (Sistema)</option>
+                            {/* Filter out bodegas that might have same ID as main or rename strict main */}
+                            {bodegas.filter(b => b.id !== 'main').map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
