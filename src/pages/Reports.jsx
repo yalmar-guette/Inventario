@@ -278,25 +278,7 @@ const Reports = () => {
                     </div>
                 </div>
 
-                {/* DEBUG: Últimas 5 Ventas Globales */}
-                {userRole === 'OWNER' && latestDebugSales.length > 0 && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
-                        <h3 className="text-orange-800 font-bold text-sm mb-2">🕵️ Auditoría: {date}</h3>
-                        <div className="text-xs text-orange-700 mb-2">
-                            (Mostrando lo que hay realmente en la BD, sin filtros de fecha)
-                        </div>
-                        <div className="space-y-2">
-                            {latestDebugSales.map(s => (
-                                <div key={s.id} className="text-xs flex gap-2 text-orange-900 border-b border-orange-100 pb-1">
-                                    <span className="font-mono">{s.timestamp?.toDate ? format(s.timestamp.toDate(), 'dd/MM HH:mm') : 'N/A'}</span>
-                                    <span className="font-bold">{s.bodega_id}</span>
-                                    <span>${s.totalUSD.toFixed(2)}</span>
-                                    <span className="truncate flex-1">{(s.items || []).map(i => i.name).join(', ')}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                {/* Debug Panel Removed */}
 
                 {/* Tabla de Transacciones */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
@@ -428,17 +410,11 @@ const Reports = () => {
                     </tr>
                 );
             } catch (error) {
-                console.error("Critical error rendering row:", error);
-                // Fallback minimal row
-                return (
-                    <tr key={sale?.id || Math.random()} className="bg-red-50">
-                        <td className="px-6 py-4 text-red-500 text-xs font-mono" colSpan="100%">
-                            Data corrupta: {sale?.id || 'No ID'}
-                        </td>
-                    </tr>
-                );
+                console.warn("Skipping corrupt sale row:", sale?.id, error);
+                return null;
             }
-        });
+        }).filter(Boolean);
+
     }
 };
 
