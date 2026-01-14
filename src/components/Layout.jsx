@@ -24,10 +24,11 @@ const Layout = () => {
     const handleLogout = async () => {
         setIsLoggingOut(true);
         try {
-            // Pequeña pausa para mostrar la animación
-            await new Promise(resolve => setTimeout(resolve, 800));
             await logout();
-            navigate('/login');
+            // Dar tiempo para la animación, luego navegar
+            setTimeout(() => {
+                navigate('/login');
+            }, 600);
         } catch (error) {
             console.error("Failed to log out", error);
             setIsLoggingOut(false);
