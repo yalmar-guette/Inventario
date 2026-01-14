@@ -336,7 +336,10 @@ const Reports = () => {
         return sales.map((sale) => {
             const saleBodega = bodegas.find(b => b.id === sale.bodega_id);
             const bodegaName = saleBodega ? saleBodega.name : (sale.bodega_id === 'main' ? 'Bodega Principal (main)' : sale.bodega_id);
+            // Safety check for timestamp
             const dateStr = sale.timestamp?.toDate ? format(sale.timestamp.toDate(), 'HH:mm aaa') : 'Hora inválida';
+            // Safety check for items
+            const itemsList = Array.isArray(sale.items) ? sale.items : [];
 
             return (
                 <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
@@ -350,11 +353,11 @@ const Reports = () => {
                     )}
                     <td className="px-6 py-4 text-slate-900">
                         <div className="flex flex-col">
-                            {Array.isArray(sale.items) ? sale.items.map((item, idx) => (
+                            {itemsList.length > 0 ? itemsList.map((item, idx) => (
                                 <span key={idx} className="text-sm">
                                     {item.quantity} x {item.name}
                                 </span>
-                            )) : <span className="text-red-400 text-xs">Error en datos de items</span>}
+                            )) : <span className="text-red-400 text-xs text-center block">- Sin items -</span>}
                         </div>
                     </td>
                     <td className="px-6 py-4 text-right text-emerald-600 font-bold">
