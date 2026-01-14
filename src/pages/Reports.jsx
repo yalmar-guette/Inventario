@@ -14,9 +14,29 @@ const Reports = () => {
     const [loading, setLoading] = useState(true);
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
+    // Filtro de Bodega (Solo Owner)
+    const [bodegas, setBodegas] = useState([]);
+    const [selectedBodega, setSelectedBodega] = useState(currentUser?.assigned_bodega_id || 'main');
+
+    useEffect(() => {
+        if (userRole === 'OWNER') {
+            fetchBodegas();
+        }
+    }, [userRole]);
+
     useEffect(() => {
         fetchData();
-    }, [date]);
+    }, [date, selectedBodega, userRole]); // Re-fetch cuando cambia la bodega seleccionada
+
+    const fetchBodegas = async () => {
+        try {
+            const snap = await getDocs(collection(db, 'bodegas'));
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setBodegas(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -37,9 +57,13 @@ const Reports = () => {
             const start = new Date(year, month - 1, day, 0, 0, 0, 0);
             const end = new Date(year, month - 1, day, 23, 59, 59, 999);
 
+            // Determinar qué bodega consultar
+            // Si es Owner, usa la seleccionada. Si es empleado, usa su asignada fija.
+            const queryBodega = userRole === 'OWNER' ? selectedBodega : (currentUser?.assigned_bodega_id || 'main');
+
             const q = query(
                 collection(db, 'sales'),
-                where('bodega_id', '==', currentUser?.assigned_bodega_id || 'main'),
+                where('bodega_id', '==', queryBodega),
                 where('timestamp', '>=', Timestamp.fromDate(start)),
                 where('timestamp', '<=', Timestamp.fromDate(end)),
                 orderBy('timestamp', 'desc')
@@ -192,14 +216,27 @@ const Reports = () => {
                     <p className="text-slate-500 mt-2 text-sm">Historial de ventas y cierres</p>
                 </div>
 
-                {/* Selector de Fecha */}
-                <div className="flex justify-center mb-6">
+                {/* Filtros: Fecha y Bodega */}
+                <div className="flex flex-col md:flex-row justify-center gap-4 mb-6">
                     <input
                         type="date"
-                        className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900"
+                        className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 shadow-sm"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
                     />
+
+                    {userRole === 'OWNER' && (
+                        <select
+                            value={selectedBodega}
+                            onChange={(e) => setSelectedBodega(e.target.value)}
+                            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
+                        >
+                            <option value="main">Bodega Principal (main)</option>
+                            {bodegas.map(b => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
 
                 {/* Tarjetas de Resumen */}
