@@ -38,64 +38,52 @@ const Dashboard = () => {
                 const debtorsRef = collection(db, 'debtors');
                 const userBodegaId = currentUser?.bodega_id || currentUser?.assigned_bodega_id;
 
-                // 1. Cargar Ventas
-                let qSales;
-                if (userRole === 'OWNER') {
-                    qSales = query(
-                        salesRef,
-                        where('timestamp', '>=', Timestamp.fromDate(todayStart)),
-                        where('timestamp', '<=', Timestamp.fromDate(todayEnd))
-                    );
-                } else if (userBodegaId) {
-                    qSales = query(
-                        salesRef,
-                        where('bodega_id', '==', userBodegaId),
-                        where('timestamp', '>=', Timestamp.fromDate(todayStart)),
-                        where('timestamp', '<=', Timestamp.fromDate(todayEnd))
-                    );
-                }
+                // 1. Cargar Ventas (Filtrado de bodega en cliente para evitar error de Index)
+                const qSales = query(
+                    salesRef,
+                    where('timestamp', '>=', Timestamp.fromDate(todayStart)),
+                    where('timestamp', '<=', Timestamp.fromDate(todayEnd))
+                );
 
-                if (qSales) {
-                    const salesSnap = await getDocs(qSales);
-                    let totalUSD = 0;
-                    salesSnap.forEach(doc => {
-                        totalUSD += doc.data().totalUSD || 0;
-                    });
-                    setStats(prev => ({
-                        ...prev,
-                        todaySalesUSD: totalUSD,
-                        todaySalesBs: totalUSD * rate
-                    }));
-                }
+                const salesSnap = await getDocs(qSales);
+                let totalUSD = 0;
+                salesSnap.forEach(doc => {
+                    const data = doc.data();
+                    // Filtramos localmente por bodega si el usuario no es OWNER
+                    if (userRole === 'OWNER' || data.bodega_id === userBodegaId) {
+                        totalUSD += data.totalUSD || 0;
+                    }
+                });
 
-                // 2. Cargar Deudores
-                let qDebtors;
-                if (userRole === 'OWNER') {
-                    qDebtors = query(debtorsRef, where('amount_owed', '>', 0));
-                } else if (userBodegaId) {
-                    qDebtors = query(
-                        debtorsRef,
-                        where('bodega_id', '==', userBodegaId),
-                        where('amount_owed', '>', 0)
-                    );
-                }
+                setStats(prev => ({
+                    ...prev,
+                    todaySalesUSD: totalUSD,
+                    todaySalesBs: totalUSD * rate
+                }));
 
-                if (qDebtors) {
-                    const debtorsSnap = await getDocs(qDebtors);
-                    const lateList = [];
-                    debtorsSnap.forEach(doc => {
-                        const d = doc.data();
-                        const lastUpdate = d.last_update?.toDate();
-                        if (lastUpdate && lastUpdate < sevenDaysAgo) {
-                            lateList.push({ id: doc.id, ...d });
-                        }
-                    });
-                    setStats(prev => ({
-                        ...prev,
-                        debtorsCount: lateList.length,
-                        lateDebtors: lateList
-                    }));
-                }
+                // 2. Cargar Deudores (Filtrado de bodega en cliente para evitar error de Index)
+                const qDebtors = query(debtorsRef, where('amount_owed', '>', 0));
+                const debtorsSnap = await getDocs(qDebtors);
+                const lateList = [];
+
+                debtorsSnap.forEach(doc => {
+                    const d = doc.data();
+                    const lastUpdate = d.last_update?.toDate();
+
+                    // Filtro de bodega + Filtro de fecha local
+                    const matchesBodega = userRole === 'OWNER' || d.bodega_id === userBodegaId;
+                    const isLate = lastUpdate && lastUpdate < sevenDaysAgo;
+
+                    if (matchesBodega && isLate) {
+                        lateList.push({ id: doc.id, ...d });
+                    }
+                });
+
+                setStats(prev => ({
+                    ...prev,
+                    debtorsCount: lateList.length,
+                    lateDebtors: lateList
+                }));
 
             } catch (error) {
                 console.error("Error loading dashboard", error);
