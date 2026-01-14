@@ -347,53 +347,50 @@ const Reports = () => {
         return sales.map((sale) => {
             const saleBodega = bodegas.find(b => b.id === sale.bodega_id);
             const bodegaName = saleBodega ? saleBodega.name : (sale.bodega_id === 'main' ? 'Bodega Principal (main)' : sale.bodega_id);
+            const dateStr = sale.timestamp?.toDate ? format(sale.timestamp.toDate(), 'HH:mm aaa') : 'Hora inválida';
 
             return (
                 <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
-                    const dateStr = sale.timestamp?.toDate ? format(sale.timestamp.toDate(), 'HH:mm aaa') : 'Hora inválida';
-
-                    return (
-                    <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 text-slate-500 font-mono text-sm">
-                            {dateStr}
+                    <td className="px-6 py-4 text-slate-500 font-mono text-sm">
+                        {dateStr}
+                    </td>
+                    {userRole === 'OWNER' && (
+                        <td className="px-6 py-4 text-slate-700 text-sm font-medium">
+                            {getCashierName(sale)}
                         </td>
-                        {userRole === 'OWNER' && (
-                            <td className="px-6 py-4 text-slate-700 text-sm font-medium">
-                                {getCashierName(sale)}
-                            </td>
-                        )}
-                        <td className="px-6 py-4 text-slate-900">
-                            <div className="flex flex-col">
-                                {Array.isArray(sale.items) ? sale.items.map((item, idx) => (
-                                    <span key={idx} className="text-sm">
-                                        {item.quantity} x {item.name}
-                                    </span>
-                                )) : <span className="text-red-400 text-xs">Error en datos de items</span>}
-                            </div>
+                    )}
+                    <td className="px-6 py-4 text-slate-900">
+                        <div className="flex flex-col">
+                            {Array.isArray(sale.items) ? sale.items.map((item, idx) => (
+                                <span key={idx} className="text-sm">
+                                    {item.quantity} x {item.name}
+                                </span>
+                            )) : <span className="text-red-400 text-xs">Error en datos de items</span>}
+                        </div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-emerald-600 font-bold">
+                        ${(sale.totalUSD || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 text-right text-primary-500 font-medium">
+                        {sale.totalBs.toFixed(2)} Bs
+                    </td>
+                    {selectedBodega === 'all' && (
+                        <td className="px-6 py-4 text-xs text-slate-500">
+                            {bodegaName}
                         </td>
-                        <td className="px-6 py-4 text-right text-emerald-600 font-bold">
-                            ${(sale.totalUSD || 0).toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 text-right text-primary-500 font-medium">
-                            {sale.totalBs.toFixed(2)} Bs
-                        </td>
-                        {selectedBodega === 'all' && (
-                            <td className="px-6 py-4 text-xs text-slate-500">
-                                {bodegaName}
-                            </td>
-                        )}
-                        <td className="px-6 py-4 text-right">
-                            <button
-                                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-                                title="Ver detalles"
-                            >
-                                <ExternalLink size={16} />
-                            </button>
-                        </td>
-                    </tr>
-                    );
+                    )}
+                    <td className="px-6 py-4 text-right">
+                        <button
+                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                            title="Ver detalles"
+                        >
+                            <ExternalLink size={16} />
+                        </button>
+                    </td>
+                </tr>
+            );
         });
     }
 };
 
-                    export default Reports;
+export default Reports;
