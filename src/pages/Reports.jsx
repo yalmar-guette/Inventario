@@ -81,6 +81,8 @@ const Reports = () => {
                 .filter(s => s.items && s.items.length > 0 && s.totalUSD != null) // Only keep valid sales
                 .sort((a, b) => b.timestamp - a.timestamp);
 
+            console.log('📊 Sales obtenidas:', data.length);
+            console.log('📦 Primera venta (ejemplo):', data[0]);
             setSales(data);
 
         } catch (err) {
