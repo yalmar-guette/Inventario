@@ -58,16 +58,25 @@ const Reports = () => {
             const end = new Date(year, month - 1, day, 23, 59, 59, 999);
 
             // Determinar qué bodega consultar
-            // Si es Owner, usa la seleccionada. Si es empleado, usa su asignada fija.
             const queryBodega = userRole === 'OWNER' ? selectedBodega : (currentUser?.assigned_bodega_id || 'main');
 
-            const q = query(
-                collection(db, 'sales'),
-                where('bodega_id', '==', queryBodega),
-                where('timestamp', '>=', Timestamp.fromDate(start)),
-                where('timestamp', '<=', Timestamp.fromDate(end)),
-                orderBy('timestamp', 'desc')
-            );
+            let q;
+            if (queryBodega === 'all') {
+                q = query(
+                    collection(db, 'sales'),
+                    where('timestamp', '>=', Timestamp.fromDate(start)),
+                    where('timestamp', '<=', Timestamp.fromDate(end)),
+                    orderBy('timestamp', 'desc')
+                );
+            } else {
+                q = query(
+                    collection(db, 'sales'),
+                    where('bodega_id', '==', queryBodega),
+                    where('timestamp', '>=', Timestamp.fromDate(start)),
+                    where('timestamp', '<=', Timestamp.fromDate(end)),
+                    orderBy('timestamp', 'desc')
+                );
+            }
 
             const snap = await getDocs(q);
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -231,7 +240,9 @@ const Reports = () => {
                             onChange={(e) => setSelectedBodega(e.target.value)}
                             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
                         >
+                            <option value="all">Ver Todas</option>
                             <option value="main">Bodega Principal (main)</option>
+                            <option value="bodega_1">Bodega (bodega_1)</option>
                             {bodegas.map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
