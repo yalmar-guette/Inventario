@@ -14,7 +14,6 @@ const POS = () => {
     const { currentUser, userRole } = useAuth();
     // Usar 'bodega_1' como respaldo si assigned_bodega_id no está definido
     const activeBodegaId = currentUser?.assigned_bodega_id || 'bodega_1';
-    console.log('🛒 POS Active Bodega ID:', activeBodegaId);
     const { products } = useInventory(activeBodegaId);
     const { rate: exchangeRate } = useSystemConfig();
     const toast = useToast();

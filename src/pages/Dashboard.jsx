@@ -61,8 +61,8 @@ const Dashboard = () => {
                 let totalUSD = 0;
                 salesSnap.forEach(doc => {
                     const data = doc.data();
-                    // Filtramos localmente por bodega si el usuario no es OWNER
-                    if (userRole === 'OWNER' || data.bodega_id === userBodegaId) {
+                    // Priorizamos mostrar la bodega en la que el usuario está trabajando
+                    if (data.bodega_id === userBodegaId) {
                         totalUSD += data.totalUSD || 0;
                     }
                 });
@@ -82,8 +82,8 @@ const Dashboard = () => {
                     const d = doc.data();
                     const lastUpdate = d.last_update?.toDate();
 
-                    // Filtro de bodega + Filtro de fecha local
-                    const matchesBodega = userRole === 'OWNER' || d.bodega_id === userBodegaId;
+                    // Filtro de bodega estricto + Filtro de fecha local
+                    const matchesBodega = d.bodega_id === userBodegaId;
                     const isLate = lastUpdate && lastUpdate < sevenDaysAgo;
 
                     if (matchesBodega && isLate) {

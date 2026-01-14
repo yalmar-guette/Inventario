@@ -67,32 +67,24 @@ const Reports = () => {
             const queryBodega = selectedBodega; // Usar la bodega seleccionada en el dropdown
 
             let q;
-            if (queryBodega === 'all') {
-                q = query(
-                    collection(db, 'sales'),
-                    where('timestamp', '>=', Timestamp.fromDate(start)),
-                    where('timestamp', '<=', Timestamp.fromDate(end))
-                    // orderBy removed to avoid Index issues
-                );
-            } else {
-                q = query(
-                    collection(db, 'sales'),
-                    where('bodega_id', '==', queryBodega),
-                    where('timestamp', '>=', Timestamp.fromDate(start)),
-                    where('timestamp', '<=', Timestamp.fromDate(end))
-                );
-            }
+            // Siempre consultamos por fecha (índice simple) y filtramos bodega en el cliente
+            q = query(
+                collection(db, 'sales'),
+                where('timestamp', '>=', Timestamp.fromDate(start)),
+                where('timestamp', '<=', Timestamp.fromDate(end))
+            );
 
             const snap = await getDocs(q);
-            // Client-side sort and filter
-            const data = snap.docs
-                .map(d => ({ id: d.id, ...d.data() }))
-                .filter(s => s.items && s.items.length > 0 && s.totalUSD != null) // Only keep valid sales
-                .sort((a, b) => b.timestamp - a.timestamp);
+            let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            console.log('📊 Sales obtenidas:', data.length);
-            console.log('📦 Primera venta ID:', data[0]?.id, 'Bodega ID en venta:', data[0]?.bodega_id);
-            console.log('🔍 Bodega seleccionada en filtro:', queryBodega);
+            // Filtrado local (Bodega y ventas válidas)
+            data = data.filter(s => s.items && s.items.length > 0 && s.totalUSD != null);
+            if (queryBodega !== 'all') {
+                data = data.filter(s => s.bodega_id === queryBodega);
+            }
+
+            // Ordenar por tiempo (descendente)
+            data.sort((a, b) => b.timestamp - a.timestamp);
             setSales(data);
 
         } catch (err) {
