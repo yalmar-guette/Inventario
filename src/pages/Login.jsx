@@ -14,6 +14,9 @@ const Login = () => {
     const [justLoggedOut, setJustLoggedOut] = useState(false);
 
     useEffect(() => {
+        // Diagnóstico: Verificar URL de Supabase cargada
+        console.log("Conectando a:", import.meta.env.VITE_SUPABASE_URL);
+
         const params = new URLSearchParams(window.location.search);
         if (params.get('loggedOut')) {
             setJustLoggedOut(true);
@@ -32,7 +35,10 @@ const Login = () => {
         e.preventDefault();
         setError('');
 
-        if (!email || !password) {
+        const cleanEmail = email.trim();
+        const cleanPassword = password.trim();
+
+        if (!cleanEmail || !cleanPassword) {
             setError('Por favor completa todos los campos');
             return;
         }
@@ -40,11 +46,26 @@ const Login = () => {
         setLoading(true);
 
         try {
-            await login(email, password);
+            await login(cleanEmail, cleanPassword);
             // La navegación ahora es manejada por el useEffect cuando cambia currentUser
         } catch (error) {
             console.error('Login error:', error);
-            setError('Credenciales incorrectas. Verifica tu información.');
+
+            // Traducir algunos errores comunes de Supabase
+            let errorMsg = 'Error al iniciar sesión. Verifica tu información.';
+
+            if (error.message === 'Invalid login credentials') {
+                errorMsg = 'Credenciales incorrectas. Verifica tu correo y contraseña.';
+            } else if (error.message === 'Email not confirmed') {
+                errorMsg = 'El correo electrónico no ha sido confirmado aún.';
+            } else if (error.message === 'Too many requests') {
+                errorMsg = 'Demasiados intentos. Intenta de nuevo más tarde.';
+            } else if (error.message) {
+                // Si es un error desconocido, lo mostramos traducido si es posible o el original
+                errorMsg = `Error: ${error.message}`;
+            }
+
+            setError(errorMsg);
             setLoading(false);
         }
     };
