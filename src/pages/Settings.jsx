@@ -171,31 +171,23 @@ const Settings = () => {
         e.preventDefault();
         setCreatingUser(true);
         try {
-            // Crear usuario en Supabase Auth
+            // Crear usuario en Supabase Auth (El trigger creará el perfil en public.users automáticamente)
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: newUser.email,
                 password: newUser.password,
                 options: {
                     data: {
-                        name: newUser.name
+                        name: newUser.name,
+                        role: newUser.role,
+                        assigned_bodega_id: newUser.bodega_id
                     }
                 }
             });
 
             if (authError) throw authError;
 
-            // Insertar en la tabla users
-            const { error: dbError } = await supabase
-                .from('users')
-                .insert([{
-                    id: authData.user.id,
-                    email: newUser.email,
-                    name: newUser.name,
-                    role: newUser.role,
-                    assigned_bodega_id: newUser.bodega_id
-                }]);
-
-            if (dbError) throw dbError;
+            // Esperar un momento para que el trigger termine (opcional, pero ayuda a la UI)
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             toast.success(`Usuario ${newUser.email} creado exitosamente.`);
             setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: bodegas[0]?.id || '' });
