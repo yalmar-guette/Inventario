@@ -60,7 +60,7 @@ const Debtors = () => {
         const amountInUSD = isUsd ? amountInput : (amountInput / rate);
 
         try {
-            const newDebt = selectedDebtor.amount_owed - amountInUSD;
+            const newDebt = (parseFloat(selectedDebtor.total_debt_usd) || 0) - amountInUSD;
 
             // 1. Actualizar/Eliminar Registro de Deudor
             if (newDebt <= 0.01) {
@@ -75,8 +75,8 @@ const Debtors = () => {
                 const { error } = await supabase
                     .from('debtors')
                     .update({
-                        amount_owed: newDebt,
-                        last_update: new Date().toISOString()
+                        total_debt_usd: newDebt,
+                        total_debt_bs: newDebt * rate
                     })
                     .eq('id', selectedDebtor.id);
 
@@ -135,10 +135,10 @@ const Debtors = () => {
                                         <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest mb-1">Deuda Total</p>
                                         <p className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-1 transition-colors">
                                             <span className="text-emerald-500 dark:text-emerald-400 text-lg">$</span>
-                                            {debtor.amount_owed?.toFixed(2)}
+                                            {(parseFloat(debtor.total_debt_usd) || 0).toFixed(2)}
                                         </p>
                                         <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 mt-1 text-right uppercase tracking-widest">
-                                            ~ {(debtor.amount_owed * rate).toFixed(2)} BS
+                                            ~ {((parseFloat(debtor.total_debt_usd) || 0) * rate).toFixed(2)} BS
                                         </p>
                                     </div>
                                 </div>
@@ -174,11 +174,11 @@ const Debtors = () => {
                                 <div className="flex items-center justify-between p-5 bg-red-50 dark:bg-red-950/20 rounded-3xl border border-red-100 dark:border-red-900/30 transition-colors">
                                     <div className="flex flex-col">
                                         <span className="text-red-600 dark:text-red-400 font-black text-[10px] uppercase tracking-widest mb-1">Deuda Pendiente</span>
-                                        <div className="font-black text-red-700 dark:text-red-300 text-2xl">${selectedDebtor.amount_owed.toFixed(2)}</div>
+                                        <div className="font-black text-red-700 dark:text-red-300 text-2xl">${(parseFloat(selectedDebtor.total_debt_usd) || 0).toFixed(2)}</div>
                                     </div>
                                     <div className="text-right">
                                         <div className="text-[10px] font-black text-red-500/60 dark:text-red-400/50 uppercase tracking-widest">Equivalente</div>
-                                        <div className="font-bold text-red-600/80 dark:text-red-400/80 text-sm">{(selectedDebtor.amount_owed * rate).toFixed(2)} Bs</div>
+                                        <div className="font-bold text-red-600/80 dark:text-red-400/80 text-sm">{((parseFloat(selectedDebtor.total_debt_usd) || 0) * rate).toFixed(2)} Bs</div>
                                     </div>
                                 </div>
 

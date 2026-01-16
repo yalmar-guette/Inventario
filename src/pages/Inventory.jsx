@@ -188,9 +188,9 @@ const Inventory = () => {
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold uppercase text-xs transition-colors">
-                                                            {product.name.substring(0, 2)}
+                                                            {(product.name || '??').substring(0, 2)}
                                                         </div>
-                                                        <span className="font-bold text-slate-700 dark:text-slate-200 text-sm transition-colors">{product.name}</span>
+                                                        <span className="font-bold text-slate-700 dark:text-slate-200 text-sm transition-colors">{product.name || 'Sin Nombre'}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-slate-400 dark:text-slate-500 font-mono text-xs uppercase tracking-widest">{product.barcode || '-'}</td>

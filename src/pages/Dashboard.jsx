@@ -75,12 +75,12 @@ const Dashboard = () => {
                     todaySalesBs: totalUSD * rate
                 }));
 
-                // 3. Cargar Deudores Críticos (monto > 0 y última actualización < 7 días)
+                // 3. Cargar Deudores Críticos (monto > 0 y fecha de creación hace más de 7 días)
                 let debtorsQuery = supabase
                     .from('debtors')
                     .select('*')
-                    .gt('amount_owed', 0)
-                    .lt('last_update', sevenDaysAgo);
+                    .gt('total_debt_usd', 0)
+                    .lt('created_at', sevenDaysAgo);
 
                 if (userRole !== 'OWNER' && userBodegaId) {
                     debtorsQuery = debtorsQuery.eq('bodega_id', userBodegaId);
@@ -250,8 +250,9 @@ const Dashboard = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 transition-colors">
                                     {stats.lateDebtors.map((debtor, index) => {
-                                        const lastUpdate = new Date(debtor.last_update);
+                                        const lastUpdate = new Date(debtor.created_at || new Date());
                                         const daysLate = Math.floor((new Date() - lastUpdate) / (1000 * 60 * 60 * 24));
+                                        const amountOwed = parseFloat(debtor.total_debt_usd) || 0;
                                         return (
                                             <motion.tr
                                                 key={debtor.id}
@@ -263,16 +264,16 @@ const Dashboard = () => {
                                                 <td className="px-10 py-5">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center text-white text-[10px] font-bold shadow-lg shadow-primary-500/10 group-hover:rotate-6 transition-all duration-300">
-                                                            {debtor.name.substring(0, 2).toUpperCase()}
+                                                            {(debtor.name || '??').substring(0, 2).toUpperCase()}
                                                         </div>
-                                                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{debtor.name}</span>
+                                                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{debtor.name || 'Sin Nombre'}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-10 py-5 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-tight">{debtor.phone}</td>
+                                                <td className="px-10 py-5 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-tight">{debtor.phone || 'S/N'}</td>
                                                 <td className="px-10 py-5">
                                                     <div className="flex flex-col">
-                                                        <span className="text-base font-extrabold text-red-600 dark:text-red-400">${debtor.amount_owed.toFixed(2)}</span>
-                                                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-tighter">{(debtor.amount_owed * rate).toFixed(2)} BS</span>
+                                                        <span className="text-base font-extrabold text-red-600 dark:text-red-400">${amountOwed.toFixed(2)}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-tighter">{(amountOwed * rate).toFixed(2)} BS</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-10 py-5">
