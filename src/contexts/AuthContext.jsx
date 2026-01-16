@@ -44,11 +44,19 @@ export function AuthProvider({ children }) {
     const fetchUserData = async (authUser) => {
         try {
             // Obtener datos adicionales del usuario desde la tabla users
-            const { data: userData, error } = await supabase
+            // Timeout de seguridad de 5s para evitar bloqueo de login
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout fetching user data')), 5000)
+            );
+
+            // Obtener datos adicionales del usuario desde la tabla users
+            const queryPromise = supabase
                 .from('users')
                 .select('*')
                 .eq('id', authUser.id)
                 .single();
+
+            const { data: userData, error } = await Promise.race([queryPromise, timeoutPromise]);
 
             if (error) {
                 console.error("Error fetching user data:", error);
