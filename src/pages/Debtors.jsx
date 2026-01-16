@@ -56,29 +56,82 @@ const Debtors = () => {
         setIsModalOpen(true);
     };
 
+    // Sincronizar moneda con método de pago automáticamente
+    useEffect(() => {
+        if (paymentMethod === 'USD') {
+            setIsUsd(true);
+        } else {
+            setIsUsd(false);
+        }
+    }, [paymentMethod]);
+
     const handleProcessPayment = async (e) => {
         e.preventDefault();
-        if (!selectedDebtor || !paymentAmount) return;
+        console.log("🟢 Iniciando proceso de pago...");
+
+        if (!selectedDebtor) {
+            alert("Error: No hay deudor seleccionado");
+            return;
+        }
+
+        if (!paymentAmount) {
+            alert("Por favor ingresa un monto");
+            return;
+        }
 
         const amountInput = parseFloat(paymentAmount);
-        if (isNaN(amountInput) || amountInput <= 0) return;
+        if (isNaN(amountInput) || amountInput <= 0) {
+            alert("El monto debe ser un número válido mayor a 0");
+            return;
+        }
 
         // Calcular monto en USD
         const amountInUSD = isUsd ? amountInput : (amountInput / rate);
 
         try {
-            const newDebt = (parseFloat(selectedDebtor.total_debt_usd) || 0) - amountInUSD;
+            const currentDebt = parseFloat(selectedDebtor.total_debt_usd) || 0;
+            let newDebtRaw = currentDebt - amountInUSD;
 
-            // 1. Actualizar/Eliminar Registro de Deudor
-            if (newDebt <= 0.01) {
-                const { error } = await supabase
+            // Redondear a 2 decimales para evitar problemas de precisión flotante
+            // Ejemplo: 0.0000000001 se convierte en 0
+            const newDebt = Math.round(newDebtRaw * 100) / 100;
+
+            console.log(`Procesando pago: Deuda ${currentDebt} - Pago ${amountInUSD} = Nueva ${newDebt}`);
+
+            // 1. Lógica de Pago
+            if (newDebt <= 0.05) {
+                console.log("Deuda saldada. Actualizando a 0 antes de borrar...");
+
+                // PASO 1: Asegurar que la deuda sea 0 (por si falla el borrado)
+                const { error: updateError } = await supabase
+                    .from('debtors')
+                    .update({
+                        total_debt_usd: 0,
+                        total_debt_bs: 0
+                    })
+                    .eq('id', selectedDebtor.id);
+
+                if (updateError) {
+                    console.error("Error al poner deuda en 0:", updateError);
+                    throw updateError;
+                }
+
+                // PASO 2: Intentar borrar el registro
+                console.log("Intentando eliminar registro...");
+                const { error: deleteError } = await supabase
                     .from('debtors')
                     .delete()
                     .eq('id', selectedDebtor.id);
 
-                if (error) throw error;
-                alert('Deuda pagada por completo. Cliente eliminado de lista.');
+                if (deleteError) {
+                    console.warn("No se pudo borrar el registro (probablemente permisos), pero la deuda ya es 0.", deleteError);
+                    alert('Deuda pagada por completo. (Registro mantenido en historial).');
+                } else {
+                    console.log("Registro eliminado correctamente.");
+                    alert('Deuda pagada por completo y cliente eliminado.');
+                }
             } else {
+                console.log("Abono parcial. Actualizando saldo...");
                 const { error } = await supabase
                     .from('debtors')
                     .update({
@@ -88,17 +141,18 @@ const Debtors = () => {
                     .eq('id', selectedDebtor.id);
 
                 if (error) throw error;
-                alert('Abono registrado exitosamente.');
+                alert('Abono registrado exitosamente. Restan: $' + newDebt.toFixed(2));
             }
 
             // 2. Opcional: Registrar la transacción de pago si tuvieras una tabla 'payments'
             // Por ahora, solo actualizamos la deuda según lo solicitado.
 
             setIsModalOpen(false);
-            fetchDebtors();
+            // Pequeño delay para asegurar que la DB procesó el cambio antes de leer
+            setTimeout(fetchDebtors, 300);
         } catch (err) {
-            console.error(err);
-            alert('Error al registrar abono');
+            console.error("Error crítico en proceso de pago:", err);
+            alert('Error al registrar abono: ' + (err.message || 'Error desconocido'));
         }
     };
 

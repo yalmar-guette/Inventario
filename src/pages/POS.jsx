@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid, Store, List, ChevronRight, Package } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid, Store, List, ChevronRight, Package, DollarSign } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
 import AuthorizationModal from '../components/AuthorizationModal';
 import { supabase } from '../supabase';
@@ -229,20 +229,41 @@ const POS = () => {
 
                 if (currentProduct) {
                     const currentStock = currentProduct.stock || {};
+                    const quantityToSubtract = parseInt(item.quantity) || 0;
+
+                    if (quantityToSubtract <= 0) {
+                        console.warn(`Cantidad inválida para ${item.name}:`, item.quantity);
+                        continue;
+                    }
+
+                    const currentStockVal = parseInt(currentStock[activeBodegaId]) || 0;
+                    const newStockVal = currentStockVal - quantityToSubtract;
+
                     const newStock = {
                         ...currentStock,
-                        [activeBodegaId]: (currentStock[activeBodegaId] || 0) - item.quantity
+                        [activeBodegaId]: newStockVal
                     };
+
+                    console.log(`📦 Actualizando Inventario: ${item.name}`);
+                    console.log(`   Bodega ID: ${activeBodegaId}`);
+                    console.log(`   Stock Antes: ${currentStockVal}`);
+                    console.log(`   Venta: -${quantityToSubtract}`);
+                    console.log(`   Stock Después: ${newStockVal}`);
 
                     const { error: updateError } = await supabase
                         .from('products')
                         .update({
                             stock: newStock,
-                            sales_count: (currentProduct.sales_count || 0) + item.quantity
+                            sales_count: (currentProduct.sales_count || 0) + quantityToSubtract
                         })
                         .eq('id', item.id);
 
-                    if (updateError) throw updateError;
+                    if (updateError) {
+                        console.error(`❌ Error actualizando producto ${item.name}:`, updateError);
+                        throw updateError;
+                    } else {
+                        console.log(`✅ Stock actualizado correctamente en DB`);
+                    }
                 }
             }
 
@@ -404,7 +425,13 @@ const POS = () => {
                         <div className="p-2 bg-primary-600 rounded-xl shadow-lg shadow-primary-500/20">
                             <ShoppingCart className="w-5 h-5 text-white" />
                         </div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">Carrito</h2>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">Carrito</h2>
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+                                <DollarSign size={10} />
+                                <span>Tasa: {exchangeRate?.toFixed(2) || '0.00'} Bs</span>
+                            </div>
+                        </div>
                     </div>
                     <span className="bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                         {totalItems} items
@@ -478,7 +505,7 @@ const POS = () => {
                         </div>
                         <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center transition-colors">
                             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Equivalente en Bolívares</span>
-                            <span className="text-sm font-black text-slate-900 dark:text-white">{subtotalBs.toLocaleString()} Bs</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white">{subtotalBs.toFixed(2)} Bs</span>
                         </div>
                     </div>
 
