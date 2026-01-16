@@ -109,6 +109,9 @@ export function useInventory(bodegaId) {
                 .eq('id', id);
 
             if (updateError) throw updateError;
+
+            // Refrescar la lista inmediatamente después de actualizar
+            await fetchProducts();
         } catch (err) {
             console.error("Error updating product:", err);
             throw err;
@@ -123,11 +126,14 @@ export function useInventory(bodegaId) {
                 .eq('id', id);
 
             if (deleteError) throw deleteError;
+
+            // Refrescar la lista inmediatamente después de eliminar
+            await fetchProducts();
         } catch (err) {
             console.error("Error deleting product:", err);
             throw err;
         }
     };
 
-    return { products, loading, error, addProduct, updateProduct, deleteProduct };
+    return { products, loading, error, addProduct, updateProduct, deleteProduct, fetchProducts };
 }

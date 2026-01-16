@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Search, Plus, Trash2, Edit, Package, AlertTriangle, ArrowUpDown } from 'lucide-react';
 import ProductModal from '../components/ProductModal';
 
 const Inventory = () => {
     const { currentUser, userRole } = useAuth();
+    const toast = useToast();
     const { products, loading, error, addProduct, updateProduct, deleteProduct } = useInventory(currentUser?.assigned_bodega_id);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOption, setSortOption] = useState('stock-asc'); // Por defecto: Poco stock primero (accionable)
@@ -59,22 +61,28 @@ const Inventory = () => {
         try {
             if (editingProduct) {
                 await updateProduct(editingProduct.id, productData);
+                toast.success('Producto actualizado correctamente');
             } else {
                 await addProduct(productData);
+                toast.success('Producto creado correctamente');
             }
             setIsModalOpen(false);
             setEditingProduct(null);
         } catch (error) {
             console.error("Error saving product:", error);
-            // Mostrar el mensaje específico del error
             const errorMessage = error?.message || error?.error?.message || JSON.stringify(error);
-            alert(`Error al guardar producto: ${errorMessage}`);
+            toast.error(`Error al guardar producto: ${errorMessage}`);
         }
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('¿Estás seguro de eliminar este producto?')) {
-            await deleteProduct(id);
+            try {
+                await deleteProduct(id);
+                toast.success('Producto eliminado correctamente');
+            } catch (error) {
+                toast.error('Error al eliminar producto');
+            }
         }
     };
 

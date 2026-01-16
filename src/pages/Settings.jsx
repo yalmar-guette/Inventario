@@ -186,12 +186,11 @@ const Settings = () => {
 
             if (authError) throw authError;
 
-            // Esperar un momento para que el trigger termine (opcional, pero ayuda a la UI)
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            toast.success(`Usuario ${newUser.email} creado exitosamente.`);
+            toast.success(`Usuario ${newUser.email} creado correctamente`);
             setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: bodegas[0]?.id || '' });
-            fetchUsers();
+
+            // Refrescar inmediatamente
+            await fetchUsers();
 
         } catch (error) {
             console.error(error);

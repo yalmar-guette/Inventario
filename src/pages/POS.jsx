@@ -14,7 +14,7 @@ const POS = () => {
     const { currentUser, userRole } = useAuth();
     // Usar 'bodega_1' como respaldo si assigned_bodega_id no está definido
     const activeBodegaId = currentUser?.assigned_bodega_id || 'bodega_1';
-    const { products } = useInventory(activeBodegaId);
+    const { products, fetchProducts } = useInventory(activeBodegaId);
     const { rate: exchangeRate } = useSystemConfig();
     const toast = useToast();
 
@@ -249,6 +249,9 @@ const POS = () => {
             toast.success('¡Venta procesada con éxito!');
             setCart([]);
             setIsPaymentModalOpen(false);
+
+            // Refrescar inventario inmediatamente después de la venta
+            await fetchProducts();
 
         } catch (error) {
             console.error("Error processing sale:", error);
