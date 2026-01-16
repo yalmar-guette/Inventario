@@ -1,0 +1,32 @@
+[
+  {
+    "email": "sarai@bodega.com",
+    "tempPassword": "Temp48fxi9h4!",
+    "name": "Sarai Melendez"
+  },
+  {
+    "email": "test@employee.com",
+    "tempPassword": "Tempi2r17rup!",
+    "name": ""
+  },
+  {
+    "email": "test@admin.com",
+    "tempPassword": "Temp5x9o0co7!",
+    "name": ""
+  },
+  {
+    "email": "carlos@bodega.com",
+    "tempPassword": "Tempolsqkkzk!",
+    "name": ""
+  },
+  {
+    "email": "dueno@bodega.com",
+    "tempPassword": "Templsa7o36o!",
+    "name": "Administrador Principal"
+  },
+  {
+    "email": "cristiano@bodega.com",
+    "tempPassword": "Tempbymx2h8b!",
+    "name": ""
+  }
+]

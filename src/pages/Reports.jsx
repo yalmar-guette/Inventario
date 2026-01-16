@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { supabase } from '../supabase';
 import { startOfDay, endOfDay, format } from 'date-fns';
 import { FileText, Download, Table, ExternalLink } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -32,14 +31,19 @@ const Reports = () => {
 
     const fetchBodegas = async () => {
         try {
-            const snap = await getDocs(collection(db, 'bodegas'));
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setBodegas(data);
+            const { data, error } = await supabase
+                .from('bodegas')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            setBodegas(data || []);
 
             // Auto-seleccionar: Si solo hay 1 bodega, seleccionarla directamente
-            if (data.length === 1) {
+            if (data && data.length === 1) {
                 setSelectedBodega(data[0].id);
-            } else if (data.length > 1) {
+            } else if (data && data.length > 1) {
                 setSelectedBodega('all'); // Si hay múltiples, mostrar "Ver Todo"
             }
         } catch (err) {
@@ -51,11 +55,15 @@ const Reports = () => {
         setLoading(true);
         try {
             // 1. Fetch Users Cache
-            const usersSnap = await getDocs(collection(db, 'users'));
+            const { data: usersData, error: usersError } = await supabase
+                .from('users')
+                .select('id, name, email');
+
+            if (usersError) throw usersError;
+
             const uMap = {};
-            usersSnap.forEach(doc => {
-                const u = doc.data();
-                uMap[doc.id] = u.name || u.email || 'Usuario';
+            (usersData || []).forEach(u => {
+                uMap[u.id] = u.name || u.email || 'Usuario';
             });
             setUsersMap(uMap);
 
@@ -64,27 +72,35 @@ const Reports = () => {
             const start = new Date(year, month - 1, day, 0, 0, 0, 0);
             const end = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-            const queryBodega = selectedBodega; // Usar la bodega seleccionada en el dropdown
+            const queryBodega = selectedBodega;
 
-            let q;
-            // Siempre consultamos por fecha (índice simple) y filtramos bodega en el cliente
-            q = query(
-                collection(db, 'sales'),
-                where('timestamp', '>=', Timestamp.fromDate(start)),
-                where('timestamp', '<=', Timestamp.fromDate(end))
-            );
+            let query = supabase
+                .from('sales')
+                .select('*')
+                .gte('timestamp', start.toISOString())
+                .lte('timestamp', end.toISOString());
 
-            const snap = await getDocs(q);
-            let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-            // Filtrado local (Bodega y ventas válidas)
-            data = data.filter(s => s.items && s.items.length > 0 && s.totalUSD != null);
+            // Filtrar por bodega si no es 'all'
             if (queryBodega !== 'all') {
-                data = data.filter(s => s.bodega_id === queryBodega);
+                query = query.eq('bodega_id', queryBodega);
             }
 
-            // Ordenar por tiempo (descendente)
-            data.sort((a, b) => b.timestamp - a.timestamp);
+            const { data: salesData, error: salesError } = await query
+                .order('timestamp', { ascending: false });
+
+            if (salesError) throw salesError;
+
+            // Filtrado local (ventas válidas)
+            let data = (salesData || []).filter(s => s.items && s.items.length > 0 && s.total_usd != null);
+
+            // Convertir timestamp strings a objetos Date para compatibilidad
+            data = data.map(s => ({
+                ...s,
+                totalUSD: s.total_usd,
+                totalBs: s.total_bs,
+                timestamp: new Date(s.timestamp)
+            }));
+
             setSales(data);
 
         } catch (err) {
@@ -99,9 +115,15 @@ const Reports = () => {
     useEffect(() => {
         if (userRole === 'OWNER') {
             const fetchDebug = async () => {
-                const q = query(collection(db, 'sales'), orderBy('timestamp', 'desc'), limit(5));
-                const s = await getDocs(q);
-                setLatestDebugSales(s.docs.map(d => ({ id: d.id, ...d.data() })));
+                const { data, error } = await supabase
+                    .from('sales')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(5);
+
+                if (!error && data) {
+                    setLatestDebugSales(data);
+                }
             };
             fetchDebug();
         }
@@ -179,11 +201,10 @@ const Reports = () => {
 
             // Timestamp safety
             let timeStr = 'N/A';
-            if (s.timestamp?.toDate) {
-                timeStr = format(s.timestamp.toDate(), 'hh:mm a');
-            } else if (s.timestamp) {
+            if (s.timestamp) {
                 try {
-                    timeStr = format(new Date(s.timestamp), 'hh:mm a');
+                    const date = s.timestamp instanceof Date ? s.timestamp : new Date(s.timestamp);
+                    timeStr = format(date, 'hh:mm a');
                 } catch (e) { timeStr = 'Error'; }
             }
 
@@ -331,7 +352,7 @@ const Reports = () => {
             }
 
             const rowParts = [
-                format(s.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
+                format(s.timestamp instanceof Date ? s.timestamp : new Date(s.timestamp), 'yyyy-MM-dd HH:mm'),
                 // Conditional User Column
                 ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
                 s.id,
@@ -483,11 +504,13 @@ const Reports = () => {
 
                 // Timestamp safety
                 let dateStr = 'Hora desconocida';
-                if (sale?.timestamp?.toDate) {
-                    dateStr = format(sale.timestamp.toDate(), 'HH:mm aaa');
-                } else if (sale?.timestamp && typeof sale.timestamp.toDate !== 'function') {
-                    // Handle case where timestamp might be a string or date object manually
-                    dateStr = 'Fecha inválida';
+                if (sale?.timestamp) {
+                    try {
+                        const date = sale.timestamp instanceof Date ? sale.timestamp : new Date(sale.timestamp);
+                        dateStr = format(date, 'HH:mm aaa');
+                    } catch (e) {
+                        dateStr = 'Fecha inválida';
+                    }
                 }
 
                 // Items safety - filter out nulls first

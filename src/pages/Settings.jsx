@@ -3,14 +3,7 @@ import { useSystemConfig } from '../hooks/useSystemConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users, Database } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import app from '../firebase';
-
-const secondaryApp = initializeApp(app.options, "Secondary");
-const secondaryAuth = getAuth(secondaryApp);
+import { supabase } from '../supabase';
 
 const Settings = () => {
     const { userRole, currentUser } = useAuth();
@@ -28,6 +21,8 @@ const Settings = () => {
     // User Mgmt State
     const [usersList, setUsersList] = useState([]);
 
+    const toast = useToast();
+
     useEffect(() => {
         if (userRole === 'OWNER') {
             fetchBodegas();
@@ -37,12 +32,17 @@ const Settings = () => {
 
     const fetchBodegas = async () => {
         try {
-            const snap = await getDocs(collection(db, 'bodegas'));
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const { data, error } = await supabase
+                .from('bodegas')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
             setBodegas(data || []);
 
             // Auto-seleccionar la primera bodega para nuevos usuarios
-            if (data.length > 0 && !newUser.bodega_id) {
+            if (data && data.length > 0 && !newUser.bodega_id) {
                 setNewUser(prev => ({ ...prev, bodega_id: data[0].id }));
             }
         } catch (error) {
@@ -53,9 +53,13 @@ const Settings = () => {
 
     const fetchUsers = async () => {
         try {
-            const snap = await getDocs(collection(db, 'users'));
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setUsersList(data);
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+            setUsersList(data || []);
         } catch (error) {
             console.error("Error fetching users:", error);
         }
@@ -64,7 +68,16 @@ const Settings = () => {
     const handleDeleteUser = async (userId, userEmail) => {
         if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
         try {
-            await deleteDoc(doc(db, 'users', userId));
+            // Eliminar de la tabla users
+            const { error } = await supabase
+                .from('users')
+                .delete()
+                .eq('id', userId);
+
+            if (error) throw error;
+
+            // También eliminar de auth (requiere admin API - esto fallará con anon key)
+            // Por ahora solo eliminamos de la tabla users
             toast.success('Usuario eliminado correctamente.');
             fetchUsers();
         } catch (error) {
@@ -79,15 +92,17 @@ const Settings = () => {
         try {
             const finalId = newBodega.name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 1000);
 
-            // Using setDoc with custom ID strategy or addDoc is fine, but addDoc is safer for now.
-            // Let's stick to addDoc but maybe we want readable IDs? 
-            // The original used addDoc. Let's keep it but just add toast.
-            await addDoc(collection(db, 'bodegas'), {
-                name: newBodega.name,
-                location: newBodega.location,
-                createdAt: new Date(),
-                active: true
-            });
+            const { error } = await supabase
+                .from('bodegas')
+                .insert([{
+                    id: finalId,
+                    name: newBodega.name,
+                    location: newBodega.location,
+                    active: true
+                }]);
+
+            if (error) throw error;
+
             toast.success('Bodega creada exitosamente');
             setNewBodega({ name: '', location: '' });
             setShowBodegaForm(false);
@@ -103,7 +118,13 @@ const Settings = () => {
     const handleDeleteBodega = async (id, name) => {
         if (!window.confirm(`¿Estás seguro de eliminar la bodega "${name}"? Esta acción no se puede deshacer.`)) return;
         try {
-            await deleteDoc(doc(db, 'bodegas', id));
+            const { error } = await supabase
+                .from('bodegas')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
             toast.success('Bodega eliminada correctamente');
             fetchBodegas();
         } catch (error) {
@@ -112,15 +133,16 @@ const Settings = () => {
         }
     };
 
-
-
     const handleSelectBodega = async (bodegaId) => {
         if (!currentUser) return;
         try {
-            const userRef = doc(db, "users", currentUser.uid);
-            await updateDoc(userRef, {
-                assigned_bodega_id: bodegaId
-            });
+            const { error } = await supabase
+                .from('users')
+                .update({ assigned_bodega_id: bodegaId })
+                .eq('id', currentUser.uid);
+
+            if (error) throw error;
+
             // Force reload to update context and views
             window.location.reload();
         } catch (error) {
@@ -130,10 +152,9 @@ const Settings = () => {
     };
 
     if (userRole !== 'OWNER') {
-        return <div className="text-slate-900 text-center mt-20 font-medium">Acceso Restringido</div>;
+        return <div className="text-slate-900 dark:text-slate-100 text-center mt-20 font-medium">Acceso Restringido</div>;
     }
 
-    const toast = useToast();
     const handleUpdateRate = async (e) => {
         e.preventDefault();
         if (!newRate) return;
@@ -150,21 +171,35 @@ const Settings = () => {
         e.preventDefault();
         setCreatingUser(true);
         try {
-            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newUser.email, newUser.password);
-            const user = userCredential.user;
-
-            await setDoc(doc(db, "users", user.uid), {
+            // Crear usuario en Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: newUser.email,
-                name: newUser.name,
-                role: newUser.role,
-                assigned_bodega_id: newUser.bodega_id,
-                createdAt: new Date()
+                password: newUser.password,
+                options: {
+                    data: {
+                        name: newUser.name
+                    }
+                }
             });
 
+            if (authError) throw authError;
+
+            // Insertar en la tabla users
+            const { error: dbError } = await supabase
+                .from('users')
+                .insert([{
+                    id: authData.user.id,
+                    email: newUser.email,
+                    name: newUser.name,
+                    role: newUser.role,
+                    assigned_bodega_id: newUser.bodega_id
+                }]);
+
+            if (dbError) throw dbError;
+
             toast.success(`Usuario ${newUser.email} creado exitosamente.`);
-            setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: 'bodega_1' });
-            await secondaryAuth.signOut();
-            fetchUsers(); // Refresh list
+            setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: bodegas[0]?.id || '' });
+            fetchUsers();
 
         } catch (error) {
             console.error(error);
@@ -174,10 +209,15 @@ const Settings = () => {
         }
     };
 
-    // Placeholder for update user logic
     const handleUpdateUserRole = async (userId, newRole) => {
         try {
-            await updateDoc(doc(db, 'users', userId), { role: newRole });
+            const { error } = await supabase
+                .from('users')
+                .update({ role: newRole })
+                .eq('id', userId);
+
+            if (error) throw error;
+
             toast.success('Rol actualizado');
             fetchUsers();
         } catch (error) {
@@ -187,7 +227,13 @@ const Settings = () => {
 
     const handleUpdateUserBodega = async (userId, newBodegaId) => {
         try {
-            await updateDoc(doc(db, 'users', userId), { assigned_bodega_id: newBodegaId });
+            const { error } = await supabase
+                .from('users')
+                .update({ assigned_bodega_id: newBodegaId })
+                .eq('id', userId);
+
+            if (error) throw error;
+
             toast.success('Bodega asignada actualizada');
             fetchUsers();
         } catch (error) {

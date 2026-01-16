@@ -6,8 +6,7 @@ import { useSystemConfig } from '../hooks/useSystemConfig';
 import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid, Store, List, ChevronRight, Package } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
 import AuthorizationModal from '../components/AuthorizationModal';
-import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, getDoc } from 'firebase/firestore';
+import { supabase } from '../supabase';
 import { useToast } from '../contexts/ToastContext';
 
 const POS = () => {
@@ -28,12 +27,14 @@ const POS = () => {
                 return;
             }
             try {
-                const docSnap = await getDoc(doc(db, 'bodegas', activeBodegaId));
-                if (docSnap.exists()) {
-                    setBodegaName(docSnap.data().name);
-                } else {
-                    setBodegaName('Bodega Desconocida');
-                }
+                const { data, error } = await supabase
+                    .from('bodegas')
+                    .select('name')
+                    .eq('id', activeBodegaId)
+                    .single();
+
+                if (error) throw error;
+                setBodegaName(data?.name || 'Bodega Desconocida');
             } catch (err) {
                 setBodegaName(activeBodegaId);
             }
@@ -67,7 +68,7 @@ const POS = () => {
             const stockA = a.stock?.[activeBodegaId] || 0;
             const stockB = b.stock?.[activeBodegaId] || 0;
             const priceA = parseFloat(a.price_usd) || 0;
-            const priceB = parseFloat(b.price_usd) || 0;
+            const priceB = parseFloat(a.price_usd) || 0;
             const salesA = a.sales_count || 0;
             const salesB = b.sales_count || 0;
 
@@ -152,7 +153,6 @@ const POS = () => {
     let finalCartTotal = 0;
     let totalItems = 0;
 
-
     // Usando un bucle básico para evitar rarezas con reduce
     for (const item of cart) {
         // Asegurar que los valores son números
@@ -177,23 +177,26 @@ const POS = () => {
             const saleData = {
                 bodega_id: activeBodegaId,
                 cashier_id: currentUser?.uid,
-                cashier_name: currentUser?.name || currentUser?.email || 'Desconocido',
                 items: cart.map(item => ({
                     id: item.id,
                     name: item.name,
                     quantity: parseInt(item.quantity),
                     price_usd: parseFloat(item.price_usd)
                 })),
-                payments,
-                totalUSD,
-                totalBs,
-                exchangeRate: validRate,
-                timestamp: serverTimestamp(),
-                status: 'COMPLETED'
+                payment_method: payments[0]?.method || 'CASH', // Método principal
+                payments: payments,
+                total_usd: totalUSD,
+                total_bs: totalBs
             };
 
             // 1. Crear Registro de Venta
-            const saleRef = await addDoc(collection(db, 'sales'), saleData);
+            const { data: saleRecord, error: saleError } = await supabase
+                .from('sales')
+                .insert([saleData])
+                .select()
+                .single();
+
+            if (saleError) throw saleError;
 
             // 2. Manejar Deudor (si aplica)
             if (debtor) {
@@ -201,25 +204,47 @@ const POS = () => {
                 const debtAmountUSD = debtPayments.reduce((sum, p) =>
                     sum + (p.isUsd ? p.amount : p.amount / validRate), 0);
 
-                await addDoc(collection(db, 'debtors'), {
-                    ...debtor,
-                    bodega_id: activeBodegaId,
-                    amount_owed: debtAmountUSD,
-                    last_sale_id: saleRef.id,
-                    last_update: serverTimestamp()
-                });
+                const { error: debtorError } = await supabase
+                    .from('debtors')
+                    .insert([{
+                        name: debtor.name,
+                        phone: debtor.phone,
+                        bodega_id: activeBodegaId,
+                        total_debt_usd: debtAmountUSD,
+                        total_debt_bs: debtAmountUSD * validRate,
+                        sale_id: saleRecord.id
+                    }]);
+
+                if (debtorError) throw debtorError;
             }
 
             // 3. Actualizar Inventario y Conteo de Ventas
-            const batchPromises = cart.map(item => {
-                const productRef = doc(db, 'products', item.id);
-                const stockField = `stock.${activeBodegaId}`;
-                return updateDoc(productRef, {
-                    [stockField]: increment(-item.quantity),
-                    sales_count: increment(item.quantity)
-                });
-            });
-            await Promise.all(batchPromises);
+            for (const item of cart) {
+                // Obtener stock actual
+                const { data: currentProduct } = await supabase
+                    .from('products')
+                    .select('stock, sales_count')
+                    .eq('id', item.id)
+                    .single();
+
+                if (currentProduct) {
+                    const currentStock = currentProduct.stock || {};
+                    const newStock = {
+                        ...currentStock,
+                        [activeBodegaId]: (currentStock[activeBodegaId] || 0) - item.quantity
+                    };
+
+                    const { error: updateError } = await supabase
+                        .from('products')
+                        .update({
+                            stock: newStock,
+                            sales_count: (currentProduct.sales_count || 0) + item.quantity
+                        })
+                        .eq('id', item.id);
+
+                    if (updateError) throw updateError;
+                }
+            }
 
             toast.success('¡Venta procesada con éxito!');
             setCart([]);
@@ -348,7 +373,7 @@ const POS = () => {
                                                 <h3 className={`font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors ${viewMode === 'compact' ? 'text-xs' : 'text-sm'}`}>
                                                     {product.name}
                                                 </h3>
-                                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-0.5 tracking-wider truncate">{product.code}</p>
+                                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-0.5 tracking-wider truncate">{product.barcode}</p>
                                             </div>
 
                                             <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between transition-colors">
