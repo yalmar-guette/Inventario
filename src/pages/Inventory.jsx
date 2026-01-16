@@ -6,7 +6,7 @@ import ProductModal from '../components/ProductModal';
 
 const Inventory = () => {
     const { currentUser, userRole } = useAuth();
-    const { products, loading, addProduct, updateProduct, deleteProduct } = useInventory(currentUser?.assigned_bodega_id);
+    const { products, loading, error, addProduct, updateProduct, deleteProduct } = useInventory(currentUser?.assigned_bodega_id);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOption, setSortOption] = useState('stock-asc'); // Por defecto: Poco stock primero (accionable)
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,7 +172,23 @@ const Inventory = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {loading ? (
+                                {error ? (
+                                    <tr>
+                                        <td colSpan="5" className="text-center py-10">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <AlertTriangle className="w-8 h-8 text-red-400 mb-2" />
+                                                <p className="text-red-500 font-bold text-sm">Error cargando inventario</p>
+                                                <p className="text-slate-400 text-xs mb-3">{error.message}</p>
+                                                <button
+                                                    onClick={() => window.location.reload()}
+                                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                                >
+                                                    Reintentar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : loading ? (
                                     <tr><td colSpan="5" className="text-center py-10 text-slate-400 dark:text-slate-600 font-bold uppercase text-[10px]">Cargando inventario...</td></tr>
                                 ) : filteredProducts.length === 0 ? (
                                     <tr><td colSpan="5" className="text-center py-10 text-slate-400 dark:text-slate-600 font-bold uppercase text-[10px]">No se encontraron productos</td></tr>

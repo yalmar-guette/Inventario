@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { supabase } from '../supabase';
-import { User, CheckCircle, Phone, X, DollarSign, Wallet } from 'lucide-react';
+import { User, CheckCircle, Phone, X, DollarSign, Wallet, AlertTriangle } from 'lucide-react';
 
 const Debtors = () => {
     const { currentUser } = useAuth();
     const { rate } = useSystemConfig();
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     // Estado del Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,12 +32,18 @@ const Debtors = () => {
                 query = query.eq('bodega_id', activeBodegaId);
             }
 
-            const { data, error } = await query;
+            // Timeout de seguridad de 10s
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 10000)
+            );
+
+            const { data, error } = await Promise.race([query, timeoutPromise]);
 
             if (error) throw error;
             setDebtors(data || []);
         } catch (err) {
             console.error(err);
+            setError(err);
         } finally {
             setLoading(false);
         }
@@ -105,7 +112,19 @@ const Debtors = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {loading ? (
+                    {error ? (
+                        <div className="col-span-full text-center py-12 flex flex-col items-center">
+                            <AlertTriangle className="w-12 h-12 text-red-400 mb-4" />
+                            <p className="text-red-500 font-bold mb-2">Error cargando deudores</p>
+                            <p className="text-slate-400 text-sm mb-4">{error.message}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700"
+                            >
+                                Reintentar
+                            </button>
+                        </div>
+                    ) : loading ? (
                         <p className="text-slate-500 dark:text-slate-400 col-span-full text-center py-12 font-bold uppercase text-xs tracking-widest">Cargando...</p>
                     ) : debtors.length === 0 ? (
                         <div className="col-span-full text-center py-12">
