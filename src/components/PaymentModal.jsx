@@ -7,7 +7,7 @@ const PAYMENT_METHODS = [
     { id: 'EFECTIVO_BS', name: 'Efectivo Bs', isUsd: false },
     { id: 'PAGO_MOVIL', name: 'Pago Móvil', isUsd: false },
     { id: 'PUNTO', name: 'Punto Venta', isUsd: false },
-    { id: 'FIADO', name: 'Fiado / Crédito', isUsd: true },
+    { id: 'FIADO', name: 'Crédito', isUsd: true },
 ];
 
 const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPayment, cart = [] }) => {
@@ -215,12 +215,17 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in notranslate" translate="no">
-            <div className="bg-white border border-slate-200 w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl flex overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in notranslate p-0 md:p-4" translate="no">
+            <div className="bg-white border border-slate-200 w-full max-w-4xl h-full md:h-[90vh] md:rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
 
                 {/* Left: Summary */}
-                <div className="w-1/3 bg-slate-50 border-r border-slate-100 p-6 flex flex-col">
-                    <h2 className="text-xl font-bold text-text-main mb-6">Resumen de Pago</h2>
+                <div className="w-full md:w-1/3 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-4 md:p-6 flex flex-col shrink-0">
+                    <div className="flex items-center justify-between md:block mb-4 md:mb-6">
+                        <h2 className="text-lg md:text-xl font-bold text-text-main">Resumen</h2>
+                        <button onClick={onClose} className="md:hidden text-text-light hover:text-text-main">
+                            <X size={24} />
+                        </button>
+                    </div>
 
                     <div className="space-y-4 mb-auto">
                         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
@@ -247,7 +252,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     </div>
 
                     {/* Cart Items List (Corrected) */}
-                    <div className="mt-6 flex-1 overflow-y-auto custom-scrollbar border-t border-slate-100 pt-4">
+                    <div className="mt-4 md:mt-6 flex-1 overflow-y-auto custom-scrollbar border-t border-slate-100 pt-4 hidden md:block">
                         <h3 className="text-xs font-bold text-text-muted uppercase mb-3 px-1">Productos en Carrito</h3>
                         <div className="space-y-2">
                             {cart.map(item => (
@@ -276,8 +281,8 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 </div>
 
                 {/* Right: Multi-Row Form */}
-                <div className="flex-1 p-8 flex flex-col relative bg-white overflow-y-auto">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-text-light hover:text-text-main">
+                <div className="flex-1 p-5 md:p-8 flex flex-col relative bg-white overflow-y-auto">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-text-light hover:text-text-main hidden md:block">
                         <X size={24} />
                     </button>
 
@@ -333,14 +338,14 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                     </div>
 
                                     {/* Amount Input */}
-                                    <div className="relative w-40">
+                                    <div className="relative w-32 md:w-40">
                                         <span className="absolute left-3 top-3.5 text-slate-400 font-bold text-sm">
                                             {method?.isUsd ? '$' : 'Bs'}
                                         </span>
                                         <input
                                             type="number"
                                             placeholder="0.00"
-                                            className="w-full pl-8 pr-2 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 font-bold text-slate-900"
+                                            className="w-full pl-8 pr-2 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 font-bold text-slate-900 text-sm md:text-base"
                                             value={row.amount}
                                             onChange={(e) => updateRow(row.id, 'amount', e.target.value)}
                                         />

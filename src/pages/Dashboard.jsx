@@ -123,8 +123,8 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8">
-            <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-7xl mx-auto space-y-8">
+        <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
 
 
 
@@ -183,7 +183,7 @@ const Dashboard = () => {
                                 <span className="px-2.5 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-lg">Atención</span>
                             )}
                         </div>
-                        <h3 className="text-slate-400 text-xs font-semibold mb-2 uppercase">Deudores Morosos</h3>
+                        <h3 className="text-slate-400 text-xs font-semibold mb-2 uppercase">Deudores</h3>
                         <div className="flex items-baseline gap-2 mb-2">
                             <span className="text-4xl font-bold text-slate-900">{stats.debtorsCount}</span>
                             <span className="text-sm text-slate-400">clientes</span>

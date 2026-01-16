@@ -66,19 +66,19 @@ const Login = () => {
             </div>
 
             {/* Right Side - Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12">
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="w-full max-w-md space-y-8"
+                    className="w-full max-w-md space-y-4 md:space-y-8"
                 >
                     <div className="text-center lg:text-left">
                         <div className="w-12 h-12 bg-primary-100 rounded-2xl flex items-center justify-center mb-6 mx-auto lg:mx-0 text-primary-600">
                             <Lock className="w-6 h-6" />
                         </div>
-                        <h1 className="text-3xl font-bold text-slate-900">¡Qué bueno verte! 👋</h1>
-                        <p className="text-slate-500 mt-2 text-lg">Ingresa para administrar tu bodega</p>
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">¡Qué bueno verte! 👋</h1>
+                        <p className="text-slate-500 mt-1 md:mt-2 text-base md:text-lg">Ingresa para administrar tu bodega</p>
                     </div>
 
                     {error && (
@@ -99,14 +99,14 @@ const Login = () => {
                         </motion.div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 ml-1">Correo Electrónico</label>
+                    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                        <div className="space-y-1.5 md:space-y-2">
+                            <label className="text-xs md:text-sm font-medium text-slate-700 ml-1">Correo Electrónico</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                                 <input
                                     type="email"
-                                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all font-medium"
+                                    className="w-full pl-11 pr-4 py-3 md:py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all font-medium text-sm md:text-base"
                                     placeholder="tu@correo.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
@@ -115,13 +115,13 @@ const Login = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 ml-1">Contraseña</label>
+                        <div className="space-y-1.5 md:space-y-2">
+                            <label className="text-xs md:text-sm font-medium text-slate-700 ml-1">Contraseña</label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                                 <input
                                     type="password"
-                                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all font-medium"
+                                    className="w-full pl-11 pr-4 py-3 md:py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all font-medium text-sm md:text-base"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -133,7 +133,7 @@ const Login = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl shadow-lg shadow-primary-200 hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+                            className="w-full py-3.5 md:py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl shadow-lg shadow-primary-200 hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 text-sm md:text-base"
                         >
                             {loading ? <Loader2 className="animate-spin" /> : 'Ingresar al Sistema'}
                         </button>

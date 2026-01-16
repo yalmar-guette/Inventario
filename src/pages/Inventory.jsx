@@ -87,8 +87,8 @@ const Inventory = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
                 {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Inventario</h1>
@@ -182,7 +182,8 @@ const Inventory = () => {
                                         // Fallback to 'bodega_1' if user has no assigned bodega
                                         const targetBodega = currentUser?.assigned_bodega_id || 'bodega_1';
                                         const stock = product.stock?.[targetBodega] || 0;
-                                        const isLow = stock < 5; // Alert threshold
+                                        const isOutOfStock = stock === 0;
+                                        const isLowStock = stock > 0 && stock <= 5;
 
                                         return (
                                             <tr key={product.id} className="hover:bg-slate-50/80 transition-colors group">
@@ -197,9 +198,12 @@ const Inventory = () => {
                                                 <td className="px-6 py-4 text-text-light font-mono text-sm">{product.barcode || '-'}</td>
                                                 <td className="px-6 py-4 text-emerald-600 font-bold">${product.price_usd?.toFixed(2)}</td>
                                                 <td className="px-6 py-4">
-                                                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${isLow ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600'
+                                                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${isOutOfStock ? 'bg-red-50 text-red-500' :
+                                                            isLowStock ? 'bg-amber-50 text-amber-600' :
+                                                                'bg-green-50 text-green-600'
                                                         }`}>
-                                                        {isLow && <AlertTriangle size={12} />}
+                                                        {isOutOfStock && <AlertTriangle size={12} />}
+                                                        {isLowStock && <Package size={12} />}
                                                         {stock} u
                                                     </div>
                                                 </td>

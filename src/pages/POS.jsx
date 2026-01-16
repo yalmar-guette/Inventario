@@ -235,7 +235,7 @@ const POS = () => {
     // ... (código de filtro existente)
 
     return (
-        <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-theme(spacing.24))] gap-6 animate-fade-in relative notranslate" translate="no">
+        <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-theme(spacing.24))] gap-4 md:gap-6 animate-fade-in relative notranslate p-4 lg:p-0" translate="no">
             {/* ... (Modals remain same) */}
             <PaymentModal
                 isOpen={isPaymentModalOpen}
@@ -257,12 +257,12 @@ const POS = () => {
                 {/* Search Bar & Controls Header */}
                 <div className="glass-panel p-4 flex flex-col md:flex-row gap-4 items-center sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-white/20">
                     {/* Search Input */}
-                    <div className="relative flex-1 w-full md:w-auto min-w-[200px]">
+                    <div className="relative flex-1 w-full min-w-0">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
                         <input
                             type="text"
-                            placeholder="Buscar producto..."
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all shadow-sm"
+                            placeholder="Buscar..."
+                            className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 placeholder:text-slate-400 transition-all shadow-sm text-sm"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -293,12 +293,12 @@ const POS = () => {
                         </div>
 
                         {/* Sort Dropdown */}
-                        <div className="glass-panel px-3 py-2 flex items-center gap-2 bg-white border border-slate-200 shadow-sm">
-                            <ArrowUpDown size={16} className="text-slate-400" />
+                        <div className="glass-panel px-2 py-1.5 flex items-center gap-1.5 bg-white border border-slate-200 shadow-sm">
+                            <ArrowUpDown size={14} className="text-slate-400" />
                             <select
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value)}
-                                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-600 cursor-pointer outline-none w-32"
+                                className="bg-transparent border-none focus:ring-0 text-xs font-medium text-slate-600 cursor-pointer outline-none w-24 md:w-32"
                             >
                                 <option value="popularity-desc">🔥 Populares</option>
                                 <option value="name-asc">🔤 Nombre</option>
@@ -327,9 +327,9 @@ const POS = () => {
                                 <p>No se encontraron productos</p>
                             </div>
                         ) : (
-                            <div className={`grid gap-4 transition-all duration-300 ${viewMode === 'compact'
-                                ? 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-6'
-                                : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                            <div className={`grid gap-3 transition-all duration-300 ${viewMode === 'compact'
+                                ? 'grid-cols-2 md:grid-cols-4 xl:grid-cols-6'
+                                : 'grid-cols-1 md:grid-cols-3 xl:grid-cols-4'
                                 }`}>
                                 {filteredProducts.map(product => {
                                     const stock = product.stock?.[activeBodegaId] || 0;

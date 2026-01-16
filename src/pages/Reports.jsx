@@ -173,7 +173,7 @@ const Reports = () => {
                 else if (p.method === 'EFECTIVO_BS') paymentStr = 'Efectivo Bs';
                 else if (p.method === 'PAGO_MOVIL') paymentStr = 'Pago Móvil';
                 else if (p.method === 'PUNTO') paymentStr = 'Punto';
-                else if (p.method === 'FIADO') paymentStr = 'Fiado';
+                else if (p.method === 'FIADO') paymentStr = 'Crédito';
                 else paymentStr = p.method;
             }
 
@@ -326,7 +326,7 @@ const Reports = () => {
                 else if (p.method === 'EFECTIVO_BS') paymentStr = 'Efectivo Bs';
                 else if (p.method === 'PAGO_MOVIL') paymentStr = 'Pago Movil';
                 else if (p.method === 'PUNTO') paymentStr = 'Punto';
-                else if (p.method === 'FIADO') paymentStr = 'Fiado';
+                else if (p.method === 'FIADO') paymentStr = 'Crédito';
                 else paymentStr = p.method;
             }
 
@@ -358,8 +358,8 @@ const Reports = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
                 {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">Informes</h1>
@@ -547,7 +547,7 @@ const Reports = () => {
                                 } else if (method === 'PUNTO') {
                                     return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">💳 Punto</span>;
                                 } else if (method === 'FIADO') {
-                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">📋 Fiado</span>;
+                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">📋 Crédito</span>;
                                 } else {
                                     return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">❓ {method}</span>;
                                 }
