@@ -34,15 +34,23 @@ export function useSystemConfig() {
                 .from('system_config')
                 .select('exchange_rate')
                 .eq('id', 'global')
-                .single();
+                .maybeSingle(); // Usar maybeSingle en lugar de single para evitar error si está vacía
 
             if (error) {
                 console.error("Error fetching system config:", error);
+                // Usar valor por defecto si hay error
+                setRate(40.00);
             } else if (data && typeof data.exchange_rate === 'number') {
                 setRate(data.exchange_rate);
+            } else {
+                // Si no hay datos, usar valor por defecto
+                console.warn("No se encontró configuración. Usando tasa por defecto: 40.00 Bs/$");
+                setRate(40.00);
             }
         } catch (error) {
             console.error("Error in fetchConfig:", error);
+            // En caso de error crítico, usar valor por defecto
+            setRate(40.00);
         } finally {
             setLoading(false);
         }
