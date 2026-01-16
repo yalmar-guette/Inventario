@@ -321,13 +321,13 @@ const POS = () => {
                                     onClick={() => setViewMode('default')}
                                     className={`p-2 rounded-lg transition-all ${viewMode === 'default' ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-slate-400'}`}
                                 >
-                                    <Grid3x3 size={16} />
+                                    <LayoutGrid size={16} />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('compact')}
                                     className={`p-2 rounded-lg transition-all ${viewMode === 'compact' ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-slate-400'}`}
                                 >
-                                    <LayoutGrid size={16} />
+                                    <Grid3x3 size={16} />
                                 </button>
                             </div>
                         </div>

@@ -240,12 +240,21 @@ const Settings = () => {
         });
     };
 
+    // Importar createClient para la instancia temporal necesita estar arriba, pero lo haremos con require o asumiendo que ya está disponible
+    // Mejor modificamos los imports arriba en otro paso si es necesario, pero aquí usaremos las variables globales.
+
     const handleSaveUser = async (e) => {
         e.preventDefault();
         setCreatingUser(true);
+
+        console.log('🔵 Iniciando gestión de usuario...');
+
         try {
             if (editingUser) {
-                // Update Logic
+                // --- EDICIÓN (Solo actualiza perfil público) ---
+                console.log('✏️ Actualizando usuario existente:', editingUser.id);
+
+                // 1. Actualizar tabla pública users
                 const { error } = await supabase
                     .from('users')
                     .update({
@@ -257,31 +266,110 @@ const Settings = () => {
                     .eq('id', editingUser.id);
 
                 if (error) throw error;
-                toast.success('Usuario actualizado correctamente');
+
+                // Nota: No podemos cambiar el email o password de Auth desde aquí sin loguearnos como ese usuario
+                // o usar funciones administrativas. Por ahora solo actualizamos el perfil.
+
+                toast.success('Perfil de usuario actualizado correctamente');
+
             } else {
-                // Create Logic
-                const newUserId = generateUUID();
-                const { error: insertError } = await supabase
-                    .from('users')
-                    .insert([{
-                        id: newUserId,
+                // --- CREACIÓN (Auth + Perfil) ---
+                console.log('🆕 Creando NUEVO usuario en sistema de autenticación...');
+
+                // 1. Configurar cliente temporal para no cerrar sesión del admin
+                // Necesitamos importar createClient. Como no puedo agregar imports fácilmente en este bloque,
+                // usaré la instancia global supabase.auth.signUp, PERO esto cerraría sesión.
+                // SOLUCIÓN: Usaremos la API REST de Supabase directamente para signUp si no podemos instanciar,
+                // O mejor, asumimos que podemos importar createClient arriba. 
+                // Dado que no puedo editar todo el archivo de una vez, haré un truco:
+                // Instanciaré usando el constructor de la clase del cliente existente si es posible, 
+                // pero lo más seguro es usar fetch a la API de Auth de Supabase.
+
+                // URL de Auth
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+                if (!newUser.password || newUser.password.length < 6) {
+                    throw new Error("La contraseña debe tener al menos 6 caracteres");
+                }
+
+                // Usamos fetch directo a la API de GoTrue para evitar conflictos de sesión
+                const response = await fetch(`${supabaseUrl}/auth/v1/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseAnonKey,
+                        'Authorization': `Bearer ${supabaseAnonKey}`
+                    },
+                    body: JSON.stringify({
                         email: newUser.email,
+                        password: newUser.password,
+                        data: {
+                            name: newUser.name,
+                            role: newUser.role,
+                            assigned_bodega_id: newUser.bodega_id
+                        }
+                    })
+                });
+
+                const authData = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(authData.msg || authData.message || authData.error_description || "Error al registrar en Auth");
+                }
+
+                const newUserId = authData.user?.id || authData.id;
+
+                if (!newUserId) {
+                    throw new Error("No se recibió ID de usuario del sistema de autenticación");
+                }
+
+                console.log('✅ Usuario registrado en Auth con ID:', newUserId);
+
+                // 2. Insertar en tabla pública 'users'
+                // Primero verificamos si ya existe para evitar duplicados (por si el trigger falló o funcionó a medias)
+                const { data: existingUser } = await supabase.from('users').select('id').eq('id', newUserId).single();
+
+                if (!existingUser) {
+                    console.log('📥 Insertando perfil público...');
+                    const { error: insertError } = await supabase
+                        .from('users')
+                        .insert([{
+                            id: newUserId,
+                            email: newUser.email,
+                            name: newUser.name,
+                            role: newUser.role,
+                            assigned_bodega_id: newUser.bodega_id
+                        }]);
+
+                    if (insertError) throw insertError;
+                } else {
+                    console.log('⚠️ El perfil público ya existía, actualizando...');
+                    await supabase.from('users').update({
                         name: newUser.name,
                         role: newUser.role,
                         assigned_bodega_id: newUser.bodega_id
-                    }]);
+                    }).eq('id', newUserId);
+                }
 
-                if (insertError) throw insertError;
-                toast.success(`Usuario ${newUser.email} creado correctamente (Modo Manual)`);
+                toast.success(`Usuario ${newUser.email} registrado y activado correctamente`);
             }
 
-            setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: bodegas[0]?.id || '' });
+            // Reset formulario
+            setNewUser({
+                email: '',
+                password: '',
+                name: '',
+                role: 'EMPLOYEE',
+                bodega_id: bodegas[0]?.id || ''
+            });
             setEditingUser(null);
+
             await fetchUsers();
 
         } catch (error) {
-            console.error(error);
-            toast.error("Error al guardar usuario: " + error.message);
+            console.error('COMBO ERROR:', error);
+            toast.error(`Error: ${error.message}`);
         } finally {
             setCreatingUser(false);
         }
