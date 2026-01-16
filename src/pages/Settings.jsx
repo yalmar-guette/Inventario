@@ -71,26 +71,25 @@ const Settings = () => {
     const handleDeleteUser = async (userId, userEmail) => {
         if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
 
-        const toastId = toast.loading("Eliminando usuario...");
+        console.log("=== INICIO ELIMINACIÓN ===");
+        console.log("Intentando eliminar usuario ID:", userId);
 
         try {
-            console.log("Intentando eliminar usuario ID:", userId);
-
             // Eliminar de la tabla users
             const { error, count } = await supabase
                 .from('users')
                 .delete({ count: 'exact' })
                 .eq('id', userId);
 
-            toast.dismiss(toastId);
+            console.log("=== RESPUESTA DE SUPABASE ===");
+            console.log("Error:", error);
+            console.log("Count:", count);
 
             if (error) {
                 console.error("Error Supabase Delete:", error);
                 alert(`ERROR AL ELIMINAR:\nMensaje: ${error.message}\nDetalle: ${error.details || 'N/A'}\nHint: ${error.hint || 'N/A'}`);
                 return;
             }
-
-            console.log("Usuarios eliminados (count):", count);
 
             if (count === 0) {
                 alert("ALERTA: La base de datos respondió 'Éxito' pero no borró ninguna fila.\nPosibles causas:\n1. El usuario ya no existe.\n2. La política RLS (Seguridad) bloqueó la operación silenciosamente.");
@@ -101,10 +100,10 @@ const Settings = () => {
             await fetchUsers();
 
         } catch (error) {
-            toast.dismiss(toastId);
             console.error("Catch Delete Error:", error);
             alert("ERROR CRÍTICO DEL SISTEMA:\n" + (error.message || 'Desconocido'));
         }
+        console.log("=== FIN ELIMINACIÓN ===");
     };
 
     const handleCreateBodega = async (e) => {
@@ -695,20 +694,14 @@ const Settings = () => {
                                                 {u.role !== 'OWNER' && u.email !== 'dueno@bodega.com' && (
                                                     <div className="flex justify-end gap-2">
                                                         <button
-                                                            onClick={() => {
-                                                                alert("TEST: Botón EDITAR funciona. ID: " + u.id);
-                                                                startEditUser(u);
-                                                            }}
+                                                            onClick={() => startEditUser(u)}
                                                             className="p-2 text-slate-400 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded-xl transition-all"
                                                             title="Editar usuario"
                                                         >
                                                             <Edit size={18} />
                                                         </button>
                                                         <button
-                                                            onClick={() => {
-                                                                alert("TEST: Botón ELIMINAR funciona. Intentando borrar a: " + u.email);
-                                                                handleDeleteUser(u.id, u.email);
-                                                            }}
+                                                            onClick={() => handleDeleteUser(u.id, u.email)}
                                                             className="p-2 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all"
                                                             title="Eliminar usuario"
                                                         >
