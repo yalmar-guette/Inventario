@@ -15,7 +15,6 @@ const Login = () => {
 
     useEffect(() => {
         // Diagnóstico: Verificar URL de Supabase cargada
-        console.log("Conectando a:", import.meta.env.VITE_SUPABASE_URL);
 
         const params = new URLSearchParams(window.location.search);
         if (params.get('loggedOut')) {

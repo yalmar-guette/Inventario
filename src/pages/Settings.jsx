@@ -36,7 +36,6 @@ const Settings = () => {
     const toast = useToast();
 
     useEffect(() => {
-        console.log("Settings Component Loaded - Version IconsOnly");
         if (userRole === 'OWNER') {
             fetchBodegas();
             fetchUsers();
@@ -72,7 +71,6 @@ const Settings = () => {
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
-            console.log("Usuarios cargados correctamente:", data?.length || 0);
             setUsersList(data || []);
         } catch (error) {
             console.error("Error fetching users:", error);
@@ -82,21 +80,14 @@ const Settings = () => {
     const handleDeleteUser = async (userId, userEmail) => {
         if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
 
-        console.log("=== INICIO ELIMINACIÓN ===");
-        console.log("Intentando eliminar usuario ID:", userId);
-
         try {
-            // Eliminar de la tabla users
+            // 1. Verificar existencia tabla users
             const { error, count } = await supabase
                 .from('users')
                 .delete({ count: 'exact' })
                 .eq('id', userId);
 
-            console.log("=== RESPUESTA DE SUPABASE ===");
-            console.log("Error:", error);
-            console.log("Count:", count);
-
-            if (error) {
+            if (count === 0) {
                 console.error("Error Supabase Delete:", error);
                 alert(`ERROR AL ELIMINAR:\nMensaje: ${error.message}\nDetalle: ${error.details || 'N/A'}\nHint: ${error.hint || 'N/A'}`);
                 return;
@@ -114,7 +105,6 @@ const Settings = () => {
             console.error("Catch Delete Error:", error);
             alert("ERROR CRÍTICO DEL SISTEMA:\n" + (error.message || 'Desconocido'));
         }
-        console.log("=== FIN ELIMINACIÓN ===");
     };
 
     const handleCreateBodega = async (e) => {
@@ -169,46 +159,43 @@ const Settings = () => {
 
         const bodegaName = bodegas.find(b => b.id === bodegaId)?.name || 'esta bodega';
 
-        // Toast de advertencia con duración larga
-        toast.info(`⚠️ Cambiando a "${bodegaName}"... (Recarga (F5) para cancelar)`, { duration: 2000 });
+        // 1. Feedback inmediato
+        toast.info(`⏳ Cambiando a "${bodegaName}"...`, { duration: 1500 });
 
-        // Dar tiempo para cancelar
-        setTimeout(async () => {
-            try {
-                // 1. Actualizar en la tabla users
-                const { error } = await supabase
-                    .from('users')
-                    .update({ assigned_bodega_id: bodegaId })
-                    .eq('id', currentUser.uid);
+        try {
+            // 2. Ejecutar cambio directamente
+            // Actualizar en tabla users
+            const { error } = await supabase
+                .from('users')
+                .update({ assigned_bodega_id: bodegaId })
+                .eq('id', currentUser.uid);
 
-                if (error) {
-                    console.error("Error updating bodega:", error);
-                    toast.error(`❌ Error: No se pudo cambiar de bodega`);
-                    return;
-                }
-
-                // 2. Actualizar metadata del usuario en auth (CRÍTICO para persistencia)
-                const { error: metadataError } = await supabase.auth.updateUser({
-                    data: {
-                        assigned_bodega_id: bodegaId,
-                        role: currentUser.role,
-                        name: currentUser.name
-                    }
-                });
-
-                if (metadataError) {
-                    console.error("Error updating metadata:", metadataError);
-                }
-
-                // 3. Toast de éxito
-                toast.success(`✓ Ahora estás en: ${bodegaName}`, { duration: 2000 });
-
-                // 4. Recargar
-                setTimeout(() => window.location.reload(), 2000);
-            } catch (error) {
-                toast.error(`❌ Error al cambiar de bodega`);
+            if (error) {
+                console.error("Error updating bodega:", error);
+                toast.error(`❌ Error: No se pudo cambiar de bodega`);
+                return;
             }
-        }, 2000);
+
+            // Actualizar metadata de auth
+            const { error: metadataError } = await supabase.auth.updateUser({
+                data: {
+                    assigned_bodega_id: bodegaId,
+                    role: currentUser.role,
+                    name: currentUser.name
+                }
+            });
+
+            if (metadataError) console.error("Error updating metadata:", metadataError);
+
+            // 3. Feedback de éxito claro
+            toast.success(`✓ Ahora estás en: ${bodegaName}`, { duration: 2000 });
+
+            // 4. Recargar brevemente después
+            setTimeout(() => window.location.reload(), 1000);
+
+        } catch (error) {
+            toast.error(`❌ Error al cambiar de bodega`);
+        }
     };
 
     if (userRole !== 'OWNER') {

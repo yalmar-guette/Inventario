@@ -116,7 +116,6 @@ export function AuthProvider({ children }) {
             });
             setUserRole(metadataRole || "EMPLOYEE");
         } finally {
-            console.log("fetchUserData Finished. User:", authUser.email);
             setLoading(false);
         }
     };

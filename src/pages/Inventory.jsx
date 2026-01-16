@@ -87,19 +87,18 @@ const Inventory = () => {
         const product = products.find(p => p.id === id);
         const productName = product?.name || 'este producto';
 
-        // Toast de advertencia con duración larga
-        toast.info(`⚠️ Eliminando "${productName}"... (Recarga la página (F5) si quieres cancelar)`, { duration: 2000 });
+        // 1. Feedback inmediato
+        toast.info(`⏳ Eliminando "${productName}"...`, { duration: 1500 });
 
-        // Dar tiempo para cancelar
-        setTimeout(async () => {
-            try {
-                await deleteProduct(id);
-                toast.success(`✓ "${productName}" eliminado correctamente`, { duration: 3000 });
-            } catch (error) {
-                console.error('Error al eliminar:', error);
-                toast.error(`❌ Error: No se pudo eliminar "${productName}"`, { duration: 4000 });
-            }
-        }, 2000);
+        try {
+            // 2. Ejecutar eliminación sin delay
+            await deleteProduct(id);
+            // 3. Feedback de éxito claro (lo que pidió el usuario)
+            toast.success(`✓ "${productName}" eliminado correctamente`, { duration: 3000 });
+        } catch (error) {
+            console.error('Error al eliminar:', error);
+            toast.error(`❌ Error: No se pudo eliminar "${productName}"`, { duration: 4000 });
+        }
     };
 
     // const executeDelete = async () => {
