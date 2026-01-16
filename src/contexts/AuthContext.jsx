@@ -43,7 +43,27 @@ export function AuthProvider({ children }) {
 
     const fetchUserData = async (authUser) => {
         try {
-            // Obtener datos adicionales del usuario desde la tabla users
+            // ESTRATEGIA DE VELOCIDAD:
+            // 1. Si tenemos datos en los metadatos (JWT), usarlos DE INMEDIATO.
+            // Esto elimina el tiempo de espera "Iniciando sesión..."
+            const metadata = authUser.user_metadata || {};
+
+            if (metadata.role) {
+                console.log("⚡ Carga rápida usando Metadata");
+                setCurrentUser({
+                    uid: authUser.id,
+                    email: authUser.email,
+                    name: metadata.name,
+                    role: metadata.role,
+                    assigned_bodega_id: metadata.assigned_bodega_id || 'bodega_1',
+                    ...metadata
+                });
+                setUserRole(metadata.role);
+                setLoading(false);
+                return; // ¡Salimos ya! No esperamos a la DB.
+            }
+
+            // 2. Si NO hay metadatos, consultamos la DB (Lento, pero necesario la primera vez)
             // Timeout de seguridad de 5s para evitar bloqueo de login
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Timeout fetching user data')), 5000)
@@ -59,21 +79,21 @@ export function AuthProvider({ children }) {
             const { data: userData, error } = await Promise.race([queryPromise, timeoutPromise]);
 
             if (error) {
-                console.error("Error fetching user data:", error);
-                // Si no existe en la tabla users, usar datos básicos
+                console.warn("Error fetching user details (using metadata fallback):", error.message);
+
+                // FALLBACK ROBUSTO: Usar metadata del usuario (JWT)
+                const metadataRole = authUser.user_metadata?.role;
+                const metadataName = authUser.user_metadata?.name;
+
                 setCurrentUser({
                     uid: authUser.id,
                     email: authUser.email,
+                    name: metadataName,
+                    role: metadataRole || "EMPLOYEE", // Usar rol del metadata o default
                     ...authUser.user_metadata
                 });
 
-                // Fallback de emergencia: Si es el email del dueño, dar permisos de OWNER
-                if (authUser.email === 'dueno@bodega.com') {
-                    setUserRole("OWNER");
-                    console.warn("Forcing OWNER role for dueno@bodega.com (Database Error Fallback)");
-                } else {
-                    setUserRole("EMPLOYEE"); // Rol por defecto
-                }
+                setUserRole(metadataRole || "EMPLOYEE");
             } else {
                 // Combinar datos de auth con datos de la tabla users
                 setCurrentUser({
@@ -86,17 +106,18 @@ export function AuthProvider({ children }) {
                 setUserRole(userData.role);
             }
         } catch (error) {
-            console.error("Error in fetchUserData:", error);
+            console.error("Error/Timeout in fetchUserData:", error);
+
+            // FALLBACK EN CATCH
+            const metadataRole = authUser.user_metadata?.role;
+
             setCurrentUser({
                 uid: authUser.id,
-                email: authUser.email
+                email: authUser.email,
+                role: metadataRole || "EMPLOYEE",
+                ...authUser.user_metadata
             });
-            // Fallback en Catch
-            if (authUser.email === 'dueno@bodega.com') {
-                setUserRole("OWNER");
-            } else {
-                setUserRole("EMPLOYEE");
-            }
+            setUserRole(metadataRole || "EMPLOYEE");
         } finally {
             console.log("fetchUserData Finished. User:", authUser.email);
             setLoading(false);
