@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users, Database } from 'lucide-react';
+import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users, Database, Edit } from 'lucide-react';
 import { supabase } from '../supabase';
 
 const Settings = () => {
@@ -10,6 +10,7 @@ const Settings = () => {
     const { rate, updateRate, loading: configLoading } = useSystemConfig();
     const [newRate, setNewRate] = useState('');
     const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: '' });
+    const [editingUser, setEditingUser] = useState(null);
     const [creatingUser, setCreatingUser] = useState(false);
 
     // Bodegas state
@@ -24,6 +25,7 @@ const Settings = () => {
     const toast = useToast();
 
     useEffect(() => {
+        console.log("Settings Component Loaded - Version HighContrast/Fixed");
         if (userRole === 'OWNER') {
             fetchBodegas();
             fetchUsers();
@@ -68,21 +70,33 @@ const Settings = () => {
     const handleDeleteUser = async (userId, userEmail) => {
         if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
         try {
+            console.log("Intentando eliminar usuario:", userId);
             // Eliminar de la tabla users
-            const { error } = await supabase
+            // Usamos count: 'exact' para saber cuántas filas se borraron
+            const { error, count } = await supabase
                 .from('users')
-                .delete()
+                .delete({ count: 'exact' })
                 .eq('id', userId);
 
-            if (error) throw error;
+            if (error) {
+                console.error("Error Supabase Delete:", error);
+                throw error;
+            }
+
+            console.log("Usuarios eliminados:", count);
+
+            if (count === 0) {
+                toast.error('No se pudo eliminar. El usuario no existe o no tienes permisos.');
+                return;
+            }
 
             // También eliminar de auth (requiere admin API - esto fallará con anon key)
             // Por ahora solo eliminamos de la tabla users
             toast.success('Usuario eliminado correctamente.');
-            fetchUsers();
+            await fetchUsers();
         } catch (error) {
-            console.error(error);
-            toast.error('Error al eliminar usuario');
+            console.error("Catch Delete Error:", error);
+            toast.error('Error al eliminar usuario: ' + (error.message || 'Desconocido'));
         }
     };
 
@@ -167,37 +181,81 @@ const Settings = () => {
         }
     };
 
-    const handleCreateUser = async (e) => {
+    // Helper robusto para generar UUIDs (funciona en http/https y navegadores viejos)
+    const generateUUID = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+
+    const handleSaveUser = async (e) => {
         e.preventDefault();
         setCreatingUser(true);
         try {
-            // Crear usuario en Supabase Auth (El trigger creará el perfil en public.users automáticamente)
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: newUser.email,
-                password: newUser.password,
-                options: {
-                    data: {
+            if (editingUser) {
+                // Update Logic
+                const { error } = await supabase
+                    .from('users')
+                    .update({
+                        name: newUser.name,
+                        email: newUser.email,
+                        role: newUser.role,
+                        assigned_bodega_id: newUser.bodega_id
+                    })
+                    .eq('id', editingUser.id);
+
+                if (error) throw error;
+                toast.success('Usuario actualizado correctamente');
+            } else {
+                // Create Logic
+                const newUserId = generateUUID();
+                const { error: insertError } = await supabase
+                    .from('users')
+                    .insert([{
+                        id: newUserId,
+                        email: newUser.email,
                         name: newUser.name,
                         role: newUser.role,
                         assigned_bodega_id: newUser.bodega_id
-                    }
-                }
-            });
+                    }]);
 
-            if (authError) throw authError;
+                if (insertError) throw insertError;
+                toast.success(`Usuario ${newUser.email} creado correctamente (Modo Manual)`);
+            }
 
-            toast.success(`Usuario ${newUser.email} creado correctamente`);
             setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: bodegas[0]?.id || '' });
-
-            // Refrescar inmediatamente
+            setEditingUser(null);
             await fetchUsers();
 
         } catch (error) {
             console.error(error);
-            toast.error("Error al crear usuario: " + error.message);
+            toast.error("Error al guardar usuario: " + error.message);
         } finally {
             setCreatingUser(false);
         }
+    };
+
+    const startEditUser = (user) => {
+        setEditingUser(user);
+        setNewUser({
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            bodega_id: user.assigned_bodega_id || '',
+            password: '' // Password irrelevant for manual/update
+        });
+        // Scroll to form
+        window.scrollTo({ top: 300, behavior: 'smooth' });
+    };
+
+    const cancelEdit = () => {
+        setEditingUser(null);
+        setNewUser({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: bodegas[0]?.id || '' });
     };
 
     const handleUpdateUserRole = async (userId, newRole) => {
@@ -369,7 +427,7 @@ const Settings = () => {
                                             {bodega.id !== 'main' && bodega.id !== 'bodega_1' && (
                                                 <button
                                                     onClick={() => handleDeleteBodega(bodega.id, bodega.name)}
-                                                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all md:opacity-0 md:group-hover:opacity-100"
+                                                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all"
                                                     title="Eliminar bodega"
                                                 >
                                                     <Trash2 size={18} />
@@ -473,12 +531,12 @@ const Settings = () => {
                                 <UserPlus size={24} />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Registrar Empleado</h2>
-                                <p className="text-slate-500 dark:text-slate-500 text-sm">Crear acceso para cajeros</p>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{editingUser ? 'Editar Empleado' : 'Registrar Empleado'}</h2>
+                                <p className="text-slate-500 dark:text-slate-500 text-sm">{editingUser ? 'Modificar datos de acceso' : 'Crear acceso para cajeros'}</p>
                             </div>
                         </div>
 
-                        <form onSubmit={handleCreateUser} className="space-y-5">
+                        <form onSubmit={handleSaveUser} className="space-y-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Nombre</label>
@@ -546,10 +604,17 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={creatingUser} className="w-full py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-all flex items-center gap-3 justify-center disabled:opacity-50 shadow-sm mt-2">
-                                {creatingUser ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />}
-                                Registrar Empleado
-                            </button>
+                            <div className="flex gap-3">
+                                <button type="submit" disabled={creatingUser} className="flex-1 py-4 bg-primary-600 dark:bg-primary-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-700 dark:hover:bg-primary-600 active:scale-[0.98] transition-all flex items-center gap-3 justify-center disabled:opacity-50 shadow-lg shadow-primary-200 dark:shadow-none mt-2">
+                                    {creatingUser ? <Loader2 className="animate-spin" size={18} /> : (editingUser ? <RefreshCw size={18} /> : <UserPlus size={18} />)}
+                                    {editingUser ? 'Guardar Cambios' : 'Registrar Empleado'}
+                                </button>
+                                {editingUser && (
+                                    <button type="button" onClick={cancelEdit} className="px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all mt-2">
+                                        Cancelar
+                                    </button>
+                                )}
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -621,13 +686,24 @@ const Settings = () => {
                                             </td>
                                             <td className="px-8 py-6 text-right">
                                                 {u.role !== 'OWNER' && u.email !== 'dueno@bodega.com' && (
-                                                    <button
-                                                        onClick={() => handleDeleteUser(u.id, u.email)}
-                                                        className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all md:opacity-0 md:group-hover:opacity-100"
-                                                        title="Eliminar usuario"
-                                                    >
-                                                        <Trash2 size={20} />
-                                                    </button>
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => startEditUser(u)}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-lg font-bold text-xs uppercase transition-all shadow-sm"
+                                                            title="Editar usuario"
+                                                        >
+                                                            <Edit size={16} />
+                                                            Editar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteUser(u.id, u.email)}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 rounded-lg font-bold text-xs uppercase transition-all shadow-sm"
+                                                            title="Eliminar usuario"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                            Eliminar
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
@@ -681,7 +757,7 @@ const Settings = () => {
                                             {b.id !== 'main' && b.id !== 'bodega_1' && (
                                                 <button
                                                     onClick={() => handleDeleteBodega(b.id, b.name)}
-                                                    className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all md:opacity-0 md:group-hover:opacity-100"
+                                                    className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all"
                                                     title="Eliminar bodega"
                                                 >
                                                     <Trash2 size={20} />

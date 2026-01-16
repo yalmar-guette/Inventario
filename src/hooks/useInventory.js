@@ -74,6 +74,10 @@ export function useInventory(bodegaId) {
                 .select();
 
             if (insertError) throw insertError;
+
+            // Refrescar lista manualmente por si falla Realtime
+            await fetchProducts();
+
             return data;
         } catch (err) {
             console.error("Error adding product:", err);
