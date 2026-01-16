@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users } from 'lucide-react';
+import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users, Database } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
@@ -195,6 +195,25 @@ const Settings = () => {
         }
     };
 
+    const handleClearCache = () => {
+        if (window.confirm('¿Estás seguro de limpiar el caché? Esto recargará la página y puede ayudar a resolver problemas de datos desactualizados.')) {
+            // Limpiar localStorage (excepto el tema)
+            const theme = localStorage.getItem('theme');
+            localStorage.clear();
+            if (theme) localStorage.setItem('theme', theme);
+
+            // Limpiar sessionStorage
+            sessionStorage.clear();
+
+            toast.success('Caché limpiado. Recargando...');
+
+            // Recargar después de 1 segundo
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors duration-300 overflow-y-auto">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -372,6 +391,42 @@ const Settings = () => {
                                 Actualizar BS/$
                             </button>
                         </form>
+                    </div>
+
+                    {/* System Maintenance Section */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 transition-colors">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-orange-50 dark:bg-orange-950/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-900/40">
+                                <Database size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Mantenimiento</h2>
+                                <p className="text-slate-500 dark:text-slate-500 text-sm">Optimización del sistema</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="p-5 bg-orange-50/50 dark:bg-orange-950/10 rounded-2xl border border-orange-100 dark:border-orange-900/30 transition-colors">
+                                <h3 className="text-sm font-bold text-orange-900 dark:text-orange-300 mb-2">Limpiar Caché del Navegador</h3>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+                                    Si experimentas datos desactualizados o problemas de rendimiento, limpiar el caché puede ayudar.
+                                    Esta acción eliminará los datos temporales almacenados localmente y recargará la aplicación.
+                                </p>
+                                <button
+                                    onClick={handleClearCache}
+                                    className="w-full py-3 bg-orange-600 dark:bg-orange-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-orange-700 dark:hover:bg-orange-600 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-orange-200 dark:shadow-none"
+                                >
+                                    <RefreshCw size={18} />
+                                    Limpiar Caché
+                                </button>
+                            </div>
+
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-widest">
+                                    💡 Nota: Tu preferencia de tema (claro/oscuro) se mantendrá después de limpiar el caché.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* User Mgmt Section */}
