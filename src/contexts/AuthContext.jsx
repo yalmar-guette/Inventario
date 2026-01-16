@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { supabase } from "../supabase";
 
 const AuthContext = createContext();
 
@@ -15,41 +13,82 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Obtener detalles adicionales del usuario (rol) desde Firestore
-                const userDocRef = doc(db, "users", user.uid);
-                try {
-                    const userDoc = await getDoc(userDocRef);
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        setCurrentUser({ ...user, ...userData });
-                        setUserRole(userData.role);
-                    } else {
-                        // Respaldo si no existe documento en Firestore todavía
-                        setCurrentUser(user);
-                        setUserRole("EMPLOYEE"); // Seguridad por defecto
-                    }
-                } catch (error) {
-                    console.error("Error fetching user role:", error);
-                    setCurrentUser(user);
-                }
+        // Obtener sesión actual al cargar
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                fetchUserData(session.user);
+            } else {
+                setLoading(false);
+            }
+        });
+
+        // Escuchar cambios de autenticación
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session?.user) {
+                await fetchUserData(session.user);
             } else {
                 setCurrentUser(null);
                 setUserRole(null);
+                setLoading(false);
             }
-            setLoading(false);
         });
 
-        return unsubscribe;
+        return () => subscription.unsubscribe();
     }, []);
 
-    const login = (email, password) => {
-        return signInWithEmailAndPassword(auth, email, password);
+    const fetchUserData = async (authUser) => {
+        try {
+            // Obtener datos adicionales del usuario desde la tabla users
+            const { data: userData, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', authUser.id)
+                .single();
+
+            if (error) {
+                console.error("Error fetching user data:", error);
+                // Si no existe en la tabla users, usar datos básicos
+                setCurrentUser({
+                    uid: authUser.id,
+                    email: authUser.email,
+                    ...authUser.user_metadata
+                });
+                setUserRole("EMPLOYEE"); // Rol por defecto
+            } else {
+                // Combinar datos de auth con datos de la tabla users
+                setCurrentUser({
+                    uid: userData.id,
+                    email: userData.email,
+                    name: userData.name,
+                    role: userData.role,
+                    assigned_bodega_id: userData.assigned_bodega_id
+                });
+                setUserRole(userData.role);
+            }
+        } catch (error) {
+            console.error("Error in fetchUserData:", error);
+            setCurrentUser({
+                uid: authUser.id,
+                email: authUser.email
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const logout = () => {
-        return signOut(auth);
+    const login = async (email, password) => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) throw error;
+        return data;
+    };
+
+    const logout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
     };
 
     const value = {

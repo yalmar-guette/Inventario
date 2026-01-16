@@ -210,7 +210,7 @@ const Inventory = () => {
                                                 </td>
                                                 {userRole === 'OWNER' && (
                                                     <td className="px-6 py-4 text-right">
-                                                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-1 group-hover:translate-x-0">
+                                                        <div className="flex justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 transition-all transform md:translate-x-1 md:group-hover:translate-x-0">
                                                             <button
                                                                 onClick={() => openEdit(product)}
                                                                 className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"

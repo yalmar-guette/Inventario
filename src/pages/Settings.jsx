@@ -332,7 +332,7 @@ const Settings = () => {
                                             {bodega.id !== 'main' && bodega.id !== 'bodega_1' && (
                                                 <button
                                                     onClick={() => handleDeleteBodega(bodega.id, bodega.name)}
-                                                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all md:opacity-0 md:group-hover:opacity-100"
                                                     title="Eliminar bodega"
                                                 >
                                                     <Trash2 size={18} />
@@ -585,7 +585,7 @@ const Settings = () => {
                                                 {u.role !== 'OWNER' && u.email !== 'dueno@bodega.com' && (
                                                     <button
                                                         onClick={() => handleDeleteUser(u.id, u.email)}
-                                                        className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                        className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all md:opacity-0 md:group-hover:opacity-100"
                                                         title="Eliminar usuario"
                                                     >
                                                         <Trash2 size={20} />
@@ -643,7 +643,7 @@ const Settings = () => {
                                             {b.id !== 'main' && b.id !== 'bodega_1' && (
                                                 <button
                                                     onClick={() => handleDeleteBodega(b.id, b.name)}
-                                                    className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all md:opacity-0 md:group-hover:opacity-100"
                                                     title="Eliminar bodega"
                                                 >
                                                     <Trash2 size={20} />
