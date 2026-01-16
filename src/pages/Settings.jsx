@@ -168,8 +168,21 @@ const Settings = () => {
 
             if (error) {
                 console.error("Error updating bodega:", error);
-                alert(`❌ Error al cambiar de bodega:\n${error.message || 'Error desconocido'}`);
+                toast.error(`Error al cambiar de bodega: ${error.message || 'Error desconocido'}`);
                 return;
+            }
+
+            // 2. Actualizar metadata del usuario en auth (CRÍTICO para persistencia)
+            const { error: metadataError } = await supabase.auth.updateUser({
+                data: {
+                    assigned_bodega_id: bodegaId,
+                    role: currentUser.role,
+                    name: currentUser.name
+                }
+            });
+
+            if (metadataError) {
+                console.error("Error updating metadata:", metadataError);
             }
 
             // Mostrar mensaje de éxito antes de recargar
@@ -178,8 +191,7 @@ const Settings = () => {
             // Force reload to update context and views
             setTimeout(() => window.location.reload(), 500);
         } catch (error) {
-            console.error("Error updating bodega:", error);
-            alert(`❌ Error al cambiar de bodega:\n${error.message || 'Error desconocido'}`);
+            toast.error(`Error al cambiar de bodega: ${error.message || 'Error desconocido'}`);
         }
     };
 
