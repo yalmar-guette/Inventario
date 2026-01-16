@@ -1,4 +1,7 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
@@ -21,14 +24,16 @@
     font-family: var(--font-sans);
     @apply antialiased transition-colors duration-300;
   }
-  
+
   /* Ajuste de scrollbar para modo oscuro */
   .dark ::-webkit-scrollbar {
     width: 8px;
   }
+
   .dark ::-webkit-scrollbar-track {
     @apply bg-slate-950;
   }
+
   .dark ::-webkit-scrollbar-thumb {
     @apply bg-slate-800 rounded-full hover:bg-slate-700;
   }
