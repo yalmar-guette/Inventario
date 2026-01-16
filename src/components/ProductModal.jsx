@@ -9,7 +9,7 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
         price_usd: '',
         cost_usd: '',
         barcode: '',
-        stock: 0
+        stock: ''
     });
 
     useEffect(() => {
@@ -24,7 +24,7 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
                 stock: currentStock
             });
         } else {
-            setFormData({ name: '', price_usd: '', cost_usd: '', barcode: '', stock: 0 });
+            setFormData({ name: '', price_usd: '', cost_usd: '', barcode: '', stock: '' });
         }
     }, [productToEdit, isOpen, currentUser]);
 
