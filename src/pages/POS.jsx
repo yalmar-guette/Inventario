@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid, Store, List } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid, Store, List, ChevronRight, Package } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
 import AuthorizationModal from '../components/AuthorizationModal';
 import { db } from '../firebase';
@@ -233,7 +233,7 @@ const POS = () => {
     const [viewMode, setViewMode] = useState('compact'); // por defecto, compacto
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
+        <div className="flex flex-col md:flex-row h-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
@@ -329,8 +329,8 @@ const POS = () => {
                                         whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
                                         onClick={() => !isOutOfStock && addToCart({ ...product, price_usd: parseFloat(product.price_usd) })}
                                         className={`relative group bg-white dark:bg-slate-900 rounded-2xl border ${isOutOfStock
-                                                ? 'border-red-100 dark:border-red-900/40 bg-red-50/10'
-                                                : 'border-slate-200 dark:border-slate-800 hover:border-primary-500 dark:hover:border-primary-400 shadow-sm'
+                                            ? 'border-red-100 dark:border-red-900/40 bg-red-50/10'
+                                            : 'border-slate-200 dark:border-slate-800 hover:border-primary-500 dark:hover:border-primary-400 shadow-sm'
                                             } p-3 transition-all cursor-pointer overflow-hidden ${viewMode === 'compact' ? 'flex flex-col' : ''}`}
                                     >
                                         <div className="flex flex-col h-full">
