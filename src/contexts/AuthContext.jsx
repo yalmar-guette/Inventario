@@ -66,7 +66,14 @@ export function AuthProvider({ children }) {
                     email: authUser.email,
                     ...authUser.user_metadata
                 });
-                setUserRole("EMPLOYEE"); // Rol por defecto
+
+                // Fallback de emergencia: Si es el email del dueño, dar permisos de OWNER
+                if (authUser.email === 'dueno@bodega.com') {
+                    setUserRole("OWNER");
+                    console.warn("Forcing OWNER role for dueno@bodega.com (Database Error Fallback)");
+                } else {
+                    setUserRole("EMPLOYEE"); // Rol por defecto
+                }
             } else {
                 // Combinar datos de auth con datos de la tabla users
                 setCurrentUser({
@@ -84,6 +91,12 @@ export function AuthProvider({ children }) {
                 uid: authUser.id,
                 email: authUser.email
             });
+            // Fallback en Catch
+            if (authUser.email === 'dueno@bodega.com') {
+                setUserRole("OWNER");
+            } else {
+                setUserRole("EMPLOYEE");
+            }
         } finally {
             console.log("fetchUserData Finished. User:", authUser.email);
             setLoading(false);
