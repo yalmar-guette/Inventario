@@ -216,7 +216,7 @@ const Debtors = () => {
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Método de Recibo</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {['EFECTIVO', 'PAGO MOVIL', 'ZELLE', 'TRANSFERENCIA'].map(method => (
+                                        {['EFECTIVO', 'PAGO MOVIL', 'USD', 'TRANSFERENCIA'].map(method => (
                                             <button
                                                 key={method}
                                                 type="button"

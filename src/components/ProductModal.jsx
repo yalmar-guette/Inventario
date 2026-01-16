@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, Package } from 'lucide-react';
+import { X, Save, AlertCircle, Package, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
@@ -97,7 +97,7 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
                         </div>
                     </div>
 
-                    <div className="bg-primary-50 dark:bg-primary-950/20 p-5 rounded-[2rem] border border-primary-100 dark:border-primary-900/40 relative overflow-hidden transition-colors">
+                    <div className="bg-primary-50/50 dark:bg-slate-800/60 p-5 rounded-[2rem] border border-primary-100 dark:border-slate-700 relative overflow-hidden transition-colors">
                         <div className="flex items-center gap-3 mb-4 relative z-10">
                             <div className="p-2 bg-primary-100 dark:bg-primary-900/40 rounded-xl text-primary-600 dark:text-primary-400">
                                 <Package size={20} />
@@ -109,7 +109,7 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
                         <input
                             type="number"
                             min="0"
-                            className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-primary-200 dark:border-primary-800/50 rounded-2xl focus:outline-none focus:border-primary-500 dark:focus:border-primary-400 text-slate-900 dark:text-white font-black text-xl transition-all relative z-10 shadow-sm"
+                            className="w-full px-5 py-3.5 bg-white dark:bg-slate-900 border-2 border-primary-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:border-primary-500 dark:focus:border-primary-400 text-slate-900 dark:text-white font-black text-xl transition-all relative z-10 shadow-sm"
                             value={formData.stock}
                             onChange={e => setFormData({ ...formData, stock: e.target.value })}
                             placeholder="0"

@@ -196,8 +196,8 @@ const Settings = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors duration-300">
-            <div className="max-w-[1600px] mx-auto space-y-8">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors duration-300 overflow-y-auto">
+            <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header - Centered */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Configuración</h1>
@@ -527,7 +527,7 @@ const Settings = () => {
                                                 {assignedBodega && <div className="text-[10px] text-slate-400 dark:text-slate-600 mt-1 uppercase tracking-widest font-medium">{assignedBodega.location}</div>}
                                             </td>
                                             <td className="px-8 py-6 text-right">
-                                                {u.role !== 'OWNER' && (
+                                                {u.role !== 'OWNER' && u.email !== 'dueno@bodega.com' && (
                                                     <button
                                                         onClick={() => handleDeleteUser(u.id, u.email)}
                                                         className="p-3 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"

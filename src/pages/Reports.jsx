@@ -154,8 +154,8 @@ const Reports = () => {
         doc.text(`~ ${sales.reduce((a, b) => a + b.totalBs, 0).toFixed(2)} Bs`, 60, 64);
 
         const headRow = userRole === 'OWNER'
-            ? [['Hora', 'Usuario', 'Items', 'Total USD', 'Total Bs', 'Pago', ...(selectedBodega === 'all' ? ['Bodega'] : [])]]
-            : [['Hora', 'Items', 'Total USD', 'Total Bs', 'Pago']];
+            ? [['Hora', 'Usuario', 'Productos', 'Total USD', 'Total Bs', 'Pago', ...(selectedBodega === 'all' ? ['Bodega'] : [])]]
+            : [['Hora', 'Productos', 'Total USD', 'Total Bs', 'Pago']];
 
         const tableData = sales.map(s => {
             const payments = s.payments || [];
@@ -306,7 +306,7 @@ const Reports = () => {
     const exportExcel = () => {
         let header = "Fecha/Hora,";
         if (userRole === 'OWNER') header += "Usuario,";
-        header += "ID Venta,Items,Total USD,Total Bs,Metodo de Pago";
+        header += "ID Venta,Productos,Total USD,Total Bs,Metodo de Pago";
         if (selectedBodega === 'all') header += ",Bodega";
         header += "\n";
 
@@ -427,7 +427,7 @@ const Reports = () => {
                                     {userRole === 'OWNER' && (
                                         <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Cajero</th>
                                     )}
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Resumen Items</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Productos</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Total USD</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Total Bs</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Método</th>
