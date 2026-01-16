@@ -25,7 +25,7 @@ const Settings = () => {
     const toast = useToast();
 
     useEffect(() => {
-        console.log("Settings Component Loaded - Version HighContrast/Fixed");
+        console.log("Settings Component Loaded - Version IconsOnly");
         if (userRole === 'OWNER') {
             fetchBodegas();
             fetchUsers();
@@ -61,6 +61,7 @@ const Settings = () => {
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
+            console.log("Usuarios cargados correctamente:", data?.length || 0);
             setUsersList(data || []);
         } catch (error) {
             console.error("Error fetching users:", error);
@@ -69,34 +70,40 @@ const Settings = () => {
 
     const handleDeleteUser = async (userId, userEmail) => {
         if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
+
+        const toastId = toast.loading("Eliminando usuario...");
+
         try {
-            console.log("Intentando eliminar usuario:", userId);
+            console.log("Intentando eliminar usuario ID:", userId);
+
             // Eliminar de la tabla users
-            // Usamos count: 'exact' para saber cuántas filas se borraron
             const { error, count } = await supabase
                 .from('users')
                 .delete({ count: 'exact' })
                 .eq('id', userId);
 
+            toast.dismiss(toastId);
+
             if (error) {
                 console.error("Error Supabase Delete:", error);
-                throw error;
-            }
-
-            console.log("Usuarios eliminados:", count);
-
-            if (count === 0) {
-                toast.error('No se pudo eliminar. El usuario no existe o no tienes permisos.');
+                alert(`ERROR AL ELIMINAR:\nMensaje: ${error.message}\nDetalle: ${error.details || 'N/A'}\nHint: ${error.hint || 'N/A'}`);
                 return;
             }
 
-            // También eliminar de auth (requiere admin API - esto fallará con anon key)
-            // Por ahora solo eliminamos de la tabla users
-            toast.success('Usuario eliminado correctamente.');
+            console.log("Usuarios eliminados (count):", count);
+
+            if (count === 0) {
+                alert("ALERTA: La base de datos respondió 'Éxito' pero no borró ninguna fila.\nPosibles causas:\n1. El usuario ya no existe.\n2. La política RLS (Seguridad) bloqueó la operación silenciosamente.");
+                return;
+            }
+
+            alert(`✅ ÉXITO: Usuario ${userEmail} eliminado correctamente.`);
             await fetchUsers();
+
         } catch (error) {
+            toast.dismiss(toastId);
             console.error("Catch Delete Error:", error);
-            toast.error('Error al eliminar usuario: ' + (error.message || 'Desconocido'));
+            alert("ERROR CRÍTICO DEL SISTEMA:\n" + (error.message || 'Desconocido'));
         }
     };
 
@@ -688,20 +695,24 @@ const Settings = () => {
                                                 {u.role !== 'OWNER' && u.email !== 'dueno@bodega.com' && (
                                                     <div className="flex justify-end gap-2">
                                                         <button
-                                                            onClick={() => startEditUser(u)}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-lg font-bold text-xs uppercase transition-all shadow-sm"
+                                                            onClick={() => {
+                                                                alert("TEST: Botón EDITAR funciona. ID: " + u.id);
+                                                                startEditUser(u);
+                                                            }}
+                                                            className="p-2 text-slate-400 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded-xl transition-all"
                                                             title="Editar usuario"
                                                         >
-                                                            <Edit size={16} />
-                                                            Editar
+                                                            <Edit size={18} />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDeleteUser(u.id, u.email)}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 rounded-lg font-bold text-xs uppercase transition-all shadow-sm"
+                                                            onClick={() => {
+                                                                alert("TEST: Botón ELIMINAR funciona. Intentando borrar a: " + u.email);
+                                                                handleDeleteUser(u.id, u.email);
+                                                            }}
+                                                            className="p-2 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all"
                                                             title="Eliminar usuario"
                                                         >
-                                                            <Trash2 size={16} />
-                                                            Eliminar
+                                                            <Trash2 size={18} />
                                                         </button>
                                                     </div>
                                                 )}
@@ -776,3 +787,4 @@ const Settings = () => {
 };
 
 export default Settings;
+
