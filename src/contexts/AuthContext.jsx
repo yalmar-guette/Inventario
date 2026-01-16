@@ -22,6 +22,9 @@ export function AuthProvider({ children }) {
             } else {
                 setLoading(false);
             }
+        }).catch((error) => {
+            console.error("Error checking session:", error);
+            setLoading(false);
         });
 
         // Escuchar cambios de autenticación
