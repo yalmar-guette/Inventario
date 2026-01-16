@@ -130,8 +130,8 @@ const Dashboard = () => {
                 {/* Encabezado */}
                 <motion.div variants={itemVariants} className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Dashboard</h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-1 text-xs font-semibold uppercase tracking-widest">Resumen de operaciones</p>
+                        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Dashboard</h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1 text-xs font-medium uppercase tracking-widest">Resumen de operaciones</p>
                     </div>
                     <div className="flex items-center gap-3 px-5 py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                         <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-xl text-primary-600 dark:text-primary-400">
@@ -158,8 +158,8 @@ const Dashboard = () => {
                         </div>
                         <h3 className="text-slate-400 dark:text-slate-500 text-[10px] font-bold mb-1 uppercase tracking-[0.2em] relative z-10">Ventas Hoy (USD)</h3>
                         <div className="flex items-baseline gap-1 relative z-10">
-                            <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tighter">${stats.todaySalesUSD.toLocaleString()}</span>
-                            <span className="text-slate-400 dark:text-slate-600 text-sm font-bold ml-1">USD</span>
+                            <span className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter">${stats.todaySalesUSD.toLocaleString()}</span>
+                            <span className="text-slate-400 dark:text-slate-600 text-sm font-medium ml-1">USD</span>
                         </div>
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-blue-400/5 -mr-8 -mt-8 rounded-full blur-3xl transition-colors" />
                     </motion.div>
@@ -173,8 +173,8 @@ const Dashboard = () => {
                         </div>
                         <h3 className="text-slate-400 dark:text-slate-500 text-[10px] font-bold mb-1 uppercase tracking-[0.2em] relative z-10">Equivalente (BS)</h3>
                         <div className="flex items-baseline gap-2 relative z-10">
-                            <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tighter">{stats.todaySalesBs.toLocaleString()}</span>
-                            <span className="text-amber-600 dark:text-amber-500 font-bold text-sm uppercase">Bs</span>
+                            <span className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter">{stats.todaySalesBs.toLocaleString()}</span>
+                            <span className="text-amber-600 dark:text-amber-500 font-medium text-sm uppercase">Bs</span>
                         </div>
                         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 dark:bg-amber-400/5 -mr-8 -mt-8 rounded-full blur-3xl transition-colors" />
                     </motion.div>
@@ -188,7 +188,7 @@ const Dashboard = () => {
                         </div>
                         <h3 className="text-slate-400 dark:text-slate-500 text-[10px] font-bold mb-1 uppercase tracking-[0.2em] relative z-10">Deudores Activos</h3>
                         <div className="flex items-center gap-3 relative z-10">
-                            <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tighter">{stats.debtorsCount}</span>
+                            <span className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter">{stats.debtorsCount}</span>
                             <span className="px-3 py-1 bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-[10px] font-bold rounded-lg uppercase tracking-widest transition-colors shadow-sm">Alerta</span>
                         </div>
                         <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 dark:bg-rose-400/5 -mr-8 -mt-8 rounded-full blur-3xl transition-colors" />
@@ -219,8 +219,8 @@ const Dashboard = () => {
                     <div className="px-10 py-8 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/20 transition-colors">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Alertas de Cobranza</h2>
-                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Gestión de créditos pendientes</p>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Alertas de Cobranza</h2>
+                                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Gestión de créditos pendientes</p>
                             </div>
                             <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all group overflow-hidden">
                                 <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:rotate-12 transition-transform" />
