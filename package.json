@@ -1,7 +1,8 @@
 {
-  "name": "client",
+  "name": "inventario-pos",
+  "description": "Sistema de Gestión de Inventario POS con Supabase",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

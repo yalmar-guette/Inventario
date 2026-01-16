@@ -58,6 +58,23 @@ export function useInventory(bodegaId) {
         try {
             const { initialStock, ...restData } = productData;
 
+            // VALIDACIÓN: Verificar que no exista un producto con el mismo nombre
+            const productName = restData.name?.trim();
+            if (!productName) {
+                throw new Error('El nombre del producto es requerido');
+            }
+
+            const { data: existingProducts, error: checkError } = await supabase
+                .from('products')
+                .select('id, name')
+                .ilike('name', productName); // Case-insensitive match
+
+            if (checkError) throw checkError;
+
+            if (existingProducts && existingProducts.length > 0) {
+                throw new Error(`Ya existe un producto con el nombre "${productName}". Por favor usa un nombre diferente.`);
+            }
+
             // Inicializar mapa de stock con la bodega actual
             const stockMap = {};
             if (bodegaId && initialStock) {
@@ -68,6 +85,7 @@ export function useInventory(bodegaId) {
                 .from('products')
                 .insert([{
                     ...restData,
+                    name: productName, // Usar nombre limpio (trimmed)
                     stock: stockMap,
                     sales_count: 0
                 }])
@@ -88,6 +106,25 @@ export function useInventory(bodegaId) {
     const updateProduct = async (id, data) => {
         try {
             const { initialStock, ...restData } = data;
+
+            // VALIDACIÓN: Verificar que no exista otro producto con el mismo nombre
+            if (restData.name) {
+                const productName = restData.name.trim();
+
+                const { data: existingProducts, error: checkError } = await supabase
+                    .from('products')
+                    .select('id, name')
+                    .ilike('name', productName)
+                    .neq('id', id); // Excluir el producto actual
+
+                if (checkError) throw checkError;
+
+                if (existingProducts && existingProducts.length > 0) {
+                    throw new Error(`Ya existe otro producto con el nombre "${productName}". Por favor usa un nombre diferente.`);
+                }
+
+                restData.name = productName; // Usar nombre limpio (trimmed)
+            }
 
             // Preparar datos de actualización
             const updateData = { ...restData };

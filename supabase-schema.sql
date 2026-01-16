@@ -1,6 +1,6 @@
 -- ============================================
 -- SCHEMA DE BASE DE DATOS PARA SUPABASE
--- Sistema de Inventario Xioale
+-- Sistema de Gestión de Inventario POS
 -- ============================================
 
 -- Habilitar extensiones necesarias

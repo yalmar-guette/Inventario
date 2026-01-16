@@ -1,10 +1,10 @@
-# 🏪 Sistema de Inventario POS
+# 🏪 Sistema de Gestión de Inventario POS
 
-Sistema de gestión de inventario moderno y completo para bodegas y puntos de venta, construido con React, Firebase y Tailwind CSS.
+Sistema moderno de gestión de inventario y punto de venta para bodegas y comercios, construido con React, Supabase y Tailwind CSS.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react)
-![Firebase](https://img.shields.io/badge/Firebase-12.7.0-FFCA28?logo=firebase)
+![Supabase](https://img.shields.io/badge/Supabase-2.90.1-3ECF8E?logo=supabase)
 ![Tailwind](https://img.shields.io/badge/Tailwind-4.1.18-38B2AC?logo=tailwind-css)
 
 ## ✨ Características Principales
@@ -21,6 +21,7 @@ Sistema de gestión de inventario moderno y completo para bodegas y puntos de ve
 - Búsqueda y filtrado avanzado
 - Códigos de barras
 - Alertas de stock bajo
+- **Validación de productos únicos** (sin duplicados por nombre)
 
 ### 💰 Punto de Venta (POS)
 - Interfaz rápida y eficiente
@@ -37,11 +38,11 @@ Sistema de gestión de inventario moderno y completo para bodegas y puntos de ve
 - Dashboard con KPIs
 
 ### 👥 Gestión de Usuarios
-- Roles: Administrador y Empleado
-- Permisos granulares
-- Asignación de bodegas
+- Roles: Administrador (OWNER) y Empleado (EMPLOYEE)
+- Permisos granulares con Row Level Security
+- Asignación de bodegas por usuario
 - Protección del admin principal
-- Autenticación segura con Firebase
+- Autenticación segura con Supabase
 
 ### 💳 Gestión de Deudores
 - Registro de créditos
@@ -54,8 +55,8 @@ Sistema de gestión de inventario moderno y completo para bodegas y puntos de ve
 - **Frontend**: React 19.2 + Vite
 - **Estilos**: Tailwind CSS 4.1 (CSS-first)
 - **Animaciones**: Framer Motion
-- **Base de Datos**: Firebase Firestore
-- **Autenticación**: Firebase Auth
+- **Base de Datos**: Supabase (PostgreSQL)
+- **Autenticación**: Supabase Auth
 - **Iconos**: Lucide React
 - **Exportación**: jsPDF + jsPDF-AutoTable
 - **Routing**: React Router DOM 7
@@ -64,46 +65,47 @@ Sistema de gestión de inventario moderno y completo para bodegas y puntos de ve
 
 - Node.js 18+ 
 - npm o yarn
-- Cuenta de Firebase
+- Cuenta de Supabase ([supabase.com](https://supabase.com))
 
 ## 🛠️ Instalación
 
-1. **Clonar el repositorio**
+### 1. Clonar el repositorio
+
 ```bash
 git clone https://github.com/tu-usuario/inventario-pos.git
 cd inventario-pos
 ```
 
-2. **Instalar dependencias**
+### 2. Instalar dependencias
+
 ```bash
 npm install
 ```
 
-3. **Configurar Firebase**
+### 3. Configurar Supabase
 
-Crea un archivo `src/firebase.js` con tu configuración:
+Crea un archivo `.env` en la raíz del proyecto con tus credenciales de Supabase:
 
-```javascript
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID",
-  appId: "TU_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export default app;
+```env
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase
 ```
 
-4. **Iniciar el servidor de desarrollo**
+> **Nota:** Puedes obtener estas credenciales desde tu proyecto en [Supabase Dashboard](https://app.supabase.com) → Settings → API.
+
+### 4. Configurar la Base de Datos
+
+Ejecuta el script SQL del esquema en tu proyecto de Supabase:
+
+1. Abre tu proyecto en Supabase Dashboard
+2. Ve a SQL Editor
+3. Copia el contenido de `supabase-schema.sql`
+4. Ejecuta el script
+
+Esto creará todas las tablas necesarias, políticas RLS y funciones.
+
+### 5. Iniciar el servidor de desarrollo
+
 ```bash
 npm run dev
 ```
@@ -133,11 +135,12 @@ inventario-pos/
 │   │   ├── Debtors.jsx      # Deudores
 │   │   ├── Settings.jsx     # Configuración
 │   │   └── Login.jsx        # Inicio de sesión
-│   ├── firebase.js          # Configuración Firebase
+│   ├── supabase.js          # Configuración Supabase
 │   ├── index.css            # Estilos globales
 │   ├── App.jsx              # Componente raíz
 │   └── main.jsx             # Punto de entrada
 ├── public/                  # Archivos estáticos
+├── supabase-schema.sql      # Esquema de base de datos
 ├── tailwind.config.js       # Configuración Tailwind
 ├── vite.config.js           # Configuración Vite
 └── package.json
@@ -149,7 +152,7 @@ inventario-pos/
 
 1. **Crear Admin Principal**
    - Regístrate con el email que será el administrador principal
-   - Este usuario no podrá ser eliminado
+   - Este usuario tendrá rol OWNER y no podrá ser eliminado
 
 2. **Configurar Bodegas**
    - Ve a Configuración → Gestionar Bodegas
@@ -161,11 +164,12 @@ inventario-pos/
 
 4. **Crear Usuarios**
    - Registra empleados y asígnalos a bodegas
-   - Define roles (Empleado/Administrador)
+   - Define roles (EMPLOYEE/OWNER)
 
 5. **Agregar Productos**
    - Ve a Inventario → Nuevo Item
    - Ingresa nombre, precio, código de barras y stock inicial
+   - El sistema validará que no existan productos duplicados
 
 ### Flujo de Venta
 
@@ -200,24 +204,47 @@ El modo oscuro usa la variante `dark:` de Tailwind CSS v4:
 
 ## 📱 Características Avanzadas
 
-- **Offline-First**: Caché local con Firestore
-- **Real-time Updates**: Sincronización en tiempo real
+- **Real-time Updates**: Suscripciones en tiempo real con Supabase Realtime
+- **Row Level Security**: Políticas RLS en PostgreSQL para seguridad granular
 - **Multi-Currency**: Soporte USD y Bs
 - **Export**: PDF y Excel para reportes
 - **Toast Notifications**: Sistema de notificaciones elegante
-- **Protected Routes**: Rutas protegidas por rol
+- **Protected Routes**: Rutas protegidas por rol y autenticación
 
 ## 🔒 Seguridad
 
-- Autenticación Firebase
-- Reglas de seguridad Firestore
-- Validación de roles
-- Protección contra eliminación del admin principal
-- Sesiones seguras
+- **Autenticación Supabase**: Sistema seguro de autenticación con JWT
+- **Row Level Security (RLS)**: Políticas a nivel de fila en PostgreSQL
+- **Validación de Roles**: Control de acceso basado en roles (RBAC)
+- **Protección de Admin**: El usuario admin principal no puede ser eliminado
+- **Validación de Datos**: Constraints y validaciones a nivel de base de datos
+
+## 📊 Base de Datos
+
+El proyecto usa PostgreSQL a través de Supabase con las siguientes tablas principales:
+
+- `users` - Usuarios del sistema
+- `bodegas` - Bodegas/sucursales
+- `products` - Inventario de productos
+- `sales` - Registro de ventas
+- `debtors` - Gestión de créditos
+- `system_config` - Configuración general
+
+Todas las tablas tienen políticas RLS configuradas para máxima seguridad.
 
 ## 🐛 Problemas Conocidos
 
 Consulta la sección [Issues](https://github.com/tu-usuario/inventario-pos/issues) para reportar bugs o solicitar features.
+
+## 🤝 Contribuir
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Haz fork del proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
 ## 📄 Licencia
 
@@ -229,11 +256,11 @@ Desarrollado con ❤️ para la gestión eficiente de inventarios.
 
 ## 🙏 Agradecimientos
 
-- [React](https://react.dev/)
-- [Firebase](https://firebase.google.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Lucide Icons](https://lucide.dev/)
-- [Framer Motion](https://www.framer.com/motion/)
+- [React](https://react.dev/) - Framework UI
+- [Supabase](https://supabase.com/) - Backend as a Service
+- [Tailwind CSS](https://tailwindcss.com/) - Framework CSS
+- [Lucide Icons](https://lucide.dev/) - Iconos
+- [Framer Motion](https://www.framer.com/motion/) - Animaciones
 
 ---
 
