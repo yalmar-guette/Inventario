@@ -1,4 +1,4 @@
-# 🏪 Sistema de Inventario Xioale
+# 🏪 Sistema de Inventario POS
 
 Sistema de gestión de inventario moderno y completo para bodegas y puntos de venta, construido con React, Firebase y Tailwind CSS.
 
@@ -70,8 +70,8 @@ Sistema de gestión de inventario moderno y completo para bodegas y puntos de ve
 
 1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/tu-usuario/inventario-xioale.git
-cd inventario-xioale
+git clone https://github.com/tu-usuario/inventario-pos.git
+cd inventario-pos
 ```
 
 2. **Instalar dependencias**
@@ -113,7 +113,7 @@ La aplicación estará disponible en `http://localhost:5173`
 ## 🏗️ Estructura del Proyecto
 
 ```
-inventario-xioale/
+inventario-pos/
 ├── src/
 │   ├── components/          # Componentes reutilizables
 │   │   ├── Layout.jsx       # Layout principal con sidebar
@@ -217,7 +217,7 @@ El modo oscuro usa la variante `dark:` de Tailwind CSS v4:
 
 ## 🐛 Problemas Conocidos
 
-Consulta la sección [Issues](https://github.com/tu-usuario/inventario-xioale/issues) para reportar bugs o solicitar features.
+Consulta la sección [Issues](https://github.com/tu-usuario/inventario-pos/issues) para reportar bugs o solicitar features.
 
 ## 📄 Licencia
 
