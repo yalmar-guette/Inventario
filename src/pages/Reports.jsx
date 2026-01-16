@@ -358,19 +358,19 @@ const Reports = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors duration-300">
             <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
                 {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900">Informes</h1>
-                    <p className="text-slate-500 mt-2 text-sm">Historial de ventas y cierres</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Informes</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Historial de ventas y cierres</p>
                 </div>
 
                 {/* Filtros: Fecha y Bodega */}
                 <div className="flex flex-col md:flex-row justify-center gap-4 mb-6">
                     <input
                         type="date"
-                        className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 shadow-sm"
+                        className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 dark:text-slate-100 shadow-sm"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
                     />
@@ -379,7 +379,7 @@ const Reports = () => {
                         <select
                             value={selectedBodega}
                             onChange={(e) => setSelectedBodega(e.target.value)}
-                            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 font-medium shadow-sm"
+                            className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 dark:text-slate-100 font-medium shadow-sm transition-colors"
                         >
                             {/* Solo mostrar "Ver Todo" si hay más de 1 bodega */}
                             {bodegas.length > 1 && <option value="all">👁️ Ver Todas las Bodegas</option>}
@@ -393,50 +393,48 @@ const Reports = () => {
 
                 {/* Tarjetas de Resumen */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
-                        <h3 className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-2">Total del Día (USD)</h3>
-                        <p className="text-4xl font-bold text-slate-900">
-                            ${sales.reduce((acc, curr) => acc + curr.totalUSD, 0).toFixed(2)}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center transition-colors">
+                        <h3 className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-black tracking-widest mb-2">Total del Día (USD)</h3>
+                        <p className="text-4xl font-black text-slate-900 dark:text-white">
+                            ${sales.reduce((acc, curr) => acc + (curr.totalUSD || 0), 0).toFixed(2)}
                         </p>
                     </div>
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
-                        <h3 className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-2">Transacciones</h3>
-                        <p className="text-4xl font-bold text-primary-500">{sales.length}</p>
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center transition-colors">
+                        <h3 className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-black tracking-widest mb-2">Transacciones</h3>
+                        <p className="text-4xl font-black text-primary-600 dark:text-primary-400">{sales.length}</p>
                     </div>
                 </div>
 
-                {/* Debug Panel Removed */}
-
                 {/* Tabla de Transacciones */}
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
-                        <h2 className="text-lg font-bold text-slate-900">Detalle de Transacciones</h2>
-                        <div className="flex gap-2">
-                            <button onClick={exportPDF} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center gap-2">
-                                <FileText size={18} /> PDF
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+                    <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white transition-colors">Detalle de Transacciones</h2>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <button onClick={exportPDF} className="flex-1 sm:flex-none px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                                <FileText size={16} /> PDF
                             </button>
-                            <button onClick={exportExcel} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center gap-2">
-                                <Table size={18} /> Excel
+                            <button onClick={exportExcel} className="flex-1 sm:flex-none px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                                <Table size={16} /> EXCEL
                             </button>
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-200">
+                            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 transition-colors">
                                 <tr>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Hora</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Hora</th>
                                     {userRole === 'OWNER' && (
-                                        <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Cajero</th>
                                     )}
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Artículos</th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total USD</th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Bs</th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Método de Pago</th>
-                                    {selectedBodega === 'all' && <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Bodega</th>}
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Resumen Items</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Total USD</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Total Bs</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Método</th>
+                                    {selectedBodega === 'all' && <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Bodega</th>}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 transition-colors">
                                 {renderSalesList()}
                             </tbody>
                         </table>

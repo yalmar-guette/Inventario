@@ -123,136 +123,124 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4 md:p-8 text-slate-900" translate="no">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 text-slate-900 dark:text-slate-100 transition-colors duration-300" translate="no">
             <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-7xl mx-auto space-y-4 md:space-y-6">
-
-
 
                 {/* Encabezado */}
                 <motion.div variants={itemVariants} className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-                        <p className="text-slate-500 mt-1 text-sm">Vista general de tu negocio</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Vista general de tu negocio</p>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                        <Activity className="w-4 h-4 text-primary-600" />
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+                        <Activity className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                         <div className="text-sm">
-                            <span className="text-slate-400 text-xs">Tasa</span>
-                            <span className="ml-2 font-bold text-slate-900">{rate.toFixed(2)} Bs/$</span>
+                            <span className="text-slate-400 dark:text-slate-500 text-xs">Tasa</span>
+                            <p className="font-bold text-slate-900 dark:text-slate-100">${rate.toFixed(2)}</p>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Cuadrícula de Métricas */}
-                <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                    {/* Tarjeta de Ventas - VERDE */}
-                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all">
+                {/* Grid de Métricas Principales */}
+                <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    {/* Tarjeta de Ventas USD - AZUL */}
+                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 hover:shadow-md transition-all">
                         <div className="flex items-start justify-between mb-4">
-                            <div className="p-3 bg-emerald-50 rounded-2xl">
-                                <DollarSign className="w-6 h-6 text-emerald-600" />
+                            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl transition-colors">
+                                <DollarSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <div className="flex items-center gap-1 text-emerald-600 text-sm font-semibold px-2 py-1 bg-emerald-50 rounded-lg">
-                                <TrendingUp className="w-4 h-4" />
-                                <span>+18%</span>
+                            <TrendingUp className="w-4 h-4 text-emerald-500" />
+                        </div>
+                        <h3 className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">Ventas Hoy (USD)</h3>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-black text-slate-900 dark:text-white">${stats.todaySalesUSD.toLocaleString()}</span>
+                        </div>
+                    </motion.div>
+
+                    {/* Tarjeta de Ventas BS - AMBAR */}
+                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl transition-colors">
+                                <ArrowUpRight className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                             </div>
                         </div>
-                        <h3 className="text-slate-400 text-xs font-semibold mb-2 uppercase">Ventas Hoy</h3>
-                        <div className="flex items-baseline gap-2 mb-2">
-                            <span className="text-4xl font-bold text-slate-900">${stats.todaySalesUSD.toFixed(2)}</span>
-                            <span className="text-sm text-slate-400">USD</span>
+                        <h3 className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">Ventas Hoy (Bs)</h3>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.todaySalesBs.toLocaleString()}</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-bold text-sm">Bs</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-3">
-                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full" style={{ width: '65%' }}></div>
-                            </div>
-                            <span className="text-xs text-slate-400">65%</span>
-                        </div>
-                        <p className="text-xs text-slate-400 bg-slate-50 inline-block px-2 py-1 rounded-md mt-3">
-                            ≈ {stats.todaySalesBs.toFixed(2)} Bs
-                        </p>
                     </motion.div>
 
                     {/* Tarjeta de Deudores - ROJO */}
-                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all">
+                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 hover:shadow-md transition-all">
                         <div className="flex items-start justify-between mb-4">
-                            <div className="p-3 bg-red-50 rounded-2xl">
-                                <AlertCircle className="w-6 h-6 text-red-600" />
+                            <div className="p-3 bg-rose-50 dark:bg-rose-900/20 rounded-2xl transition-colors">
+                                <Users className="w-6 h-6 text-rose-600 dark:text-rose-400" />
                             </div>
-                            {stats.debtorsCount > 0 && (
-                                <span className="px-2.5 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-lg">Atención</span>
-                            )}
                         </div>
-                        <h3 className="text-slate-400 text-xs font-semibold mb-2 uppercase">Deudores</h3>
-                        <div className="flex items-baseline gap-2 mb-2">
-                            <span className="text-4xl font-bold text-slate-900">{stats.debtorsCount}</span>
-                            <span className="text-sm text-slate-400">clientes</span>
+                        <h3 className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">Deudores</h3>
+                        <div className="flex items-center gap-2">
+                            <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.debtorsCount}</span>
+                            <span className="px-2 py-0.5 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 text-[10px] font-bold rounded-lg uppercase transition-colors text-center">Atención</span>
                         </div>
-                        <p className="text-xs mt-4">
-                            {stats.debtorsCount > 0 ? (
-                                <span className="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-md">Requiere seguimiento</span>
-                            ) : (
-                                <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-1 rounded-md">✓ Al día</span>
-                            )}
-                        </p>
                     </motion.div>
 
-                    {/* Tarjeta de Usuario - MORADO */}
-                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all">
+                    {/* Tarjeta de Usuario - PÚRPURA */}
+                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -4 }} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 hover:shadow-md transition-all">
                         <div className="flex items-start justify-between mb-4">
-                            <div className="p-3 bg-primary-50 rounded-2xl">
-                                <Users className="w-6 h-6 text-primary-600" />
+                            <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-2xl transition-colors">
+                                <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                             </div>
-                            <span className="px-2.5 py-1 bg-primary-50 text-primary-600 text-xs font-bold rounded-lg uppercase">{userRole}</span>
+                            <span className="px-2.5 py-1 bg-primary-50 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 text-[10px] font-bold rounded-lg uppercase transition-colors">{userRole}</span>
                         </div>
-                        <h3 className="text-slate-400 text-xs font-semibold mb-2 uppercase">Usuario Activo</h3>
-                        <div className="mb-2">
-                            <span className="text-lg font-bold text-slate-900 block truncate">{currentUser?.email}</span>
+                        <h3 className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-1 uppercase tracking-wider">Usuario</h3>
+                        <div className="mb-1 truncate">
+                            <span className="text-[15px] font-bold text-slate-900 dark:text-white">{currentUser?.email}</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-4">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                            <p className="text-xs text-slate-400">En línea • {stats.bodegaName || 'Carga Global'}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse-soft"></div>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate">{stats.bodegaName || 'Carga Global'}</p>
                         </div>
                     </motion.div>
                 </motion.div>
 
                 {/* Tabla de Deudores */}
-                <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+                    <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800/50 transition-colors">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900">Alertas de Cobranza</h2>
-                                <p className="text-sm text-slate-500 mt-0.5">Clientes con más de 7 días sin abonos</p>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Alertas de Cobranza</h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Clientes con más de 7 días sin abonos</p>
                             </div>
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 shadow-sm">
-                                <Clock className="w-4 h-4 text-slate-400" />
-                                <span className="text-xs text-slate-600 font-medium">{stats.lateDebtors.length} pendientes</span>
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+                                <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                                <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">{stats.lateDebtors.length} pendientes</span>
                             </div>
                         </div>
                     </div>
 
                     {stats.lateDebtors.length === 0 ? (
                         <div className="p-12 text-center">
-                            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
+                                <svg className="w-8 h-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <p className="text-slate-900 font-semibold">Todo al día</p>
-                            <p className="text-slate-500 text-sm mt-1">No hay deudores pendientes</p>
+                            <p className="text-slate-900 dark:text-white font-semibold">Todo al día</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">No hay deudores pendientes</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-slate-50 border-b border-slate-200">
+                                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 transition-colors">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Cliente</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Teléfono</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Deuda</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Días</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cliente</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">Teléfono</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">Deuda</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">Días</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 transition-colors">
                                     {stats.lateDebtors.map((debtor, index) => {
                                         const daysLate = Math.floor((new Date() - debtor.last_update.toDate()) / (1000 * 60 * 60 * 24));
                                         return (
@@ -261,22 +249,22 @@ const Dashboard = () => {
                                                 initial={{ opacity: 0, x: -20 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 transition={{ delay: index * 0.05 }}
-                                                className="hover:bg-slate-50"
+                                                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
                                             >
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white text-xs font-bold">
+                                                        <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white text-[10px] font-bold shadow-sm group-hover:scale-110 transition-transform">
                                                             {debtor.name.substring(0, 2).toUpperCase()}
                                                         </div>
-                                                        <span className="text-sm font-semibold text-slate-900">{debtor.name}</span>
+                                                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{debtor.name}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">{debtor.phone}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{debtor.phone}</td>
                                                 <td className="px-6 py-4">
-                                                    <span className="text-sm font-bold text-red-600">${debtor.amount_owed.toFixed(2)}</span>
+                                                    <span className="text-sm font-black text-red-600 dark:text-red-400">${debtor.amount_owed.toFixed(2)}</span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="px-3 py-1.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
+                                                    <span className="px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-[10px] font-bold rounded-full border border-red-100 dark:border-red-900/40 transition-colors">
                                                         {daysLate} días
                                                     </span>
                                                 </td>

@@ -11,12 +11,22 @@ import Reports from './pages/Reports';
 import Debtors from './pages/Debtors';
 import SetupAdmin from './pages/SetupAdmin';
 
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+
 // Protected Route Wrapper
 const PrivateRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
+  const { theme } = useTheme(); // Esto requiere que useTheme esté disponible
 
   if (loading) {
-    return <div className="h-screen w-full flex items-center justify-center bg-slate-900 text-white">Cargando...</div>;
+    return (
+      <div className={`h-screen w-full flex items-center justify-center ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="font-medium animate-pulse">Cargando sistema...</p>
+        </div>
+      </div>
+    );
   }
 
   return currentUser ? children : <Navigate to="/login" />;
@@ -24,27 +34,29 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <ThemeProvider>
+      <Router>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route path="/" element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="pos" element={<POS />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="debtors" element={<Debtors />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-          <Route path="/setup" element={<SetupAdmin />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+            <Route path="/" element={
+              <PrivateRoute>
+                <Layout />
+              </PrivateRoute>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="pos" element={<POS />} />
+              <Route path="inventory" element={<Inventory />} />
+              <Route path="debtors" element={<Debtors />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+            <Route path="/setup" element={<SetupAdmin />} />
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 

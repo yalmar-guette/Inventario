@@ -215,64 +215,80 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in notranslate p-0 md:p-4" translate="no">
-            <div className="bg-white border border-slate-200 w-full max-w-4xl h-full md:h-[90vh] md:rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300 notranslate p-0 md:p-4" translate="no">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl h-full md:h-[90vh] md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden transition-colors">
 
                 {/* Left: Summary */}
-                <div className="w-full md:w-1/3 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-4 md:p-6 flex flex-col shrink-0">
-                    <div className="flex items-center justify-between md:block mb-4 md:mb-6">
-                        <h2 className="text-lg md:text-xl font-bold text-text-main">Resumen</h2>
-                        <button onClick={onClose} className="md:hidden text-text-light hover:text-text-main">
+                <div className="w-full md:w-1/3 bg-slate-50 dark:bg-slate-800/50 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 p-4 md:p-6 flex flex-col shrink-0 transition-colors">
+                    <div className="flex items-center justify-between md:block mb-4 md:mb-8">
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Resumen</h2>
+                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Detalles de la Venta</p>
+                        </div>
+                        <button onClick={onClose} className="md:hidden p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all">
                             <X size={24} />
                         </button>
                     </div>
 
                     <div className="space-y-4 mb-auto">
-                        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                            <p className="text-text-muted text-sm">Total a Pagar</p>
-                            <div className="flex flex-col xl:flex-row xl:justify-between xl:items-baseline mt-1 gap-1">
-                                <p className="text-2xl font-bold text-text-main">${totalUSD.toFixed(2)}</p>
-                                <p className="text-lg font-bold text-emerald-600">{totalBs.toFixed(2)} Bs</p>
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors relative overflow-hidden group">
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Total Neto a Pagar</p>
+                            <div className="flex flex-col gap-1 relative z-10">
+                                <p className="text-3xl font-black text-slate-900 dark:text-white">${totalUSD.toFixed(2)}</p>
+                                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{totalBs.toFixed(2)} Bs</p>
                             </div>
+                            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 dark:bg-emerald-400/5 -mr-8 -mt-8 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
                         </div>
 
-                        <div className={clsx("p-4 rounded-xl border transition-colors", remainingInfo.bgClass)}>
-                            <p className={clsx("text-sm font-bold", remainingInfo.colorClass)}>
+                        <div className={clsx("p-5 rounded-2xl border transition-all relative overflow-hidden",
+                            remainingInfo.amountUSD > 0.01
+                                ? "bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/40"
+                                : remainingInfo.amountUSD < -0.01
+                                    ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40"
+                                    : "bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-700"
+                        )}>
+                            <p className={clsx("text-[10px] font-black uppercase tracking-widest mb-2",
+                                remainingInfo.amountUSD > 0.01 ? "text-amber-600 dark:text-amber-400" : remainingInfo.amountUSD < -0.01 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"
+                            )}>
                                 {remainingInfo.label}
                             </p>
-                            <div className="flex flex-col xl:flex-row xl:justify-between xl:items-baseline mt-1 gap-1">
-                                <p className={clsx("text-xl font-bold", remainingInfo.colorClass)}>
-                                    ${remainingInfo.amountUSD.toFixed(2)}
+                            <div className="flex flex-col gap-1">
+                                <p className={clsx("text-2xl font-black",
+                                    remainingInfo.amountUSD > 0.01 ? "text-amber-700 dark:text-amber-400" : remainingInfo.amountUSD < -0.01 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300"
+                                )}>
+                                    ${Math.abs(remainingInfo.amountUSD).toFixed(2)}
                                 </p>
-                                <p className={clsx("text-sm font-bold", remainingInfo.colorClass)}>
-                                    {remainingInfo.amountBs.toFixed(2)} Bs
+                                <p className={clsx("text-sm font-bold opacity-80",
+                                    remainingInfo.amountUSD > 0.01 ? "text-amber-600 dark:text-amber-500" : remainingInfo.amountUSD < -0.01 ? "text-emerald-600 dark:text-emerald-500" : "text-slate-500 dark:text-slate-500"
+                                )}>
+                                    {Math.abs(remainingInfo.amountBs).toFixed(2)} Bs
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Cart Items List (Corrected) */}
-                    <div className="mt-4 md:mt-6 flex-1 overflow-y-auto custom-scrollbar border-t border-slate-100 pt-4 hidden md:block">
-                        <h3 className="text-xs font-bold text-text-muted uppercase mb-3 px-1">Productos en Carrito</h3>
-                        <div className="space-y-2">
+                    {/* Cart Items List */}
+                    <div className="mt-8 flex-1 overflow-y-auto custom-scrollbar border-t border-slate-200 dark:border-slate-800 pt-6 hidden md:block">
+                        <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4 px-1">Productos en Carrito</h3>
+                        <div className="space-y-3">
                             {cart.map(item => (
-                                <div key={item.id} className="flex justify-between items-start bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                                    <div className="flex-1">
-                                        <p className="font-bold text-slate-700 text-sm line-clamp-2">{item.name}</p>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                                            <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">x{item.quantity}</span>
+                                <div key={item.id} className="flex justify-between items-center bg-white dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary-300 dark:hover:border-primary-800 transition-all group">
+                                    <div className="flex-1 min-w-0 pr-3">
+                                        <p className="font-bold text-slate-800 dark:text-white text-xs truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{item.name}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-lg text-slate-600 dark:text-slate-400 text-[10px] font-black">X{item.quantity}</span>
                                         </div>
                                     </div>
-                                    <div className="text-right pl-2">
-                                        <p className="font-bold text-slate-800 text-sm">${(parseFloat(item.price_usd) * item.quantity).toFixed(2)}</p>
-                                        <p className="text-[10px] text-emerald-600 font-semibold">
+                                    <div className="text-right shrink-0">
+                                        <p className="font-black text-slate-900 dark:text-white text-xs">${(parseFloat(item.price_usd) * item.quantity).toFixed(2)}</p>
+                                        <p className="text-[9px] text-emerald-600 dark:text-emerald-500 font-bold">
                                             {(parseFloat(item.price_usd) * item.quantity * exchangeRate).toFixed(2)} Bs
                                         </p>
                                     </div>
                                 </div>
                             ))}
                             {cart.length === 0 && (
-                                <p className="text-xs text-center text-slate-300 italic py-4">
+                                <p className="text-[10px] font-bold text-center text-slate-300 dark:text-slate-700 uppercase tracking-widest py-8 italic">
                                     Carrito vacío
                                 </p>
                             )}
@@ -281,53 +297,51 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 </div>
 
                 {/* Right: Multi-Row Form */}
-                <div className="flex-1 p-5 md:p-8 flex flex-col relative bg-white overflow-y-auto">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-text-light hover:text-text-main hidden md:block">
+                <div className="flex-1 p-6 md:p-10 flex flex-col relative bg-white dark:bg-slate-900 overflow-y-auto transition-colors">
+                    <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all hidden md:block">
                         <X size={24} />
                     </button>
 
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-bold text-text-main">Detalles del Pago</h3>
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Detalles del Pago</h3>
+                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Selección de Métodos</p>
+                        </div>
 
                         <button
                             onClick={() => {
                                 const newMode = !isManualMode;
                                 setIsManualMode(newMode);
-                                // Si volvemos a Inteligente, re-balancear inmediatamente
                                 if (!newMode) {
                                     const distributed = getDistributedRows(rows, totalUSD);
                                     setRows(distributed);
                                 }
                             }}
                             className={clsx(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm active:scale-95",
+                                "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border active:scale-95 shadow-sm",
                                 isManualMode
-                                    ? "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
-                                    : "bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
+                                    ? "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                    : "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-primary-100 dark:border-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-900/50"
                             )}
-                            title={isManualMode ? "Cambiar a modo inteligente (Auto-balance)" : "Cambiar a modo manual (Control total)"}
+                            title={isManualMode ? "Cambiar a modo inteligente" : "Cambiar a modo manual"}
                         >
                             {isManualMode ? (
-                                <>
-                                    <span>🧮 Modo Manual</span>
-                                </>
+                                <><div className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Manual</>
                             ) : (
-                                <>
-                                    <span>⚡ Modo Inteligente</span>
-                                </>
+                                <><div className="w-1.5 h-1.5 rounded-full bg-primary-600 dark:bg-primary-400 animate-pulse" /> Inteligente</>
                             )}
                         </button>
                     </div>
 
-                    <div className="space-y-4 mb-6">
+                    <div className="space-y-4 mb-8">
                         {rows.map((row, index) => {
                             const method = PAYMENT_METHODS.find(m => m.id === row.methodId);
                             return (
-                                <div key={row.id} className="flex gap-3 items-start animate-slide-up">
+                                <div key={row.id} className="flex gap-4 items-start animate-in slide-in-from-bottom-2 duration-300">
                                     {/* Method Selector */}
                                     <div className="flex-1">
                                         <select
-                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 font-medium text-slate-700"
+                                            className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-400 font-bold text-slate-700 dark:text-slate-200 transition-all appearance-none"
                                             value={row.methodId}
                                             onChange={(e) => updateRow(row.id, 'methodId', e.target.value)}
                                         >
@@ -338,14 +352,14 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                     </div>
 
                                     {/* Amount Input */}
-                                    <div className="relative w-32 md:w-40">
-                                        <span className="absolute left-3 top-3.5 text-slate-400 font-bold text-sm">
+                                    <div className="relative w-36 md:w-48">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-sm">
                                             {method?.isUsd ? '$' : 'Bs'}
-                                        </span>
+                                        </div>
                                         <input
                                             type="number"
                                             placeholder="0.00"
-                                            className="w-full pl-8 pr-2 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 font-bold text-slate-900 text-sm md:text-base"
+                                            className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-400 font-black text-slate-900 dark:text-white text-lg transition-all shadow-sm"
                                             value={row.amount}
                                             onChange={(e) => updateRow(row.id, 'amount', e.target.value)}
                                         />
@@ -354,10 +368,10 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                     {/* Remove Button */}
                                     <button
                                         onClick={() => removeRow(row.id)}
-                                        className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                                        className="p-3.5 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-all shadow-sm group"
                                         title="Eliminar fila"
                                     >
-                                        <Trash2 size={20} />
+                                        <Trash2 size={22} className="group-active:scale-90 transition-transform" />
                                     </button>
                                 </div>
                             );
@@ -366,55 +380,67 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
                     <button
                         onClick={addRow}
-                        className="flex items-center gap-2 text-primary-600 font-bold hover:text-primary-700 self-start px-2 mb-8"
+                        className="flex items-center gap-3 text-primary-600 dark:text-primary-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-primary-700 dark:hover:text-primary-300 self-start px-2 mb-10 transition-colors group"
                     >
-                        <PlusCircle size={20} />
-                        <span>Añadir otro método de pago</span>
+                        <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-xl group-hover:scale-110 transition-transform">
+                            <PlusCircle size={18} />
+                        </div>
+                        <span>Añadir método de pago</span>
                     </button>
 
                     {/* Conditional Debt Info */}
                     {hasFiado && (
-                        <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl mb-6 animate-fade-in">
-                            <h4 className="text-amber-600 font-bold text-sm mb-3 flex items-center gap-2">
-                                <User size={16} /> Datos del Deudor
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-6 rounded-[2rem] mb-8 animate-in zoom-in-95 duration-300 transition-colors relative overflow-hidden">
+                            <h4 className="text-amber-700 dark:text-amber-400 font-black text-xs uppercase tracking-widest mb-5 flex items-center gap-3 relative z-10">
+                                <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
+                                    <User size={18} />
+                                </div>
+                                Datos del Deudor
                             </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <input
-                                    placeholder="Nombre Completo"
-                                    className="input-field bg-white"
-                                    value={debtorInfo.name}
-                                    onChange={e => setDebtorInfo({ ...debtorInfo, name: e.target.value })}
-                                />
-                                <input
-                                    placeholder="Teléfono"
-                                    className="input-field bg-white"
-                                    value={debtorInfo.phone}
-                                    onChange={e => setDebtorInfo({ ...debtorInfo, phone: e.target.value })}
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-amber-600/60 dark:text-amber-400/40 uppercase tracking-widest ml-1">Nombre Completo</label>
+                                    <input
+                                        placeholder="Nombre del cliente"
+                                        className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
+                                        value={debtorInfo.name}
+                                        onChange={e => setDebtorInfo({ ...debtorInfo, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-amber-600/60 dark:text-amber-400/40 uppercase tracking-widest ml-1">Teléfono Movil</label>
+                                    <input
+                                        placeholder="04xx-xxxxxxx"
+                                        className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
+                                        value={debtorInfo.phone}
+                                        onChange={e => setDebtorInfo({ ...debtorInfo, phone: e.target.value })}
+                                    />
+                                </div>
                             </div>
+                            <div className="absolute bottom-0 right-0 w-32 h-32 bg-amber-500/5 dark:bg-amber-400/5 -mr-12 -mb-12 rounded-full blur-2xl" />
                         </div>
                     )}
 
-                    <div className="mt-auto pt-6 border-t border-slate-100">
+                    <div className="mt-auto pt-8 border-t border-slate-100 dark:border-slate-800">
                         <button
                             onClick={handleSubmit}
                             disabled={!isCovered || isProcessing}
                             className={clsx(
-                                "w-full py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-3 transition-all",
+                                "w-full py-5 rounded-2xl text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all shadow-xl",
                                 (isCovered && !isProcessing)
-                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200 active:scale-[0.98]"
-                                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                    ? "bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white shadow-emerald-200/50 dark:shadow-none translate-y-0 hover:-translate-y-1 active:scale-[0.98]"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none"
                             )}
                         >
                             {isProcessing ? (
                                 <>
-                                    <Loader2 className="animate-spin" size={24} />
-                                    Procesando...
+                                    <Loader2 className="animate-spin" size={20} />
+                                    Procesando Venta...
                                 </>
                             ) : (
                                 <>
-                                    <Check size={24} />
-                                    Finalizar Venta
+                                    <Check size={20} />
+                                    Finalizar y Registrar
                                 </>
                             )}
                         </button>
