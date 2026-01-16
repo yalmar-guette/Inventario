@@ -76,12 +76,17 @@ const Inventory = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar este producto?')) {
+        // Obtener nombre del producto para mensaje personalizado
+        const product = products.find(p => p.id === id);
+        const productName = product?.name || 'este producto';
+
+        if (window.confirm(`¿Desea eliminar "${productName}"?\n\nEsta acción no se puede deshacer.`)) {
             try {
                 await deleteProduct(id);
                 toast.success('Producto eliminado correctamente');
             } catch (error) {
-                toast.error('Error al eliminar producto');
+                console.error('Error al eliminar:', error);
+                toast.error(`Error al eliminar producto: ${error.message || 'Error desconocido'}`);
             }
         }
     };

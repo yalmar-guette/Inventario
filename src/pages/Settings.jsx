@@ -155,19 +155,31 @@ const Settings = () => {
 
     const handleSelectBodega = async (bodegaId) => {
         if (!currentUser) return;
+
+        const bodegaName = bodegas.find(b => b.id === bodegaId)?.name || 'esta bodega';
+
+        if (!window.confirm(`¿Cambiar a la bodega "${bodegaName}"?\n\nLa página se recargará.`)) return;
+
         try {
             const { error } = await supabase
                 .from('users')
                 .update({ assigned_bodega_id: bodegaId })
                 .eq('id', currentUser.uid);
 
-            if (error) throw error;
+            if (error) {
+                console.error("Error updating bodega:", error);
+                alert(`❌ Error al cambiar de bodega:\n${error.message || 'Error desconocido'}`);
+                return;
+            }
+
+            // Mostrar mensaje de éxito antes de recargar
+            alert(`✅ Cambiado a: ${bodegaName}\n\nLa página se recargará.`);
 
             // Force reload to update context and views
-            window.location.reload();
+            setTimeout(() => window.location.reload(), 500);
         } catch (error) {
             console.error("Error updating bodega:", error);
-            alert("Error al cambiar de bodega");
+            alert(`❌ Error al cambiar de bodega:\n${error.message || 'Error desconocido'}`);
         }
     };
 
