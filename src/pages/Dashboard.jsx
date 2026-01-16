@@ -59,7 +59,8 @@ const Dashboard = () => {
                     .gte('timestamp', todayStart)
                     .lte('timestamp', todayEnd);
 
-                if (userRole !== 'OWNER' && userBodegaId) {
+                // Filtrar por bodega si hay una asignada (sin importar rol)
+                if (userBodegaId) {
                     salesQuery = salesQuery.eq('bodega_id', userBodegaId);
                 }
 
@@ -82,7 +83,8 @@ const Dashboard = () => {
                     .gt('total_debt_usd', 0)
                     .lt('created_at', sevenDaysAgo);
 
-                if (userRole !== 'OWNER' && userBodegaId) {
+                // Filtrar por bodega si hay una asignada (sin importar rol)
+                if (userBodegaId) {
                     debtorsQuery = debtorsQuery.eq('bodega_id', userBodegaId);
                 }
 

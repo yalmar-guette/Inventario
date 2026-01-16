@@ -35,6 +35,7 @@ export const ToastProvider = ({ children }) => {
         error: (msg, duration) => addToast(msg, 'error', duration),
         info: (msg, duration) => addToast(msg, 'info', duration),
         warning: (msg, duration) => addToast(msg, 'warning', duration),
+        loading: (msg, duration) => addToast(msg, 'info', duration), // Mapeamos loading a info por ahora
     };
 
     return (

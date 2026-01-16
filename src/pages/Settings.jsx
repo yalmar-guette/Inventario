@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users, Database, Edit } from 'lucide-react';
 import { supabase } from '../supabase';
+import ConfirmModal from '../components/ConfirmModal';
 
 const Settings = () => {
     const { userRole, currentUser } = useAuth();
@@ -13,6 +14,16 @@ const Settings = () => {
     const [editingUser, setEditingUser] = useState(null);
     const [creatingUser, setCreatingUser] = useState(false);
 
+    // Otros estados
+    const [users, setUsers] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
+
+    // Estado para modal de confirmación de cambio de bodega
+    const [confirmBodega, setConfirmBodega] = useState({
+        isOpen: false,
+        bodegaId: null,
+        bodegaName: ''
+    });
     // Bodegas state
     const [bodegas, setBodegas] = useState([]);
     const [showBodegaForm, setShowBodegaForm] = useState(false);
@@ -158,41 +169,46 @@ const Settings = () => {
 
         const bodegaName = bodegas.find(b => b.id === bodegaId)?.name || 'esta bodega';
 
-        if (!window.confirm(`¿Cambiar a la bodega "${bodegaName}"?\n\nLa página se recargará.`)) return;
+        // Toast de advertencia con duración larga
+        toast.info(`⚠️ Cambiando a "${bodegaName}"... (Recarga (F5) para cancelar)`, { duration: 2000 });
 
-        try {
-            const { error } = await supabase
-                .from('users')
-                .update({ assigned_bodega_id: bodegaId })
-                .eq('id', currentUser.uid);
+        // Dar tiempo para cancelar
+        setTimeout(async () => {
+            try {
+                // 1. Actualizar en la tabla users
+                const { error } = await supabase
+                    .from('users')
+                    .update({ assigned_bodega_id: bodegaId })
+                    .eq('id', currentUser.uid);
 
-            if (error) {
-                console.error("Error updating bodega:", error);
-                toast.error(`Error al cambiar de bodega: ${error.message || 'Error desconocido'}`);
-                return;
-            }
-
-            // 2. Actualizar metadata del usuario en auth (CRÍTICO para persistencia)
-            const { error: metadataError } = await supabase.auth.updateUser({
-                data: {
-                    assigned_bodega_id: bodegaId,
-                    role: currentUser.role,
-                    name: currentUser.name
+                if (error) {
+                    console.error("Error updating bodega:", error);
+                    toast.error(`❌ Error: No se pudo cambiar de bodega`);
+                    return;
                 }
-            });
 
-            if (metadataError) {
-                console.error("Error updating metadata:", metadataError);
+                // 2. Actualizar metadata del usuario en auth (CRÍTICO para persistencia)
+                const { error: metadataError } = await supabase.auth.updateUser({
+                    data: {
+                        assigned_bodega_id: bodegaId,
+                        role: currentUser.role,
+                        name: currentUser.name
+                    }
+                });
+
+                if (metadataError) {
+                    console.error("Error updating metadata:", metadataError);
+                }
+
+                // 3. Toast de éxito
+                toast.success(`✓ Ahora estás en: ${bodegaName}`, { duration: 2000 });
+
+                // 4. Recargar
+                setTimeout(() => window.location.reload(), 2000);
+            } catch (error) {
+                toast.error(`❌ Error al cambiar de bodega`);
             }
-
-            // Mostrar mensaje de éxito antes de recargar
-            alert(`✅ Cambiado a: ${bodegaName}\n\nLa página se recargará.`);
-
-            // Force reload to update context and views
-            setTimeout(() => window.location.reload(), 500);
-        } catch (error) {
-            toast.error(`Error al cambiar de bodega: ${error.message || 'Error desconocido'}`);
-        }
+        }, 2000);
     };
 
     if (userRole !== 'OWNER') {
@@ -804,4 +820,3 @@ const Settings = () => {
 };
 
 export default Settings;
-

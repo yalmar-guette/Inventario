@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Search, Plus, Trash2, Edit, Package, AlertTriangle, ArrowUpDown } from 'lucide-react';
 import ProductModal from '../components/ProductModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 const Inventory = () => {
     const { currentUser, userRole } = useAuth();
@@ -13,6 +14,13 @@ const Inventory = () => {
     const [sortOption, setSortOption] = useState('stock-asc'); // Por defecto: Poco stock primero (accionable)
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+
+    // Estado para modal de confirmación
+    const [confirmDelete, setConfirmDelete] = useState({
+        isOpen: false,
+        productId: null,
+        productName: ''
+    });
     const [showGlobalCatalog, setShowGlobalCatalog] = useState(false);
 
     // Filtrar y Ordenar
@@ -76,20 +84,49 @@ const Inventory = () => {
     };
 
     const handleDelete = async (id) => {
-        // Obtener nombre del producto para mensaje personalizado
         const product = products.find(p => p.id === id);
         const productName = product?.name || 'este producto';
 
-        if (window.confirm(`¿Desea eliminar "${productName}"?\n\nEsta acción no se puede deshacer.`)) {
+        // Toast de advertencia con duración larga
+        toast.info(`⚠️ Eliminando "${productName}"... (Recarga la página (F5) si quieres cancelar)`, { duration: 2000 });
+
+        // Dar tiempo para cancelar
+        setTimeout(async () => {
             try {
                 await deleteProduct(id);
-                toast.success('Producto eliminado correctamente');
+                toast.success(`✓ "${productName}" eliminado correctamente`, { duration: 3000 });
             } catch (error) {
                 console.error('Error al eliminar:', error);
-                toast.error(`Error al eliminar producto: ${error.message || 'Error desconocido'}`);
+                toast.error(`❌ Error: No se pudo eliminar "${productName}"`, { duration: 4000 });
             }
-        }
+        }, 2000);
     };
+
+    // const executeDelete = async () => {
+    //     console.log('executeDelete called!');
+    //     const { productId, productName } = confirmDelete;
+    //     console.log('Deleting:', productId, productName);
+
+    //     // Cerrar modal
+    //     setConfirmDelete({ isOpen: false, productId: null, productName: '' });
+
+    //     // Notificación de acción
+    //     toast.loading(`🗑️ Eliminando "${productName}"...`, { duration: 1500 });
+
+    //     try {
+    //         console.log('Calling deleteProduct...');
+    //         await deleteProduct(productId);
+    //         console.log('Delete successful');
+
+    //         // Toast de éxito prominente
+    //         setTimeout(() => {
+    //             toast.success(`✓ "${productName}" eliminado correctamente`, { duration: 3000 });
+    //         }, 1500);
+    //     } catch (error) {
+    //         console.error('Error al eliminar:', error);
+    //         toast.error(`❌ Error: No se pudo eliminar "${productName}"`, { duration: 4000 });
+    //     }
+    // };
 
     const openEdit = (product) => {
         setEditingProduct(product);

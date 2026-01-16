@@ -11,12 +11,19 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
             border: 'border-red-100 dark:border-red-900/40',
             button: 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600'
         }
-        : {
-            icon: 'text-primary-500 dark:text-primary-400',
-            bg: 'bg-primary-50 dark:bg-primary-950/30',
-            border: 'border-primary-100 dark:border-primary-900/40',
-            button: 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-600'
-        };
+        : variant === 'warning'
+            ? {
+                icon: 'text-amber-500 dark:text-amber-400',
+                bg: 'bg-amber-50 dark:bg-amber-950/30',
+                border: 'border-amber-100 dark:border-amber-900/40',
+                button: 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600'
+            }
+            : {
+                icon: 'text-primary-500 dark:text-primary-400',
+                bg: 'bg-primary-50 dark:bg-primary-950/30',
+                border: 'border-primary-100 dark:border-primary-900/40',
+                button: 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-600'
+            };
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
