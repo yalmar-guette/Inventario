@@ -513,6 +513,7 @@ const Settings = () => {
                                     onChange={e => setNewUser({ ...newUser, password: e.target.value })}
                                 />
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Rol</label>
