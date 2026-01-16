@@ -154,10 +154,24 @@ const Settings = () => {
         }
     };
 
-    const handleSelectBodega = async (bodegaId) => {
+    const handleSelectBodega = (bodegaId) => {
         if (!currentUser) return;
 
         const bodegaName = bodegas.find(b => b.id === bodegaId)?.name || 'esta bodega';
+
+        // Abrir modal de confirmación
+        setConfirmBodega({
+            isOpen: true,
+            bodegaId: bodegaId,
+            bodegaName: bodegaName
+        });
+    };
+
+    const executeSelectBodega = async () => {
+        const { bodegaId, bodegaName } = confirmBodega;
+
+        // Cerrar modal
+        setConfirmBodega({ isOpen: false, bodegaId: null, bodegaName: '' });
 
         // 1. Feedback inmediato
         toast.info(`⏳ Cambiando a "${bodegaName}"...`, { duration: 1500 });
@@ -802,6 +816,17 @@ const Settings = () => {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmBodega.isOpen}
+                onClose={() => setConfirmBodega({ isOpen: false, bodegaId: null, bodegaName: '' })}
+                onConfirm={executeSelectBodega}
+                title="Confirmar Cambio de Bodega"
+                message={`¿Desea cambiar a la bodega "${confirmBodega.bodegaName}"?\n\nLa página se recargará para aplicar los cambios.`}
+                confirmText="Cambiar"
+                cancelText="Cancelar"
+                variant="warning"
+            />
         </div>
     );
 };

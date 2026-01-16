@@ -83,49 +83,37 @@ const Inventory = () => {
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         const product = products.find(p => p.id === id);
         const productName = product?.name || 'este producto';
+
+        // Abrir modal de confirmación
+        setConfirmDelete({
+            isOpen: true,
+            productId: id,
+            productName: productName
+        });
+    };
+
+    const executeDelete = async () => {
+        const { productId, productName } = confirmDelete;
+
+        // Cerrar modal
+        setConfirmDelete({ isOpen: false, productId: null, productName: '' });
 
         // 1. Feedback inmediato
         toast.info(`⏳ Eliminando "${productName}"...`, { duration: 1500 });
 
         try {
             // 2. Ejecutar eliminación sin delay
-            await deleteProduct(id);
-            // 3. Feedback de éxito claro (lo que pidió el usuario)
+            await deleteProduct(productId);
+            // 3. Feedback de éxito claro
             toast.success(`✓ "${productName}" eliminado correctamente`, { duration: 3000 });
         } catch (error) {
             console.error('Error al eliminar:', error);
             toast.error(`❌ Error: No se pudo eliminar "${productName}"`, { duration: 4000 });
         }
     };
-
-    // const executeDelete = async () => {
-    //     console.log('executeDelete called!');
-    //     const { productId, productName } = confirmDelete;
-    //     console.log('Deleting:', productId, productName);
-
-    //     // Cerrar modal
-    //     setConfirmDelete({ isOpen: false, productId: null, productName: '' });
-
-    //     // Notificación de acción
-    //     toast.loading(`🗑️ Eliminando "${productName}"...`, { duration: 1500 });
-
-    //     try {
-    //         console.log('Calling deleteProduct...');
-    //         await deleteProduct(productId);
-    //         console.log('Delete successful');
-
-    //         // Toast de éxito prominente
-    //         setTimeout(() => {
-    //             toast.success(`✓ "${productName}" eliminado correctamente`, { duration: 3000 });
-    //         }, 1500);
-    //     } catch (error) {
-    //         console.error('Error al eliminar:', error);
-    //         toast.error(`❌ Error: No se pudo eliminar "${productName}"`, { duration: 4000 });
-    //     }
-    // };
 
     const openEdit = (product) => {
         setEditingProduct(product);
@@ -307,6 +295,17 @@ const Inventory = () => {
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleSaveProduct}
                     productToEdit={editingProduct}
+                />
+
+                <ConfirmModal
+                    isOpen={confirmDelete.isOpen}
+                    onClose={() => setConfirmDelete({ isOpen: false, productId: null, productName: '' })}
+                    onConfirm={executeDelete}
+                    title="Confirmar Eliminación"
+                    message={`¿Desea eliminar "${confirmDelete.productName}" del inventario?\n\nEsta acción no se puede deshacer.`}
+                    confirmText="Eliminar"
+                    cancelText="Cancelar"
+                    variant="danger"
                 />
             </div>
         </div>
