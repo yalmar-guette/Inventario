@@ -359,7 +359,7 @@ const Reports = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors duration-300">
-            <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+            <div className="max-w-[1600px] mx-auto space-y-4 md:space-y-6">
                 {/* Encabezado - Centrado */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Informes</h1>
