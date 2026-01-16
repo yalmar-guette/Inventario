@@ -286,22 +286,65 @@ const Debtors = () => {
                                         </div>
                                     </div>
                                     {/* Vista Previa de Conversión */}
-                                    {paymentAmount && (
-                                        <div className="text-right px-2 animate-in fade-in slide-in-from-top-1">
-                                            {isUsd ? (
-                                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total: <span className="text-slate-900 dark:text-white">{(parseFloat(paymentAmount) * rate).toFixed(2)} Bs</span></span>
-                                            ) : (
-                                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total: <span className="text-slate-900 dark:text-white">${(parseFloat(paymentAmount) / rate).toFixed(2)} USD</span></span>
-                                            )}
-                                        </div>
-                                    )}
+                                    {/* Vista Previa de Conversión Inteligente */}
+                                    {paymentAmount && ((() => {
+                                        const amountInput = parseFloat(paymentAmount) || 0;
+                                        const paymentInUSD = isUsd ? amountInput : (amountInput / rate);
+                                        const totalDebtUSD = parseFloat(selectedDebtor.total_debt_usd) || 0;
+                                        const differenceUSD = totalDebtUSD - paymentInUSD;
+
+                                        // Tolerancia pequeña para errores de flotante
+                                        const isPaid = differenceUSD <= 0.05 && differenceUSD >= -0.05;
+                                        const isOverpaid = differenceUSD < -0.05;
+                                        const remainingUSD = Math.max(0, differenceUSD);
+                                        const changeUSD = Math.abs(differenceUSD);
+
+                                        return (
+                                            <div className="flex flex-col items-end px-2 animate-in fade-in slide-in-from-top-1 gap-1">
+                                                {/* 1. Mostrar valor del input */}
+                                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                    Monto: <span className="text-slate-900 dark:text-white">
+                                                        {isUsd
+                                                            ? `$${amountInput.toFixed(2)} USD`
+                                                            : `${amountInput.toFixed(2)} Bs`
+                                                        }
+                                                    </span>
+                                                </span>
+
+                                                {/* 2. Mostrar Estado (Falta o Sobra) en la moneda correspondiente */}
+                                                {!isPaid && !isOverpaid && (
+                                                    <span className="text-xs font-bold text-amber-500">
+                                                        Faltan: {isUsd
+                                                            ? `$${remainingUSD.toFixed(2)}`
+                                                            : `${(remainingUSD * rate).toFixed(2)} Bs`
+                                                        }
+                                                    </span>
+                                                )}
+
+                                                {isOverpaid && (
+                                                    <span className="text-xs font-bold text-emerald-500 uppercase">
+                                                        Su Cambio: {isUsd
+                                                            ? `$${changeUSD.toFixed(2)}`
+                                                            : `${(changeUSD * rate).toFixed(2)} Bs`
+                                                        }
+                                                    </span>
+                                                )}
+
+                                                {isPaid && (
+                                                    <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">
+                                                        ¡Pago Completo!
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })())}
                                 </div>
 
                                 {/* Método de Pago */}
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Método de Recibo</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {['EFECTIVO', 'PAGO MOVIL', 'USD', 'TRANSFERENCIA'].map(method => (
+                                        {['EFECTIVO', 'PAGO MOVIL', 'USD', 'PUNTO DE VENTA'].map(method => (
                                             <button
                                                 key={method}
                                                 type="button"
