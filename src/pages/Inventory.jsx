@@ -66,7 +66,9 @@ const Inventory = () => {
             setEditingProduct(null);
         } catch (error) {
             console.error("Error saving product:", error);
-            alert("Error al guardar producto");
+            // Mostrar el mensaje específico del error
+            const errorMessage = error?.message || error?.error?.message || JSON.stringify(error);
+            alert(`Error al guardar producto: ${errorMessage}`);
         }
     };
 
