@@ -504,13 +504,13 @@ const Reports = () => {
                                 {getCashierName(sale)}
                             </td>
                         )}
-                        <td className="px-6 py-4 text-slate-900">
+                        <td className="px-6 py-4 text-slate-900 dark:text-white">
                             <div className="flex flex-col">
                                 {validItems.length > 0 ? validItems.map((item, idx) => (
-                                    <span key={idx} className="text-sm">
+                                    <span key={idx} className="text-sm text-slate-900 dark:text-white">
                                         {(item?.quantity || 0)} x {(item?.name || 'Item desconocido')}
                                     </span>
-                                )) : <span className="text-slate-400 text-xs italic">- Datos de items perdidos -</span>}
+                                )) : <span className="text-slate-400 dark:text-slate-500 text-xs italic">- Datos de items perdidos -</span>}
                             </div>
                         </td>
                         <td className="px-6 py-4 text-right text-emerald-600 font-bold">
