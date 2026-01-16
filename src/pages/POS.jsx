@@ -78,7 +78,7 @@ const POS = () => {
                 case 'price-desc': return priceB - priceA;
                 case 'price-asc': return priceA - priceB;
                 case 'popularity-desc': return salesB - salesA;
-                case 'name-asc': return a.name.localeCompare(b.name);
+                case 'name-asc': return (a.name || '').localeCompare(b.name || '');
                 default: return 0;
             }
         });

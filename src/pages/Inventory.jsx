@@ -22,7 +22,7 @@ const Inventory = () => {
         // 1. Filtrar
         let result = products.filter(product => {
             // Búsqueda de Texto
-            const matchesText = product.name.toLowerCase().includes(term) || product.barcode?.includes(term);
+            const matchesText = (product.name || '').toLowerCase().includes(term) || product.barcode?.includes(term);
 
             // Visibilidad de Bodega: Mostrar si "Mostrar Global" está ACTIVADO O si el producto tiene entrada para esta bodega
             const hasBodegaEntry = product.stock && Object.prototype.hasOwnProperty.call(product.stock, targetBodega);
