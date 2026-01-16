@@ -12,8 +12,20 @@ dist
 dist-ssr
 *.local
 
-# Environment variables
+# Environment variables (IMPORTANTE - NO SUBIR)
 .env
+.env.local
+.env.production
+.env.migration
+
+# Firebase credentials (IMPORTANTE - NO SUBIR)
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
+# Migration files (IMPORTANTE - NO SUBIR)
+usuarios-migrados.json
+create-users-manual.sql
+scripts/firebase-service-account.json
 
 # Editor directories and files
 .vscode/*
