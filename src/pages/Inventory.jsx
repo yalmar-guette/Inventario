@@ -194,7 +194,7 @@ const Inventory = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-slate-400 dark:text-slate-500 font-mono text-xs uppercase tracking-widest">{product.barcode || '-'}</td>
-                                                <td className="px-6 py-4 text-primary-600 dark:text-primary-400 font-black text-sm">${parseFloat(product.price_usd).toFixed(2)}</td>
+                                                <td className="px-6 py-4 text-primary-600 dark:text-primary-400 font-black text-sm">${(parseFloat(product.price_usd) || 0).toFixed(2)}</td>
                                                 <td className="px-6 py-4">
                                                     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${isOutOfStock ? 'bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400' :
                                                         isLowStock ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400' :

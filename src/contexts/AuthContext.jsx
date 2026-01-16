@@ -12,6 +12,8 @@ export function AuthProvider({ children }) {
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    console.log("AuthProvider Initializing. Loading:", loading);
+
     useEffect(() => {
         // Obtener sesión actual al cargar
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -72,6 +74,7 @@ export function AuthProvider({ children }) {
                 email: authUser.email
             });
         } finally {
+            console.log("fetchUserData Finished. User:", authUser.email);
             setLoading(false);
         }
     };

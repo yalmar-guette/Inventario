@@ -57,7 +57,7 @@ const POS = () => {
 
         // 1. Filtrar
         let result = products.filter(p => {
-            const matchesText = p.name.toLowerCase().includes(term) || (p.barcode && p.barcode.includes(term));
+            const matchesText = (p.name || '').toLowerCase().includes(term) || (p.barcode && p.barcode.includes(term));
             // Aislamiento Estricto: Ocultar items con stock 0 a menos que "existan" en la estructura de esta bodega
             const hasEntry = p.stock && Object.prototype.hasOwnProperty.call(p.stock, activeBodegaId);
             return matchesText && hasEntry;

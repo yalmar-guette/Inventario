@@ -137,7 +137,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-tighter">Tasa del Día</span>
-                            <p className="font-extrabold text-slate-900 dark:text-white text-lg leading-tight">{rate.toFixed(2)} <span className="text-[10px] opacity-60 font-medium">Bs/$</span></p>
+                            <p className="font-extrabold text-slate-900 dark:text-white text-lg leading-tight">{(parseFloat(rate) || 0).toFixed(2)} <span className="text-[10px] opacity-60 font-medium">Bs/$</span></p>
                         </div>
                     </div>
                 </motion.div>

@@ -124,7 +124,7 @@ const Layout = () => {
                     <div className="bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-3 mb-3 border border-slate-100 dark:border-slate-700/50 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-semibold text-sm transition-colors">
-                                {currentUser?.email?.substring(0, 2).toUpperCase() || 'US'}
+                                {((currentUser?.email || 'US').substring(0, 2)).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate transition-colors">{currentUser?.email}</p>

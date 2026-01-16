@@ -28,6 +28,7 @@ const PrivateRoute = ({ children }) => {
     );
   }
 
+  console.log("PrivateRoute - User:", currentUser?.email, "Loading:", loading);
   return currentUser ? children : <Navigate to="/login" />;
 };
 
