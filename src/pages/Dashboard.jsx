@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { supabase } from '../supabase';
 import {
     TrendingUp,
     DollarSign,
@@ -32,41 +31,43 @@ const Dashboard = () => {
             if (!currentUser || !userRole || rate <= 0) return;
 
             try {
-                const todayStart = startOfDay(new Date());
-                const todayEnd = endOfDay(new Date());
-                const sevenDaysAgo = subDays(new Date(), 7);
+                const todayStart = startOfDay(new Date()).toISOString();
+                const todayEnd = endOfDay(new Date()).toISOString();
+                const sevenDaysAgo = subDays(new Date(), 7).toISOString();
 
-                const salesRef = collection(db, 'sales');
-                const debtorsRef = collection(db, 'debtors');
-                const userBodegaId = currentUser?.bodega_id || currentUser?.assigned_bodega_id;
+                const userBodegaId = currentUser?.assigned_bodega_id;
 
-                // Obtener nombre de la bodega
+                // 1. Obtener nombre de la bodega
                 if (userBodegaId) {
-                    const bDoc = await getDocs(query(collection(db, 'bodegas')));
-                    const bData = bDoc.docs.find(d => d.id === userBodegaId)?.data();
-                    if (bData) {
+                    const { data: bData, error: bError } = await supabase
+                        .from('bodegas')
+                        .select('name')
+                        .eq('id', userBodegaId)
+                        .single();
+
+                    if (bData && !bError) {
                         setStats(prev => ({ ...prev, bodegaName: bData.name }));
                     }
                 } else if (userRole === 'OWNER') {
                     setStats(prev => ({ ...prev, bodegaName: 'Global (Todas)' }));
                 }
 
-                // 1. Cargar Ventas (Filtrado de bodega en cliente para evitar error de Index)
-                const qSales = query(
-                    salesRef,
-                    where('timestamp', '>=', Timestamp.fromDate(todayStart)),
-                    where('timestamp', '<=', Timestamp.fromDate(todayEnd))
-                );
+                // 2. Cargar Ventas del día
+                let salesQuery = supabase
+                    .from('sales')
+                    .select('total_usd')
+                    .gte('timestamp', todayStart)
+                    .lte('timestamp', todayEnd);
 
-                const salesSnap = await getDocs(qSales);
-                let totalUSD = 0;
-                salesSnap.forEach(doc => {
-                    const data = doc.data();
-                    // Priorizamos mostrar la bodega en la que el usuario está trabajando
-                    if (data.bodega_id === userBodegaId) {
-                        totalUSD += data.totalUSD || 0;
-                    }
-                });
+                if (userRole !== 'OWNER' && userBodegaId) {
+                    salesQuery = salesQuery.eq('bodega_id', userBodegaId);
+                }
+
+                const { data: salesData, error: salesError } = await salesQuery;
+
+                if (salesError) throw salesError;
+
+                const totalUSD = salesData.reduce((acc, sale) => acc + (sale.total_usd || 0), 0);
 
                 setStats(prev => ({
                     ...prev,
@@ -74,28 +75,25 @@ const Dashboard = () => {
                     todaySalesBs: totalUSD * rate
                 }));
 
-                // 2. Cargar Deudores (Filtrado de bodega en cliente para evitar error de Index)
-                const qDebtors = query(debtorsRef, where('amount_owed', '>', 0));
-                const debtorsSnap = await getDocs(qDebtors);
-                const lateList = [];
+                // 3. Cargar Deudores Críticos (monto > 0 y última actualización < 7 días)
+                let debtorsQuery = supabase
+                    .from('debtors')
+                    .select('*')
+                    .gt('amount_owed', 0)
+                    .lt('last_update', sevenDaysAgo);
 
-                debtorsSnap.forEach(doc => {
-                    const d = doc.data();
-                    const lastUpdate = d.last_update?.toDate();
+                if (userRole !== 'OWNER' && userBodegaId) {
+                    debtorsQuery = debtorsQuery.eq('bodega_id', userBodegaId);
+                }
 
-                    // Filtro de bodega estricto + Filtro de fecha local
-                    const matchesBodega = d.bodega_id === userBodegaId;
-                    const isLate = lastUpdate && lastUpdate < sevenDaysAgo;
+                const { data: debtorsData, error: debtorsError } = await debtorsQuery;
 
-                    if (matchesBodega && isLate) {
-                        lateList.push({ id: doc.id, ...d });
-                    }
-                });
+                if (debtorsError) throw debtorsError;
 
                 setStats(prev => ({
                     ...prev,
-                    debtorsCount: lateList.length,
-                    lateDebtors: lateList
+                    debtorsCount: debtorsData.length,
+                    lateDebtors: debtorsData
                 }));
 
             } catch (error) {
@@ -252,7 +250,8 @@ const Dashboard = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 transition-colors">
                                     {stats.lateDebtors.map((debtor, index) => {
-                                        const daysLate = Math.floor((new Date() - debtor.last_update.toDate()) / (1000 * 60 * 60 * 24));
+                                        const lastUpdate = new Date(debtor.last_update);
+                                        const daysLate = Math.floor((new Date() - lastUpdate) / (1000 * 60 * 60 * 24));
                                         return (
                                             <motion.tr
                                                 key={debtor.id}

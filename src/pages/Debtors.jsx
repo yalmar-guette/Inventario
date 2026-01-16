@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
-import { db } from '../firebase';
-import { collection, getDocs, updateDoc, doc, deleteDoc, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../supabase';
 import { User, CheckCircle, Phone, X, DollarSign, Wallet } from 'lucide-react';
 
 const Debtors = () => {
@@ -24,14 +23,18 @@ const Debtors = () => {
 
     const fetchDebtors = async () => {
         try {
-            const activeBodegaId = currentUser?.assigned_bodega_id || 'bodega_1';
-            const q = query(
-                collection(db, 'debtors'),
-                where('bodega_id', '==', activeBodegaId)
-            );
-            const snap = await getDocs(q);
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setDebtors(data);
+            const activeBodegaId = currentUser?.assigned_bodega_id;
+
+            let query = supabase.from('debtors').select('*');
+
+            if (activeBodegaId) {
+                query = query.eq('bodega_id', activeBodegaId);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+            setDebtors(data || []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -58,21 +61,30 @@ const Debtors = () => {
 
         try {
             const newDebt = selectedDebtor.amount_owed - amountInUSD;
-            const ref = doc(db, 'debtors', selectedDebtor.id);
 
             // 1. Actualizar/Eliminar Registro de Deudor
             if (newDebt <= 0.01) {
-                await deleteDoc(ref);
+                const { error } = await supabase
+                    .from('debtors')
+                    .delete()
+                    .eq('id', selectedDebtor.id);
+
+                if (error) throw error;
                 alert('Deuda pagada por completo. Cliente eliminado de lista.');
             } else {
-                await updateDoc(ref, {
-                    amount_owed: newDebt,
-                    last_update: serverTimestamp()
-                });
+                const { error } = await supabase
+                    .from('debtors')
+                    .update({
+                        amount_owed: newDebt,
+                        last_update: new Date().toISOString()
+                    })
+                    .eq('id', selectedDebtor.id);
+
+                if (error) throw error;
                 alert('Abono registrado exitosamente.');
             }
 
-            // 2. Opcional: Registrar la transacción de pago si tuvieras una colección 'payments'
+            // 2. Opcional: Registrar la transacción de pago si tuvieras una tabla 'payments'
             // Por ahora, solo actualizamos la deuda según lo solicitado.
 
             setIsModalOpen(false);

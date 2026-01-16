@@ -9,7 +9,6 @@ import POS from './pages/POS';
 import Settings from './pages/Settings';
 import Reports from './pages/Reports';
 import Debtors from './pages/Debtors';
-import SetupAdmin from './pages/SetupAdmin';
 
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
@@ -52,7 +51,6 @@ function App() {
               <Route path="reports" element={<Reports />} />
               <Route path="settings" element={<Settings />} />
             </Route>
-            <Route path="/setup" element={<SetupAdmin />} />
           </Routes>
         </AuthProvider>
       </Router>
