@@ -176,8 +176,34 @@ const Layout = () => {
                 )}
 
                 {/* Page Content */}
-                <div className="flex-1 overflow-auto">
-                    <Outlet />
+                <div className="flex-1 overflow-auto flex flex-col">
+                    <div className="flex-1 min-h-0">
+                        <Outlet />
+                    </div>
+
+                    {/* Footer Profesional Global */}
+                    <footer className="py-8 border-t border-slate-200/60 bg-white/30 backdrop-blur-sm mt-auto">
+                        <div className="flex flex-col items-center gap-4 text-center px-4">
+                            <p className="text-slate-500 text-sm font-medium">
+                                © 2026 Sistema de Inventario. Todos los derechos reservados.
+                            </p>
+                            <div className="flex items-center gap-3 px-4 py-2 bg-white/50 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-primary-100 group">
+                                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest hidden sm:inline">Desarrollado por</span>
+                                <span className="text-primary-600 font-black text-sm group-hover:text-primary-700 transition-colors">Yalmar Guette</span>
+                                <div className="w-10 h-10 rounded-full border-2 border-primary-100 p-0.5 shadow-sm overflow-hidden group-hover:border-primary-200 group-hover:scale-110 transition-all duration-300">
+                                    <img
+                                        src="/yalmar-profile.png"
+                                        alt="Yalmar Guette"
+                                        className="w-full h-full object-cover rounded-full"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                            e.target.parentElement.innerHTML = '<div class="w-full h-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-xs">YG</div>';
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
                 </div>
             </main>
 
