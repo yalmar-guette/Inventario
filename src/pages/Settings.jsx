@@ -10,6 +10,8 @@ const Settings = () => {
     const { userRole, currentUser } = useAuth();
     const { rate, updateRate, loading: configLoading } = useSystemConfig();
     const [newRate, setNewRate] = useState('');
+    const [autoSyncType, setAutoSyncType] = useState('none'); // 'none', 'bcv', 'euro'
+    const [savingSync, setSavingSync] = useState(false);
     const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: '' });
     const [editingUser, setEditingUser] = useState(null);
     const [creatingUser, setCreatingUser] = useState(false);
@@ -40,8 +42,25 @@ const Settings = () => {
         if (userRole === 'OWNER') {
             fetchBodegas();
             fetchUsers();
+            fetchSyncConfig();
         }
     }, [userRole]);
+
+    const fetchSyncConfig = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('system_config')
+                .select('auto_sync_type')
+                .eq('id', 'global')
+                .maybeSingle();
+
+            if (!error && data?.auto_sync_type) {
+                setAutoSyncType(data.auto_sync_type);
+            }
+        } catch (err) {
+            console.error("Error fetching sync config:", err);
+        }
+    };
 
     const fetchBodegas = async () => {
         try {
@@ -262,6 +281,27 @@ const Settings = () => {
             toast.error(`No se pudo obtener la tasa ${type.toUpperCase()}`);
         } finally {
             setFetchingApi(prev => ({ ...prev, [type]: false }));
+        }
+    };
+
+    const handleSaveSyncConfig = async () => {
+        setSavingSync(true);
+        try {
+            // Actualizamos la DB. Al usar upsert falso (update directo), si la columna no existe 
+            // fallará, pero en Supabase podemos crearla luego usando la UI asumiendo que el request va bien.
+            // Para ser robustos en producción, esto asume que la migración SQL ya se corrió.
+            const { error } = await supabase
+                .from('system_config')
+                .update({ auto_sync_type: autoSyncType })
+                .eq('id', 'global');
+
+            if (error) throw error;
+            toast.success('Configuración de auto-sincronización guardada');
+        } catch (error) {
+            console.error("Error saving sync config:", error);
+            toast.error('Error al guardar configuración automática');
+        } finally {
+            setSavingSync(false);
         }
     };
 
@@ -679,6 +719,35 @@ const Settings = () => {
                                 Actualizar BS/$
                             </button>
                         </form>
+
+                        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 transition-colors">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Actualización Automática Diaria</h3>
+                            <div className="space-y-4">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                    Selecciona si deseas que el sistema actualice automáticamente la tasa todos los días al iniciar.
+                                    La tasa será obtenida automáticamente.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <select
+                                        className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-400 text-slate-900 dark:text-white transition-all font-bold text-sm"
+                                        value={autoSyncType}
+                                        onChange={(e) => setAutoSyncType(e.target.value)}
+                                    >
+                                        <option value="none">Ninguna (Manual)</option>
+                                        <option value="bcv">Tasa BCV</option>
+                                        <option value="euro">Tasa Euro</option>
+                                    </select>
+                                    <button
+                                        onClick={handleSaveSyncConfig}
+                                        disabled={savingSync}
+                                        className="px-6 py-3 bg-slate-900 dark:bg-slate-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-w-[140px]"
+                                    >
+                                        {savingSync ? <Loader2 size={16} className="animate-spin" /> : 'Guardar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* System Maintenance Section */}
