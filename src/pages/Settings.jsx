@@ -13,6 +13,7 @@ const Settings = () => {
     const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: '' });
     const [editingUser, setEditingUser] = useState(null);
     const [creatingUser, setCreatingUser] = useState(false);
+    const [fetchingApi, setFetchingApi] = useState({ bcv: false, euro: false });
 
     // Otros estados
     const [users, setUsers] = useState([]);
@@ -220,11 +221,47 @@ const Settings = () => {
         e.preventDefault();
         if (!newRate) return;
         try {
-            await updateRate(newRate);
+            const roundedRate = parseFloat(newRate).toFixed(2);
+            await updateRate(roundedRate);
             setNewRate('');
             toast.success('Tasa actualizada correctamente');
         } catch (error) {
             toast.error('Error al actualizar tasa');
+        }
+    };
+
+    const handleFetchRate = async (type) => {
+        setFetchingApi(prev => ({ ...prev, [type]: true }));
+        try {
+            const endpoint = type === 'bcv'
+                ? 'https://ve.dolarapi.com/v1/dolares/oficial'
+                : 'https://ve.dolarapi.com/v1/euros';
+
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error('Error al obtener tasa');
+
+            const data = await response.json();
+            let rateValue;
+
+            if (type === 'euro' && Array.isArray(data)) {
+                // Seleccionar la fuente 'oficial' si está presente, sino la primera
+                const oficialEuro = data.find(e => e.fuente === 'oficial') || data[0];
+                rateValue = oficialEuro?.promedio;
+            } else {
+                rateValue = data?.promedio;
+            }
+
+            if (typeof rateValue === 'number') {
+                setNewRate(rateValue.toFixed(2));
+                toast.success(`Tasa ${type.toUpperCase()} obtenida: ${rateValue.toFixed(2)}`);
+            } else {
+                throw new Error('Datos de tasa inválidos');
+            }
+        } catch (error) {
+            console.error(`Error fetching ${type} rate:`, error);
+            toast.error(`No se pudo obtener la tasa ${type.toUpperCase()}`);
+        } finally {
+            setFetchingApi(prev => ({ ...prev, [type]: false }));
         }
     };
 
@@ -614,6 +651,27 @@ const Settings = () => {
                                     value={newRate}
                                     onChange={(e) => setNewRate(e.target.value)}
                                 />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-2">
+                                <button
+                                    type="button"
+                                    disabled={fetchingApi.bcv}
+                                    onClick={() => handleFetchRate('bcv')}
+                                    className="py-3 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50"
+                                >
+                                    {fetchingApi.bcv ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                                    Tasa BCV
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={fetchingApi.euro}
+                                    onClick={() => handleFetchRate('euro')}
+                                    className="py-3 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-blue-100 dark:border-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50"
+                                >
+                                    {fetchingApi.euro ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                                    Tasa Euro
+                                </button>
                             </div>
 
                             <button type="submit" className="w-full py-4 bg-primary-600 dark:bg-primary-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-700 dark:hover:bg-primary-600 active:scale-[0.98] transition-all flex items-center gap-3 justify-center shadow-lg shadow-primary-200 dark:shadow-none">
