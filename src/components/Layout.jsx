@@ -200,8 +200,8 @@ const Layout = () => {
 
             {/* Contenido Principal */}
             <main className="flex-1 flex flex-col overflow-hidden">
-                {/* Cabecera Móvil */}
-                <div className="md:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 transition-colors">
+                {/* Cabecera Móvil — safe-area-inset-top manejado en el div raíz */}
+                <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 transition-colors">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-bold shadow-lg">
                             B
@@ -221,26 +221,34 @@ const Layout = () => {
                     </div>
                 </div>
 
-                {/* Mobile Menu */}
+                {/* Mobile Menu Overlay — fixed + safe-area-inset-top */}
                 {isMobileMenuOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
+                        initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="md:hidden absolute inset-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl flex flex-col p-6"
+                        exit={{ opacity: 0, y: -10 }}
+                        className="md:hidden fixed inset-0 z-[200] bg-white/97 dark:bg-slate-950/97 backdrop-blur-xl flex flex-col"
+                        style={{
+                            paddingTop: 'env(safe-area-inset-top)',
+                            paddingBottom: 'env(safe-area-inset-bottom)',
+                        }}
                     >
-                        <div className="flex justify-between items-center mb-8">
+                        {/* Header del overlay */}
+                        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 dark:border-slate-800/60">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-bold shadow-lg">
                                     B
                                 </div>
                                 <span className="font-bold text-slate-900 dark:text-white">Bodega</span>
                             </div>
-                            <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-600 dark:text-slate-400">
-                                <X size={28} />
+                            <button
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 active:scale-95 transition-all"
+                            >
+                                <X size={20} />
                             </button>
                         </div>
-                        <nav className="space-y-2">
+                        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
                             {filteredNavItems.map((item) => (
                                 <NavLink
                                     key={item.path}
