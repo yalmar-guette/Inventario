@@ -1,10 +1,40 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inventario POS</title>
+
+    <!-- PWA: Icono principal y favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-72x72.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/icon-96x96.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+
+    <!-- PWA: Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- PWA: Viewport óptimo para móvil (sin zoom forzado, respeta safe-area) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- PWA: Colores del navegador / barra de estado -->
+    <meta name="theme-color" content="#7C3AED" />
+    <meta name="msapplication-navbutton-color" content="#7C3AED" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- PWA: Soporte iOS "Add to Home Screen" -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Inventario" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- SEO / descripción -->
+    <meta name="description" content="Sistema de Gestión de Inventario y Punto de Venta. Controla tu stock, ventas y deudores desde cualquier dispositivo." />
+    <meta name="application-name" content="Gestión de Inventario" />
+
+    <!-- Open Graph (por si se comparte el link) -->
+    <meta property="og:title" content="Gestión de Inventario" />
+    <meta property="og:description" content="Sistema POS moderno para gestión de inventario, ventas y deudores." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512x512.png" />
+
+    <title>Gestión de Inventario</title>
   </head>
   <body>
     <div id="root"></div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users, Database, Edit } from 'lucide-react';
+import { RefreshCw, DollarSign, UserPlus, Loader2, Store, Plus, Trash2, Users, Database, Edit, Smartphone, Download, CheckCircle } from 'lucide-react';
 import { supabase } from '../supabase';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -11,6 +11,9 @@ const Settings = () => {
     const { rate, updateRate, loading: configLoading } = useSystemConfig();
     const [newRate, setNewRate] = useState('');
     const [autoSyncType, setAutoSyncType] = useState('none'); // 'none', 'bcv', 'euro'
+    const [needsUpdate, setNeedsUpdate] = useState(false);
+    const [updating, setUpdating] = useState(false);
+    const [updateDone, setUpdateDone] = useState(false);
     const [savingSync, setSavingSync] = useState(false);
     const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'EMPLOYEE', bodega_id: '' });
     const [editingUser, setEditingUser] = useState(null);
@@ -45,6 +48,59 @@ const Settings = () => {
             fetchSyncConfig();
         }
     }, [userRole]);
+
+    // Detectar si hay una nueva versión del Service Worker disponible
+    useEffect(() => {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then((reg) => {
+                if (!reg) return;
+                // Si ya hay un SW en espera, hay actualización disponible
+                if (reg.waiting) setNeedsUpdate(true);
+                // Escuchar futuras actualizaciones
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            setNeedsUpdate(true);
+                        }
+                    });
+                });
+            });
+        }
+    }, []);
+
+    const handleUpdateApp = async () => {
+        setUpdating(true);
+        try {
+            if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg?.waiting) {
+                    // Decirle al SW en espera que tome control ahora
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    // Escuchar el cambio de controlador y recargar
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        setUpdateDone(true);
+                        setTimeout(() => window.location.reload(), 800);
+                    });
+                } else {
+                    // Forzar check de actualización
+                    await reg?.update();
+                    // Si no hay sw en espera, recargamos igual para forzar versión fresca
+                    setUpdateDone(true);
+                    setTimeout(() => window.location.reload(), 800);
+                }
+            } else {
+                // Sin soporte SW: simplemente recargar sin caché
+                setUpdateDone(true);
+                setTimeout(() => window.location.reload(true), 800);
+            }
+        } catch (err) {
+            console.error('Update error:', err);
+            toast.error('Error al intentar actualizar');
+            setUpdating(false);
+        }
+    };
 
     const fetchSyncConfig = async () => {
         try {
@@ -763,6 +819,61 @@ const Settings = () => {
                         </div>
 
                         <div className="space-y-4">
+                            {/* ─── Actualizar Aplicación (PWA) ─────────────────────── */}
+                            <div className={`p-5 rounded-2xl border transition-all ${
+                                needsUpdate
+                                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
+                                    : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+                            }`}>
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                                        needsUpdate
+                                            ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400'
+                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                                    }`}>
+                                        <Smartphone size={20} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className={`text-sm font-bold mb-1 ${
+                                            needsUpdate ? 'text-primary-900 dark:text-primary-200' : 'text-slate-900 dark:text-white'
+                                        }`}>
+                                            Actualizar Aplicación
+                                            {needsUpdate && (
+                                                <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-primary-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full">
+                                                    Nueva versión
+                                                </span>
+                                            )}
+                                        </h3>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                            {needsUpdate
+                                                ? 'Hay una nueva versión disponible. Pulsa el botón para aplicar los cambios.'
+                                                : 'Fuerza la instalación de la última versión de la aplicación. Útil si los cambios no se reflejan automáticamente.'
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleUpdateApp}
+                                    disabled={updating || updateDone}
+                                    className={`w-full py-3 font-black text-xs uppercase tracking-[0.2em] rounded-xl active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-70 ${
+                                        updateDone
+                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 dark:shadow-none cursor-default'
+                                            : needsUpdate
+                                                ? 'bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 shadow-lg shadow-primary-200 dark:shadow-none'
+                                                : 'bg-slate-800 dark:bg-slate-600 text-white hover:bg-slate-700 dark:hover:bg-slate-500'
+                                    }`}
+                                >
+                                    {updateDone ? (
+                                        <><CheckCircle size={18} /> Actualizando...</>
+                                    ) : updating ? (
+                                        <><Loader2 size={18} className="animate-spin" /> Aplicando actualización...</>
+                                    ) : (
+                                        <><Download size={18} /> Actualizar ahora</>
+                                    )}
+                                </button>
+                            </div>
+
+                            {/* ─── Limpiar Caché ───────────────────────────────────── */}
                             <div className="p-5 bg-orange-50/50 dark:bg-orange-950/10 rounded-2xl border border-orange-100 dark:border-orange-900/30 transition-colors">
                                 <h3 className="text-sm font-bold text-orange-900 dark:text-orange-300 mb-2">Limpiar Caché del Navegador</h3>
                                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">

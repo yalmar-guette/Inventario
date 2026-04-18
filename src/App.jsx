@@ -10,6 +10,7 @@ import POS from './pages/POS';
 import Settings from './pages/Settings';
 import Reports from './pages/Reports';
 import Debtors from './pages/Debtors';
+import InstallPrompt from './components/InstallPrompt';
 
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
@@ -54,6 +55,9 @@ function App() {
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Routes>
+
+            {/* Banner de instalación PWA — aparece en todas las rutas */}
+            <InstallPrompt />
           </ToastProvider>
         </AuthProvider>
       </Router>

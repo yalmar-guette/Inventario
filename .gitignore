@@ -37,3 +37,7 @@ scripts/firebase-service-account.json
 *.njsproj
 *.sln
 *.sw?
+
+# PWA - archivos temporales de generación de íconos
+pwa_icon_source.png
+generate_pwa_icons.py
