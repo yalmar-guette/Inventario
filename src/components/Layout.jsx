@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -14,7 +14,8 @@ import {
     X,
     Circle,
     Moon,
-    Sun
+    Sun,
+    RefreshCw
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -24,6 +25,38 @@ const Layout = () => {
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [hasUpdate, setHasUpdate] = useState(false);
+    const [swReg, setSwReg] = useState(null);
+
+    // Detectar actualizaciones del Service Worker
+    useEffect(() => {
+        if (!('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.getRegistration().then((reg) => {
+            if (!reg) return;
+            setSwReg(reg);
+            if (reg.waiting) setHasUpdate(true);
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (!newWorker) return;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        setHasUpdate(true);
+                    }
+                });
+            });
+        });
+    }, []);
+
+    const handleUpdate = () => {
+        if (swReg?.waiting) {
+            swReg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
+        } else {
+            window.location.reload();
+        }
+    };
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
@@ -122,7 +155,24 @@ const Layout = () => {
                     ))}
                 </nav>
 
-                {/* Perfil de Usuario con Tarjeta Glassmorphism */}
+                {/* Banner de actualización - Sidebar Desktop */}
+                {hasUpdate && (
+                    <div className="mx-3 mb-3">
+                        <button
+                            onClick={handleUpdate}
+                            className="w-full flex items-center gap-3 px-4 py-3 bg-primary-600 hover:bg-primary-700 active:scale-[0.98] text-white rounded-2xl transition-all shadow-lg shadow-primary-500/30 group"
+                        >
+                            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                                <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary-200">Nueva versión</p>
+                                <p className="text-xs font-bold text-white">Actualizar ahora</p>
+                            </div>
+                            <div className="ml-auto w-2 h-2 bg-amber-400 rounded-full animate-ping" />
+                        </button>
+                    </div>
+                )}
                 <div className="p-4 border-t border-slate-200/60 dark:border-slate-800/60 transition-colors">
                     <div className="bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-3 mb-3 border border-slate-100 dark:border-slate-700/50 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
@@ -207,6 +257,24 @@ const Layout = () => {
                                     <span>{item.name}</span>
                                 </NavLink>
                             ))}
+
+                            {/* Banner de actualización en menú móvil */}
+                            {hasUpdate && (
+                                <button
+                                    onClick={handleUpdate}
+                                    className="w-full flex items-center gap-4 px-4 py-3 mt-4 bg-primary-600 hover:bg-primary-700 active:scale-[0.98] text-white rounded-2xl transition-all shadow-lg shadow-primary-500/30 group"
+                                >
+                                    <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                                        <RefreshCw size={20} className="group-hover:rotate-180 transition-transform duration-500" />
+                                    </div>
+                                    <div className="text-left flex-1">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-primary-200">Actualización disponible</p>
+                                        <p className="text-sm font-bold">Toca para actualizar</p>
+                                    </div>
+                                    <div className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />
+                                </button>
+                            )}
+
                             <button
                                 onClick={handleLogout}
                                 className="flex items-center gap-4 px-4 py-3 rounded-2xl text-base text-red-600 dark:text-red-400 w-full mt-8"
