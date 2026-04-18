@@ -51,7 +51,10 @@ const Layout = () => {
     const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
 
     return (
-        <div className={`flex h-screen ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'} transition-colors duration-300 overflow-hidden`}>
+        <div
+            className={`flex h-screen ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'} transition-colors duration-300 overflow-hidden`}
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
             {/* Sidebar con Glassmorphism - Escritorio */}
             <aside className="hidden md:flex flex-col w-64 glass-sidebar transition-colors duration-300">
                 {/* Logo con estado pulsante */}
@@ -147,11 +150,8 @@ const Layout = () => {
 
             {/* Contenido Principal */}
             <main className="flex-1 flex flex-col overflow-hidden">
-                {/* Cabecera Móvil — padding-top maneja el notch/Dynamic Island */}
-                <div
-                    className="md:hidden flex items-center justify-between px-4 pb-3 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 transition-colors"
-                    style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
-                >
+                {/* Cabecera Móvil */}
+                <div className="md:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 transition-colors">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-bold shadow-lg">
                             B

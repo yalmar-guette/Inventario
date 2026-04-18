@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, Package, DollarSign } from 'lucide-react';
+import { X, Save, AlertCircle, Package, DollarSign, ScanLine } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import BarcodeScanner from './BarcodeScanner';
 
 const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
     const { currentUser } = useAuth();
@@ -11,6 +12,7 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
         barcode: '',
         stock: ''
     });
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     useEffect(() => {
         if (productToEdit) {
@@ -88,12 +90,22 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Barra / Código</label>
-                            <input
-                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-400 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all font-mono font-bold"
-                                value={formData.barcode}
-                                onChange={e => setFormData({ ...formData, barcode: e.target.value })}
-                                placeholder="ESCANEAR..."
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    className="flex-1 px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-400 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all font-mono font-bold"
+                                    value={formData.barcode}
+                                    onChange={e => setFormData({ ...formData, barcode: e.target.value })}
+                                    placeholder="ESCANEAR..."
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setIsScannerOpen(true)}
+                                    title="Escanear con cámara"
+                                    className="flex-shrink-0 w-12 h-12 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-2xl flex items-center justify-center shadow-md shadow-primary-500/20 transition-all"
+                                >
+                                    <ScanLine size={20} />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -131,6 +143,16 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
                     </div>
                 </form>
             </div>
+
+            {/* Escaner de código de barras para el campo Barra/Código */}
+            <BarcodeScanner
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onDetected={(code) => {
+                    setFormData(prev => ({ ...prev, barcode: code }));
+                    setIsScannerOpen(false);
+                }}
+            />
         </div>
     );
 };
