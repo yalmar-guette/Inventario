@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid, Store, List, ChevronRight, Package, DollarSign } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowUpDown, Grid3x3, LayoutGrid, Store, List, ChevronRight, Package, DollarSign, ScanLine } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
 import AuthorizationModal from '../components/AuthorizationModal';
+import BarcodeScanner from '../components/BarcodeScanner';
 import { supabase } from '../supabase';
 import { useToast } from '../contexts/ToastContext';
 
@@ -48,6 +49,7 @@ const POS = () => {
     const [cart, setCart] = useState([]);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [pendingAction, setPendingAction] = useState(null);
 
     // Filtrar y Ordenar Productos
@@ -297,6 +299,14 @@ const POS = () => {
                 onClose={() => setIsAuthModalOpen(false)}
                 onSuccess={handleAuthSuccess}
             />
+            <BarcodeScanner
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onDetected={(code) => {
+                    setSearchTerm(code);
+                    setIsScannerOpen(false);
+                }}
+            />
 
             {/* Sección de Productos */}
             <div className="flex-1 flex flex-col min-w-0 border-r border-slate-200 dark:border-slate-800">
@@ -312,15 +322,25 @@ const POS = () => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="relative w-full sm:w-80">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por código o nombre..."
-                                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all text-sm"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                            <div className="relative w-full sm:w-80 flex gap-2">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por código o nombre..."
+                                        className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all text-sm"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                {/* Botón escaner cámara */}
+                                <button
+                                    onClick={() => setIsScannerOpen(true)}
+                                    title="Escanear código con cámara"
+                                    className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl shadow-md shadow-primary-500/20 transition-all"
+                                >
+                                    <ScanLine size={18} />
+                                </button>
                             </div>
 
                             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">

@@ -147,8 +147,11 @@ const Layout = () => {
 
             {/* Contenido Principal */}
             <main className="flex-1 flex flex-col overflow-hidden">
-                {/* Cabecera Móvil */}
-                <div className="md:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 transition-colors">
+                {/* Cabecera Móvil — padding-top maneja el notch/Dynamic Island */}
+                <div
+                    className="md:hidden flex items-center justify-between px-4 pb-3 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 transition-colors"
+                    style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
+                >
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-bold shadow-lg">
                             B

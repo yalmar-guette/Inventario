@@ -2,18 +2,20 @@ import React, { useState, useMemo } from 'react';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { Search, Plus, Trash2, Edit, Package, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import { Search, Plus, Trash2, Edit, Package, AlertTriangle, ArrowUpDown, ScanLine } from 'lucide-react';
 import ProductModal from '../components/ProductModal';
 import ConfirmModal from '../components/ConfirmModal';
+import BarcodeScanner from '../components/BarcodeScanner';
 
 const Inventory = () => {
     const { currentUser, userRole } = useAuth();
     const toast = useToast();
     const { products, loading, error, addProduct, updateProduct, deleteProduct } = useInventory(currentUser?.assigned_bodega_id);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortOption, setSortOption] = useState('stock-asc'); // Por defecto: Poco stock primero (accionable)
+    const [sortOption, setSortOption] = useState('stock-asc');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     // Estado para modal de confirmación
     const [confirmDelete, setConfirmDelete] = useState({
@@ -158,14 +160,26 @@ const Inventory = () => {
                 {/* Search and Add Button */}
                 <div className="flex flex-col md:flex-row gap-4 items-center">
                     <div className="relative flex-1 w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5 pointer-events-none" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre o código..."
-                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-sm"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                        <div className="relative flex gap-2">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nombre o código..."
+                                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-sm"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            {/* Botón escaner cámara */}
+                            <button
+                                onClick={() => setIsScannerOpen(true)}
+                                title="Escanear código con cámara"
+                                className="flex-shrink-0 w-11 h-11 flex items-center justify-center bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl shadow-md shadow-primary-500/20 transition-all"
+                            >
+                                <ScanLine size={20} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex gap-4 w-full md:w-auto">
@@ -306,6 +320,15 @@ const Inventory = () => {
                     confirmText="Eliminar"
                     cancelText="Cancelar"
                     variant="danger"
+                />
+
+                <BarcodeScanner
+                    isOpen={isScannerOpen}
+                    onClose={() => setIsScannerOpen(false)}
+                    onDetected={(code) => {
+                        setSearchTerm(code);
+                        setIsScannerOpen(false);
+                    }}
                 />
             </div>
         </div>
