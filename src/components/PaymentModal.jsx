@@ -282,10 +282,10 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300 notranslate p-0 md:p-4" translate="no">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl h-full md:h-[90vh] md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden transition-colors" style={{maxHeight: '100dvh'}}>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl overflow-y-auto md:overflow-hidden md:h-[90vh] md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row transition-colors" style={{maxHeight: '100dvh'}}>
 
                 {/* Left: Summary */}
-                <div className="w-full md:w-1/3 bg-slate-50 dark:bg-slate-800/50 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 p-4 md:p-6 flex flex-col shrink-0 transition-colors max-h-[35vh] md:max-h-full overflow-y-auto">
+                <div className="w-full md:w-1/3 bg-slate-50 dark:bg-slate-800/50 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 p-4 md:p-6 flex flex-col md:shrink-0 transition-colors md:overflow-y-auto">
                     <div className="flex items-center justify-between md:block mb-4 md:mb-8">
                         <div>
                             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Resumen</h2>
@@ -363,13 +363,13 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 </div>
 
                 {/* Right: Multi-Row Form */}
-                <div className="flex-1 flex flex-col relative bg-white dark:bg-slate-900 transition-colors min-h-0">
+                <div className="md:flex-1 md:flex md:flex-col relative bg-white dark:bg-slate-900 transition-colors md:min-h-0">
                     <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all hidden md:block z-10">
                         <X size={24} />
                     </button>
 
                     {/* Scrollable form area */}
-                    <div className="flex-1 overflow-y-auto p-6 md:p-10">
+                    <div className="md:flex-1 md:overflow-y-auto p-6 md:p-10">
 
                     <div className="flex items-center justify-between mb-8">
                         <div>
@@ -602,7 +602,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     {/* End scrollable area */}
 
                     {/* Fixed bottom button */}
-                    <div className="px-6 md:px-10 pt-4 pb-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0">
+                    <div className="px-6 md:px-10 pt-4 pb-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 md:shrink-0">
                         <button
                             onClick={handleSubmit}
                             disabled={!canSubmit || isProcessing}
