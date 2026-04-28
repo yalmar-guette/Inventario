@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Loader2, Search, UserPlus, ChevronRight, Hash } from 'lucide-react';
 import clsx from 'clsx';
+import { supabase } from '../supabase';
 
 const PAYMENT_METHODS = [
     { id: 'EFECTIVO_USD', name: 'Efectivo $', isUsd: true },
@@ -10,12 +11,21 @@ const PAYMENT_METHODS = [
     { id: 'FIADO', name: 'Crédito', isUsd: true },
 ];
 
-const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPayment, cart = [] }) => {
-    // Por defecto una fila vacía
+const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPayment, cart = [], activeBodegaId }) => {
     const [rows, setRows] = useState([{ id: Date.now(), methodId: 'EFECTIVO_USD', amount: '' }]);
-    const [debtorInfo, setDebtorInfo] = useState({ name: '', phone: '' });
-    const [isManualMode, setIsManualMode] = useState(false); // Nuevo estado para el modo de calculadora
-    const [isProcessing, setIsProcessing] = useState(false); // Estado de procesamiento
+    const [isManualMode, setIsManualMode] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    // --- Estados de búsqueda de deudor ---
+    const [debtorSearch, setDebtorSearch] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [selectedDebtor, setSelectedDebtor] = useState(null);   // deudor existente seleccionado
+    const [showNewForm, setShowNewForm] = useState(false);         // modo nuevo cliente
+    const [newDebtorInfo, setNewDebtorInfo] = useState({ name: '', phone: '' });
+    const [showDropdown, setShowDropdown] = useState(false);
+    const searchRef = useRef(null);
+    const debounceRef = useRef(null);
 
     // Helper para distribuir el total equitativamente entre filas
     const getDistributedRows = (currentRows, targetTotalUSD) => {
@@ -34,13 +44,55 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
     useEffect(() => {
         if (isOpen) {
-            // Inicial: 1 Fila con el monto total
             const initialRow = { id: Date.now(), methodId: 'EFECTIVO_USD', amount: totalUSD.toFixed(2) };
             setRows([initialRow]);
-            setDebtorInfo({ name: '', phone: '' });
-            setIsManualMode(false); // Resetear a modo inteligente al abrir
+            setIsManualMode(false);
+            // Reset debtor search state
+            setDebtorSearch('');
+            setSearchResults([]);
+            setSelectedDebtor(null);
+            setShowNewForm(false);
+            setNewDebtorInfo({ name: '', phone: '' });
+            setShowDropdown(false);
         }
-    }, [isOpen, totalUSD]); // Agregar dependencia totalUSD para actualizar si cambia
+    }, [isOpen, totalUSD]);
+
+    // Debounce search
+    useEffect(() => {
+        const hasFiadoNow = rows.some(r => r.methodId === 'FIADO');
+        if (!hasFiadoNow) return;
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        if (!debtorSearch.trim()) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
+        debounceRef.current = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const term = debtorSearch.trim();
+                const isCode = /^\d+$/.test(term);
+                let query = supabase
+                    .from('debtors')
+                    .select('*')
+                    .order('code', { ascending: true })
+                    .limit(6);
+                if (activeBodegaId) query = query.eq('bodega_id', activeBodegaId);
+                if (isCode) {
+                    query = query.eq('code', parseInt(term));
+                } else {
+                    query = query.ilike('name', `%${term}%`);
+                }
+                const { data } = await query;
+                setSearchResults(data || []);
+                setShowDropdown(true);
+            } catch (e) {
+                console.error('Error buscando deudor:', e);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 350);
+    }, [debtorSearch, hasFiado, activeBodegaId]);
 
     if (!isOpen) return null;
 
@@ -74,9 +126,9 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const isCovered = totalPaidUSD >= totalUSD - 0.01;
 
     const hasFiado = rows.some(r => r.methodId === 'FIADO');
-    // Si hay crédito, el teléfono es obligatorio para identificar al deudor
-    const fiadoNeedsPhone = hasFiado && !debtorInfo.phone.trim();
-    const canSubmit = isCovered && !fiadoNeedsPhone;
+    // Para crédito: se necesita o un deudor existente seleccionado, o un nuevo con nombre
+    const fiadoReady = !hasFiado || selectedDebtor || (showNewForm && newDebtorInfo.name.trim());
+    const canSubmit = isCovered && fiadoReady;
 
     // Operaciones de Fila
     const addRow = () => {
@@ -189,7 +241,6 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
         setIsProcessing(true);
         try {
-            // Compilar pagos válidos
             const validPayments = rows
                 .filter(r => parseFloat(r.amount) > 0)
                 .map(r => {
@@ -203,9 +254,19 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     };
                 });
 
+            // Construir objeto deudor para el POS
+            let debtorPayload = null;
+            if (hasFiado) {
+                if (selectedDebtor) {
+                    debtorPayload = { existingId: selectedDebtor.id, name: selectedDebtor.name };
+                } else if (showNewForm && newDebtorInfo.name.trim()) {
+                    debtorPayload = { isNew: true, name: newDebtorInfo.name.trim(), phone: newDebtorInfo.phone.trim() };
+                }
+            }
+
             await onProcessPayment({
                 payments: validPayments,
-                debtor: hasFiado ? debtorInfo : null,
+                debtor: debtorPayload,
                 totalUSD,
                 totalBs,
                 changeUSD: isOverpaid ? Math.abs(difference) : 0
@@ -394,47 +455,143 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                         <span>Añadir método de pago</span>
                     </button>
 
-                    {/* Conditional Debt Info */}
+                    {/* Debtor Search Section */}
                     {hasFiado && (
                         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-6 rounded-[2rem] mb-8 animate-in zoom-in-95 duration-300 transition-colors relative overflow-hidden">
                             <h4 className="text-amber-700 dark:text-amber-400 font-black text-xs uppercase tracking-widest mb-5 flex items-center gap-3 relative z-10">
                                 <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
                                     <User size={18} />
                                 </div>
-                                Datos del Deudor
+                                Cliente a Crédito
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-amber-600/60 dark:text-amber-400/40 uppercase tracking-widest ml-1">
-                                        Nombre Completo
-                                    </label>
-                                    <input
-                                        placeholder="Nombre del cliente"
-                                        className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
-                                        value={debtorInfo.name}
-                                        onChange={e => setDebtorInfo({ ...debtorInfo, name: e.target.value })}
-                                    />
+
+                            {/* Estado: deudor ya seleccionado */}
+                            {selectedDebtor ? (
+                                <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-5 py-4 relative z-10">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] font-black bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-lg tracking-widest">
+                                                #{String(selectedDebtor.code || '?').padStart(3, '0')}
+                                            </span>
+                                            <span className="font-black text-slate-900 dark:text-white">{selectedDebtor.name}</span>
+                                        </div>
+                                        <p className="text-xs text-rose-500 font-bold">
+                                            Deuda actual: ${(parseFloat(selectedDebtor.total_debt_usd) || 0).toFixed(2)}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => { setSelectedDebtor(null); setDebtorSearch(''); }}
+                                        className="text-slate-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
+                                    >
+                                        <X size={18} />
+                                    </button>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 flex items-center gap-1.5"
-                                        style={{color: fiadoNeedsPhone ? '#d97706' : undefined}}>
-                                        Teléfono Móvil
-                                        <span className="text-red-500 font-black">*</span>
-                                        {fiadoNeedsPhone && <span className="text-red-400 normal-case font-bold text-[9px]">(requerido para crédito)</span>}
-                                    </label>
-                                    <input
-                                        placeholder="04xx-xxxxxxx"
-                                        className={clsx(
-                                            "w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 rounded-2xl focus:outline-none text-slate-900 dark:text-white font-bold transition-all",
-                                            fiadoNeedsPhone
-                                                ? "border-red-300 dark:border-red-700 focus:border-red-400"
-                                                : "border-amber-100 dark:border-amber-900/30 focus:border-amber-400"
-                                        )}
-                                        value={debtorInfo.phone}
-                                        onChange={e => setDebtorInfo({ ...debtorInfo, phone: e.target.value })}
-                                    />
+                            ) : showNewForm ? (
+                                /* Estado: formulario nuevo cliente */
+                                <div className="space-y-4 relative z-10">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-amber-600/70 dark:text-amber-400/50 uppercase tracking-widest ml-1">
+                                            Nombre Completo <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            autoFocus
+                                            placeholder="Nombre del cliente"
+                                            className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
+                                            value={newDebtorInfo.name}
+                                            onChange={e => setNewDebtorInfo(p => ({ ...p, name: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-amber-600/70 dark:text-amber-400/50 uppercase tracking-widest ml-1">
+                                            Teléfono <span className="text-slate-400">(opcional)</span>
+                                        </label>
+                                        <input
+                                            placeholder="04xx-xxxxxxx"
+                                            className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
+                                            value={newDebtorInfo.phone}
+                                            onChange={e => setNewDebtorInfo(p => ({ ...p, phone: e.target.value }))}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => setShowNewForm(false)}
+                                        className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                    >
+                                        ← Buscar cliente existente
+                                    </button>
                                 </div>
-                            </div>
+                            ) : (
+                                /* Estado: buscador */
+                                <div className="relative z-10" ref={searchRef}>
+                                    <div className="relative">
+                                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        {searchLoading && <Loader2 size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 animate-spin" />}
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar por nombre o código (001)..."
+                                            className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
+                                            value={debtorSearch}
+                                            onChange={e => setDebtorSearch(e.target.value)}
+                                            onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                                        />
+                                    </div>
+
+                                    {/* Dropdown resultados */}
+                                    {showDropdown && (
+                                        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden z-50">
+                                            {searchResults.length > 0 ? (
+                                                <>
+                                                    {searchResults.map(d => (
+                                                        <button
+                                                            key={d.id}
+                                                            type="button"
+                                                            onClick={() => { setSelectedDebtor(d); setShowDropdown(false); setDebtorSearch(''); }}
+                                                            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors text-left border-b border-slate-100 dark:border-slate-700 last:border-0"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-lg">
+                                                                    #{String(d.code || '?').padStart(3, '0')}
+                                                                </span>
+                                                                <div>
+                                                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{d.name}</p>
+                                                                    {d.phone && <p className="text-[10px] text-slate-400">{d.phone}</p>}
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-xs font-black text-rose-500">${(parseFloat(d.total_debt_usd) || 0).toFixed(2)}</span>
+                                                        </button>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setShowNewForm(true); setShowDropdown(false); }}
+                                                        className="w-full flex items-center gap-3 px-5 py-3.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/20 transition-colors font-bold text-sm"
+                                                    >
+                                                        <UserPlus size={16} /> Nuevo cliente
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <div className="px-5 py-4">
+                                                    <p className="text-sm text-slate-400 font-bold mb-3">Sin resultados para "{debtorSearch}"</p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setShowNewForm(true); setShowDropdown(false); }}
+                                                        className="flex items-center gap-2 text-primary-600 dark:text-primary-400 font-bold text-sm hover:underline"
+                                                    >
+                                                        <UserPlus size={16} /> Registrar como nuevo cliente
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowNewForm(true); setShowDropdown(false); }}
+                                        className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                                    >
+                                        <UserPlus size={14} /> Es un cliente nuevo
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="absolute bottom-0 right-0 w-32 h-32 bg-amber-500/5 dark:bg-amber-400/5 -mr-12 -mb-12 rounded-full blur-2xl" />
                         </div>
                     )}

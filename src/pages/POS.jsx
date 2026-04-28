@@ -206,49 +206,31 @@ const POS = () => {
                 const debtAmountUSD = debtPayments.reduce((sum, p) =>
                     sum + (p.isUsd ? p.amount : p.amount / validRate), 0);
 
-                // El tel\u00e9fono siempre est\u00e1 presente (el UI lo requiere para cr\u00e9dito).
-                // Buscar \u00fanicamente por tel\u00e9fono: identificador \u00fanico y sin ambig\u00fcedades.
-                let existingDebtor = null;
-                const { data: byPhone } = await supabase
-                    .from('debtors')
-                    .select('*')
-                    .eq('bodega_id', activeBodegaId)
-                    .eq('phone', debtor.phone.trim())
-                    .maybeSingle();
-                existingDebtor = byPhone;
-
-
-                if (existingDebtor) {
-                    // Acumular deuda sobre el registro existente
-                    const newTotalUSD = (parseFloat(existingDebtor.total_debt_usd) || 0) + debtAmountUSD;
+                if (debtor.existingId) {
+                    // Deudor existente seleccionado: acumular deuda
+                    const { data: current } = await supabase
+                        .from('debtors').select('total_debt_usd').eq('id', debtor.existingId).single();
+                    const newTotal = (parseFloat(current?.total_debt_usd) || 0) + debtAmountUSD;
                     const { error: debtorError } = await supabase
                         .from('debtors')
-                        .update({
-                            total_debt_usd: newTotalUSD,
-                            total_debt_bs: newTotalUSD * validRate,
-                            // Actualizar teléfono si antes no lo tenía
-                            phone: existingDebtor.phone || debtor.phone,
-                        })
-                        .eq('id', existingDebtor.id);
-
+                        .update({ total_debt_usd: newTotal, total_debt_bs: newTotal * validRate })
+                        .eq('id', debtor.existingId);
                     if (debtorError) throw debtorError;
-                } else {
-                    // Crear nuevo registro de deudor
+                } else if (debtor.isNew) {
+                    // Nuevo cliente: insertar (code se asigna automáticamente por la DB)
                     const { error: debtorError } = await supabase
                         .from('debtors')
                         .insert([{
                             name: debtor.name,
-                            phone: debtor.phone,
+                            phone: debtor.phone || null,
                             bodega_id: activeBodegaId,
                             total_debt_usd: debtAmountUSD,
                             total_debt_bs: debtAmountUSD * validRate,
                             sale_id: saleRecord.id
                         }]);
-
                     if (debtorError) throw debtorError;
                 }
             }
-
 
             // 3. Actualizar Inventario y Conteo de Ventas
             for (const item of cart) {
@@ -323,6 +305,7 @@ const POS = () => {
                 cart={cart}
                 exchangeRate={validRate}
                 onProcessPayment={handleProcessPayment}
+                activeBodegaId={activeBodegaId}
             />
             <AuthorizationModal
                 isOpen={isAuthModalOpen}

@@ -196,7 +196,14 @@ const Debtors = () => {
                                             <User size={24} />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-slate-900 dark:text-white text-lg transition-colors">{debtor.name}</h3>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {debtor.code && (
+                                                    <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 tracking-widest">
+                                                        #{String(debtor.code).padStart(3, '0')}
+                                                    </span>
+                                                )}
+                                                <h3 className="font-bold text-slate-900 dark:text-white text-lg transition-colors">{debtor.name}</h3>
+                                            </div>
                                             <div className="flex items-center gap-1 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1">
                                                 <Phone size={12} />
                                                 <span>{debtor.phone || 'Sin teléfono'}</span>
