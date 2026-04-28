@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { supabase } from '../supabase';
 import { startOfDay, endOfDay, format } from 'date-fns';
-import { FileText, Download, Table, ExternalLink } from 'lucide-react';
+import { FileText, Download, Table, ExternalLink, Undo2, AlertTriangle, X } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -14,6 +14,8 @@ const Reports = () => {
     const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [returnModal, setReturnModal] = useState(null); // sale object
+    const [returningId, setReturningId] = useState(null);
 
     // Filtro de Bodega (Solo Owner)
     const [bodegas, setBodegas] = useState([]);
@@ -134,6 +136,54 @@ const Reports = () => {
         if (sale.cashier_name) return sale.cashier_name;
         if (usersMap && sale.cashier_id && usersMap[sale.cashier_id]) return usersMap[sale.cashier_id];
         return 'Desconocido';
+    };
+
+    // ── Devolución ────────────────────────────────────────────────
+    const handleReturn = async (sale) => {
+        if (!sale || returningId) return;
+        setReturningId(sale.id);
+        try {
+            // 1. Marcar venta como devuelta
+            await supabase.from('sales').update({ returned: true }).eq('id', sale.id);
+
+            // 2. Devolver stock al inventario
+            for (const item of (sale.items || [])) {
+                const pid = item.product_id || item.id;
+                if (!pid) continue;
+                const { data: prod } = await supabase
+                    .from('products').select('quantity').eq('id', pid).single();
+                if (prod) {
+                    await supabase.from('products')
+                        .update({ quantity: (prod.quantity || 0) + (item.quantity || 1) })
+                        .eq('id', pid);
+                }
+            }
+
+            // 3. Si había FIADO, reducir deuda del deudor
+            const fiadoPmt = (sale.payments || []).find(p => p.method === 'FIADO');
+            if (fiadoPmt) {
+                const rate = sale.exchange_rate || 1;
+                const fiadoAmtUSD = fiadoPmt.isUsd ? fiadoPmt.amount : fiadoPmt.amount / rate;
+                const { data: debtorRows } = await supabase
+                    .from('debtors').select('id, total_debt_usd, total_debt_bs')
+                    .eq('sale_id', sale.id).limit(1);
+                if (debtorRows?.length > 0) {
+                    const d = debtorRows[0];
+                    const newDebt = Math.max(0, (parseFloat(d.total_debt_usd) || 0) - fiadoAmtUSD);
+                    await supabase.from('debtors')
+                        .update({ total_debt_usd: newDebt, total_debt_bs: newDebt * rate })
+                        .eq('id', d.id);
+                }
+            }
+
+            await fetchData();
+            setReturnModal(null);
+        } catch (err) {
+            console.error('Error en devolución:', err);
+            alert('Error al procesar la devolución: ' + err.message);
+        } finally {
+            setReturningId(null);
+        }
     };
 
     const exportPDF = () => {
@@ -453,6 +503,9 @@ const Reports = () => {
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Total Bs</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Método</th>
                                     {selectedBodega === 'all' && <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Bodega</th>}
+                                    {(userRole === 'OWNER' || userRole === 'ADMIN') && (
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Acción</th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 transition-colors">
@@ -462,6 +515,68 @@ const Reports = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Confirmación de Devolución */}
+            {returnModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center">
+                                    <AlertTriangle size={20} className="text-rose-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-slate-900 dark:text-white text-lg">Confirmar Devolución</h3>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Esta acción no se puede deshacer</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setReturnModal(null)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 mb-5 space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500 dark:text-slate-400 font-bold">Total</span>
+                                <span className="font-black text-emerald-600">${(returnModal.totalUSD || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500 dark:text-slate-400 font-bold">Productos</span>
+                                <span className="font-bold text-slate-900 dark:text-white text-right max-w-[60%]">
+                                    {(returnModal.items || []).map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                                </span>
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-5">
+                            El stock de los productos <strong>regresará al inventario</strong>.
+                            {(returnModal.payments || []).some(p => p.method === 'FIADO') &&
+                                <span className="block mt-1 text-amber-600 dark:text-amber-400 font-bold">⚠️ La deuda del cliente también será reducida.</span>
+                            }
+                        </p>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setReturnModal(null)}
+                                className="flex-1 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => handleReturn(returnModal)}
+                                disabled={returningId === returnModal.id}
+                                className="flex-1 py-3 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+                            >
+                                {returningId === returnModal.id ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <><Undo2 size={16} /> Devolver</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 
@@ -577,6 +692,22 @@ const Reports = () => {
                         {selectedBodega === 'all' && (
                             <td className="px-6 py-4 text-xs text-slate-500">
                                 {bodegaName}
+                            </td>
+                        )}
+                        {(userRole === 'OWNER' || userRole === 'ADMIN') && (
+                            <td className="px-6 py-4 text-center">
+                                {sale.returned ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                                        <Undo2 size={10} /> Devuelta
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => setReturnModal(sale)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 border border-rose-200 dark:border-rose-900/40 transition-all active:scale-95"
+                                    >
+                                        <Undo2 size={13} /> Devolver
+                                    </button>
+                                )}
                             </td>
                         )}
                     </tr>
