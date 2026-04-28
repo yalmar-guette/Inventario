@@ -27,6 +27,9 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const searchRef = useRef(null);
     const debounceRef = useRef(null);
 
+    // Calculado siempre (antes de early return) para usarse en useEffect deps
+    const hasFiado = rows.some(r => r.methodId === 'FIADO');
+
     // Helper para distribuir el total equitativamente entre filas
     const getDistributedRows = (currentRows, targetTotalUSD) => {
         const count = currentRows.length;
@@ -92,7 +95,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 setSearchLoading(false);
             }
         }, 350);
-    }, [debtorSearch, hasFiado, activeBodegaId]);
+    }, [debtorSearch, rows, activeBodegaId]);
 
     if (!isOpen) return null;
 
@@ -125,7 +128,6 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     // Permitir pequeña tolerancia decimal para "Está Cubierto" (Botón proceder)
     const isCovered = totalPaidUSD >= totalUSD - 0.01;
 
-    const hasFiado = rows.some(r => r.methodId === 'FIADO');
     // Para crédito: se necesita o un deudor existente seleccionado, o un nuevo con nombre
     const fiadoReady = !hasFiado || selectedDebtor || (showNewForm && newDebtorInfo.name.trim());
     const canSubmit = isCovered && fiadoReady;
