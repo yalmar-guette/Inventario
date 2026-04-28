@@ -537,9 +537,9 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                         />
                                     </div>
 
-                                    {/* Dropdown resultados */}
+                                    {/* Resultados inline (no absolute, para evitar clip por overflow) */}
                                     {showDropdown && (
-                                        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden z-50">
+                                        <div className="mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg overflow-hidden">
                                             {searchResults.length > 0 ? (
                                                 <>
                                                     {searchResults.map(d => (
