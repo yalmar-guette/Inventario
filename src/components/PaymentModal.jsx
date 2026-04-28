@@ -297,10 +297,13 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 </div>
 
                 {/* Right: Multi-Row Form */}
-                <div className="flex-1 p-6 md:p-10 flex flex-col relative bg-white dark:bg-slate-900 overflow-y-auto transition-colors min-h-0">
-                    <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all hidden md:block">
+                <div className="flex-1 flex flex-col relative bg-white dark:bg-slate-900 transition-colors min-h-0">
+                    <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all hidden md:block z-10">
                         <X size={24} />
                     </button>
+
+                    {/* Scrollable form area */}
+                    <div className="flex-1 overflow-y-auto p-6 md:p-10">
 
                     <div className="flex items-center justify-between mb-8">
                         <div>
@@ -421,7 +424,11 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                         </div>
                     )}
 
-                    <div className="sticky bottom-0 mt-6 pt-4 pb-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 z-10">
+                    </div>
+                    {/* End scrollable area */}
+
+                    {/* Fixed bottom button */}
+                    <div className="px-6 md:px-10 pt-4 pb-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0">
                         <button
                             onClick={handleSubmit}
                             disabled={!isCovered || isProcessing}
