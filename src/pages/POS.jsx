@@ -206,30 +206,17 @@ const POS = () => {
                 const debtAmountUSD = debtPayments.reduce((sum, p) =>
                     sum + (p.isUsd ? p.amount : p.amount / validRate), 0);
 
-                // Buscar deudor existente: el teléfono es el identificador único fiable
+                // El tel\u00e9fono siempre est\u00e1 presente (el UI lo requiere para cr\u00e9dito).
+                // Buscar \u00fanicamente por tel\u00e9fono: identificador \u00fanico y sin ambig\u00fcedades.
                 let existingDebtor = null;
+                const { data: byPhone } = await supabase
+                    .from('debtors')
+                    .select('*')
+                    .eq('bodega_id', activeBodegaId)
+                    .eq('phone', debtor.phone.trim())
+                    .maybeSingle();
+                existingDebtor = byPhone;
 
-                if (debtor.phone) {
-                    // Con teléfono: buscar SOLO por teléfono. Si no coincide, es otra persona.
-                    const { data: byPhone } = await supabase
-                        .from('debtors')
-                        .select('*')
-                        .eq('bodega_id', activeBodegaId)
-                        .eq('phone', debtor.phone)
-                        .maybeSingle();
-                    existingDebtor = byPhone;
-                } else {
-                    // Sin teléfono: buscar por nombre solo entre deudores que tampoco tienen teléfono,
-                    // para evitar confundir a dos personas con el mismo nombre.
-                    const { data: byName } = await supabase
-                        .from('debtors')
-                        .select('*')
-                        .eq('bodega_id', activeBodegaId)
-                        .ilike('name', debtor.name.trim())
-                        .or('phone.is.null,phone.eq.')
-                        .maybeSingle();
-                    existingDebtor = byName;
-                }
 
                 if (existingDebtor) {
                     // Acumular deuda sobre el registro existente

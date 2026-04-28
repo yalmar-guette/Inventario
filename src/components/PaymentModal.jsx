@@ -74,6 +74,9 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const isCovered = totalPaidUSD >= totalUSD - 0.01;
 
     const hasFiado = rows.some(r => r.methodId === 'FIADO');
+    // Si hay crédito, el teléfono es obligatorio para identificar al deudor
+    const fiadoNeedsPhone = hasFiado && !debtorInfo.phone.trim();
+    const canSubmit = isCovered && !fiadoNeedsPhone;
 
     // Operaciones de Fila
     const addRow = () => {
@@ -182,7 +185,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     };
 
     const handleSubmit = async () => {
-        if (!isCovered || isProcessing) return;
+        if (!canSubmit || isProcessing) return;
 
         setIsProcessing(true);
         try {
@@ -402,7 +405,9 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-amber-600/60 dark:text-amber-400/40 uppercase tracking-widest ml-1">Nombre Completo</label>
+                                    <label className="text-[10px] font-black text-amber-600/60 dark:text-amber-400/40 uppercase tracking-widest ml-1">
+                                        Nombre Completo
+                                    </label>
                                     <input
                                         placeholder="Nombre del cliente"
                                         className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
@@ -411,10 +416,20 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-amber-600/60 dark:text-amber-400/40 uppercase tracking-widest ml-1">Teléfono Movil</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 flex items-center gap-1.5"
+                                        style={{color: fiadoNeedsPhone ? '#d97706' : undefined}}>
+                                        Teléfono Móvil
+                                        <span className="text-red-500 font-black">*</span>
+                                        {fiadoNeedsPhone && <span className="text-red-400 normal-case font-bold text-[9px]">(requerido para crédito)</span>}
+                                    </label>
                                     <input
                                         placeholder="04xx-xxxxxxx"
-                                        className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
+                                        className={clsx(
+                                            "w-full px-5 py-3.5 bg-white dark:bg-slate-800 border-2 rounded-2xl focus:outline-none text-slate-900 dark:text-white font-bold transition-all",
+                                            fiadoNeedsPhone
+                                                ? "border-red-300 dark:border-red-700 focus:border-red-400"
+                                                : "border-amber-100 dark:border-amber-900/30 focus:border-amber-400"
+                                        )}
                                         value={debtorInfo.phone}
                                         onChange={e => setDebtorInfo({ ...debtorInfo, phone: e.target.value })}
                                     />
@@ -431,10 +446,10 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     <div className="px-6 md:px-10 pt-4 pb-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0">
                         <button
                             onClick={handleSubmit}
-                            disabled={!isCovered || isProcessing}
+                            disabled={!canSubmit || isProcessing}
                             className={clsx(
                                 "w-full py-5 rounded-2xl text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all shadow-xl",
-                                (isCovered && !isProcessing)
+                                (canSubmit && !isProcessing)
                                     ? "bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white shadow-emerald-200/50 dark:shadow-none translate-y-0 hover:-translate-y-1 active:scale-[0.98]"
                                     : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none"
                             )}
