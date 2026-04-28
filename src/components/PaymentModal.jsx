@@ -216,10 +216,10 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300 notranslate p-0 md:p-4" translate="no">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl h-full md:h-[90vh] md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden transition-colors">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl h-full md:h-[90vh] md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden transition-colors" style={{maxHeight: '100dvh'}}>
 
                 {/* Left: Summary */}
-                <div className="w-full md:w-1/3 bg-slate-50 dark:bg-slate-800/50 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 p-4 md:p-6 flex flex-col shrink-0 transition-colors">
+                <div className="w-full md:w-1/3 bg-slate-50 dark:bg-slate-800/50 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 p-4 md:p-6 flex flex-col shrink-0 transition-colors max-h-[35vh] md:max-h-full overflow-y-auto">
                     <div className="flex items-center justify-between md:block mb-4 md:mb-8">
                         <div>
                             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Resumen</h2>
@@ -297,7 +297,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 </div>
 
                 {/* Right: Multi-Row Form */}
-                <div className="flex-1 p-6 md:p-10 flex flex-col relative bg-white dark:bg-slate-900 overflow-y-auto transition-colors">
+                <div className="flex-1 p-6 md:p-10 flex flex-col relative bg-white dark:bg-slate-900 overflow-y-auto transition-colors min-h-0">
                     <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all hidden md:block">
                         <X size={24} />
                     </button>
@@ -421,7 +421,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                         </div>
                     )}
 
-                    <div className="mt-auto pt-8 border-t border-slate-100 dark:border-slate-800">
+                    <div className="sticky bottom-0 mt-6 pt-4 pb-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 z-10">
                         <button
                             onClick={handleSubmit}
                             disabled={!isCovered || isProcessing}
