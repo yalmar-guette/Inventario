@@ -79,14 +79,15 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     .from('debtors')
                     .select('*')
                     .order('code', { ascending: true })
-                    .limit(6);
-                if (activeBodegaId) query = query.eq('bodega_id', activeBodegaId);
+                    .limit(8);
+                // RLS ya filtra por bodega del usuario — no necesitamos filtro manual
                 if (isCode) {
                     query = query.eq('code', parseInt(term));
                 } else {
                     query = query.ilike('name', `%${term}%`);
                 }
-                const { data } = await query;
+                const { data, error } = await query;
+                if (error) console.error('Supabase error:', error);
                 setSearchResults(data || []);
                 setShowDropdown(true);
             } catch (e) {
