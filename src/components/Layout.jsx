@@ -60,16 +60,18 @@ const Layout = () => {
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
-        // Mostrar la animación de despedida por 1.5 segundos antes de invalidar la sesión
+        // Breve animación antes de cerrar sesión
         setTimeout(async () => {
             try {
                 await logout();
-                navigate('/login?loggedOut=true');
+                // window.location.href es más confiable que navigate() en PWA
+                // porque fuerza una navegación real que el SW maneja correctamente
+                window.location.href = '/login';
             } catch (error) {
                 console.error("Failed to log out", error);
                 setIsLoggingOut(false);
             }
-        }, 1500);
+        }, 1200);
     };
 
     const navItems = [

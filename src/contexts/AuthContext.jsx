@@ -39,34 +39,12 @@ export function AuthProvider({ children }) {
         return () => subscription.unsubscribe();
     }, []);
 
+    /**
+     * Fuente de verdad: SIEMPRE la DB.
+     * JWT metadata solo se usa como fallback si la DB falla.
+     * Esto evita el "flash" de rol incorrecto al recargar.
+     */
     const fetchUserData = async (authUser) => {
-        const meta = authUser.user_metadata || {};
-
-        // PASO 1: Mostrar de inmediato para evitar pantalla blanca
-        if (meta.role) {
-            setCurrentUser({
-                uid: authUser.id,
-                email: authUser.email,
-                name: meta.name || authUser.email,
-                role: meta.role,
-                assigned_bodega_id: meta.assigned_bodega_id || null,
-            });
-            setUserRole(meta.role);
-            setLoading(false);
-        } else {
-            // Sin metadata → desbloquear UI de inmediato con fallback
-            setCurrentUser({
-                uid: authUser.id,
-                email: authUser.email,
-                name: authUser.email,
-                role: 'EMPLOYEE',
-                assigned_bodega_id: null,
-            });
-            setUserRole('EMPLOYEE');
-            setLoading(false);
-        }
-
-        // PASO 2: Refrescar desde DB en background (actualiza rol/bodega real)
         try {
             const { data: userData, error } = await supabase
                 .from('users')
@@ -78,16 +56,27 @@ export function AuthProvider({ children }) {
                 setCurrentUser({
                     uid: userData.id,
                     email: userData.email,
-                    name: userData.name,
+                    name: userData.name || authUser.email,
                     role: userData.role,
                     assigned_bodega_id: userData.assigned_bodega_id || null,
                 });
                 setUserRole(userData.role);
+                return;
             }
         } catch (dbErr) {
-            console.warn('Background DB refresh failed:', dbErr.message);
+            console.warn('DB fetch failed, using metadata fallback:', dbErr.message);
         }
-        // No se necesita finally aquí — loading ya está en false desde el paso 1
+
+        // Fallback: JWT metadata (si la DB falla por red u otro motivo)
+        const meta = authUser.user_metadata || {};
+        setCurrentUser({
+            uid: authUser.id,
+            email: authUser.email,
+            name: meta.name || authUser.email,
+            role: meta.role || 'EMPLOYEE',
+            assigned_bodega_id: meta.assigned_bodega_id || null,
+        });
+        setUserRole(meta.role || 'EMPLOYEE');
     };
 
     // Actualiza assigned_bodega_id en estado local SIN recargar página
@@ -122,7 +111,7 @@ export function AuthProvider({ children }) {
     return (
         <AuthContext.Provider value={value}>
             {loading ? (
-                // Carga invisible (fondo blanco/oscuro) como pidió el usuario
+                // Pantalla de carga invisible mientras se confirma el rol desde la DB
                 <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950" />
             ) : (
                 children
