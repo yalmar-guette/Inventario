@@ -78,7 +78,7 @@ const Layout = () => {
         { name: 'Inventario', path: '/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Deudores', path: '/debtors', icon: Users, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Reportes', path: '/reports', icon: FileText, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
-        { name: 'Configuración', path: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN'] },
+        { name: 'Configuración', path: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
     ];
 
     const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
@@ -177,10 +177,10 @@ const Layout = () => {
                     <div className="bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-3 mb-3 border border-slate-100 dark:border-slate-700/50 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-semibold text-sm transition-colors">
-                                {((currentUser?.email || 'US').substring(0, 2)).toUpperCase()}
+                                {((currentUser?.name || currentUser?.email || 'U').charAt(0)).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate transition-colors">{currentUser?.email}</p>
+                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate transition-colors">{currentUser?.name || currentUser?.email}</p>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse-soft"></div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 uppercase transition-colors">{userRole}</p>

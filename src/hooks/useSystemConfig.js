@@ -1,38 +1,64 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 
-export function useSystemConfig() {
+export function useSystemConfig(bodegaId = null) {
     const [rate, setRate] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Fetch inicial
         fetchConfig();
 
-        // Suscribirse a cambios en tiempo real
-        const subscription = supabase
+        // Suscribirse a cambios en tiempo real en system_config (tasa global)
+        const globalSub = supabase
             .channel('system-config-channel')
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'system_config' },
                 (payload) => {
-                    console.log('Config change detected:', payload);
+                    // Solo actualizar con global si no hay tasa de bodega específica
                     if (payload.new && typeof payload.new.exchange_rate === 'number') {
-                        setRate(payload.new.exchange_rate);
+                        // Re-fetch para respetar la lógica de bodega > global
+                        fetchConfig();
                     }
                 }
             )
             .subscribe();
 
+        // Suscribirse a cambios en bodegas (tasa por sede)
+        const bodegaSub = supabase
+            .channel('bodegas-rate-channel')
+            .on('postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'bodegas' },
+                () => { fetchConfig(); }
+            )
+            .subscribe();
+
         return () => {
-            subscription.unsubscribe();
+            globalSub.unsubscribe();
+            bodegaSub.unsubscribe();
         };
-    }, []);
+    }, [bodegaId]);
 
     const fetchConfig = async () => {
         try {
+            // 1. Si hay bodegaId, intentar leer tasa específica de esa bodega
+            if (bodegaId) {
+                const { data: bodegaData, error: bodegaError } = await supabase
+                    .from('bodegas')
+                    .select('exchange_rate')
+                    .eq('id', bodegaId)
+                    .maybeSingle();
+
+                if (!bodegaError && bodegaData?.exchange_rate != null) {
+                    setRate(bodegaData.exchange_rate);
+                    setLoading(false);
+                    return; // Tasa de bodega encontrada, no necesitamos la global
+                }
+            }
+
+            // 2. Fallback: leer tasa global de system_config
             const { data, error } = await supabase
                 .from('system_config')
-                .select('*') // Seleccionar todo para obtener auto_sync_type y last_sync_date
+                .select('*')
                 .eq('id', 'global')
                 .maybeSingle();
 
@@ -46,13 +72,11 @@ export function useSystemConfig() {
 
                 // --- Lógica de Sincronización Automática Diaria ---
                 try {
-                    // Verificar si las columnas existen en data (para retrocompatibilidad si aún no se crean en DB)
                     if (data.auto_sync_type && data.auto_sync_type !== 'none') {
-                        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD local (aprox)
+                        const today = new Date().toISOString().split('T')[0];
 
-                        // Si no hay last_sync_date o es anterior a hoy
                         if (!data.last_sync_date || data.last_sync_date < today) {
-                            console.log(`Auto-sync detectado para ${data.auto_sync_type}. Última sinc: ${data.last_sync_date}. Sincronizando hoy: ${today}`);
+                            console.log(`Auto-sync para ${data.auto_sync_type}. Sincronizando hoy: ${today}`);
 
                             const endpoint = data.auto_sync_type === 'bcv'
                                 ? 'https://ve.dolarapi.com/v1/dolares/oficial'
@@ -72,8 +96,6 @@ export function useSystemConfig() {
 
                                 if (typeof apiRate === 'number') {
                                     const roundedRate = parseFloat(apiRate).toFixed(2);
-
-                                    // Actualizar DB con nueva tasa y fecha
                                     const { error: syncError } = await supabase
                                         .from('system_config')
                                         .update({
@@ -83,28 +105,21 @@ export function useSystemConfig() {
                                         .eq('id', 'global');
 
                                     if (!syncError) {
-                                        console.log(`✅ Sincronización automática exitosa: ${roundedRate} BS/$`);
-                                        setRate(parseFloat(roundedRate)); // Actualizar estado local
-                                    } else {
-                                        console.error("Error guardando sinc automática en DB:", syncError);
+                                        console.log(`✅ Auto-sync: ${roundedRate} BS/$`);
+                                        setRate(parseFloat(roundedRate));
                                     }
                                 }
                             }
                         }
                     }
                 } catch (syncErr) {
-                    console.error("Error en sincronización automática de tasa:", syncErr);
+                    console.error("Error en sincronización automática:", syncErr);
                 }
-                // --------------------------------------------------
-
             } else {
-                // Si no hay datos, usar valor por defecto
-                console.warn("No se encontró configuración. Usando tasa por defecto: 40.00 Bs/$");
                 setRate(40.00);
             }
         } catch (error) {
             console.error("Error in fetchConfig:", error);
-            // En caso de error crítico, usar valor por defecto
             setRate(40.00);
         } finally {
             setLoading(false);
@@ -113,17 +128,23 @@ export function useSystemConfig() {
 
     const updateRate = async (newRate) => {
         const val = parseFloat(newRate);
-        if (isNaN(val)) {
-            console.error("Invalid rate:", newRate);
-            throw new Error("Tasa inválida");
+        if (isNaN(val)) throw new Error("Tasa inválida");
+
+        // Si hay bodegaId, actualizar tasa de esa bodega
+        if (bodegaId) {
+            const { error } = await supabase
+                .from('bodegas')
+                .update({ exchange_rate: val })
+                .eq('id', bodegaId);
+            if (error) throw error;
+        } else {
+            // Actualizar tasa global
+            const { error } = await supabase
+                .from('system_config')
+                .update({ exchange_rate: val })
+                .eq('id', 'global');
+            if (error) throw error;
         }
-
-        const { error } = await supabase
-            .from('system_config')
-            .update({ exchange_rate: val })
-            .eq('id', 'global');
-
-        if (error) throw error;
     };
 
     return { rate, updateRate, loading };
