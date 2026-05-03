@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../supabase";
 
 const AuthContext = createContext();
@@ -12,45 +12,38 @@ export function AuthProvider({ children }) {
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Evita llamadas concurrentes a fetchUserData (AbortError)
-    const fetchingRef = useRef(false);
-
     useEffect(() => {
-        /**
-         * onAuthStateChange con Supabase v2 dispara INITIAL_SESSION al registrarse,
-         * por lo que NO necesitamos llamar getSession() por separado.
-         * Llamarlos juntos causaba doble-fetch → AbortError en consola.
-         */
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_OUT') {
-                setCurrentUser(null);
-                setUserRole(null);
-                setLoading(false);
-                return;
-            }
-
+        // getSession() para carga inicial → una sola llamada a fetchUserData
+        supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
-                await fetchUserData(session.user);
+                fetchUserData(session.user);
             } else {
+                setLoading(false);
+            }
+        }).catch(() => setLoading(false));
+
+        // onAuthStateChange: SOLO reacciona a login nuevo y cierre de sesión.
+        // Ignoramos INITIAL_SESSION y TOKEN_REFRESHED para evitar doble-fetch → AbortError.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN') {
+                fetchUserData(session.user);
+            } else if (event === 'SIGNED_OUT') {
                 setCurrentUser(null);
                 setUserRole(null);
                 setLoading(false);
             }
+            // TOKEN_REFRESHED e INITIAL_SESSION son ignorados intencionalmente
         });
 
         return () => subscription.unsubscribe();
     }, []);
 
     /**
-     * Fuente de verdad: SIEMPRE la DB (no JWT metadata).
-     * Esto evita que un empleado vea vista de OWNER por metadata desactualizada.
-     * JWT metadata solo se usa como fallback si la DB falla por red.
+     * La DB es siempre la fuente de verdad para el ROL.
+     * Esto evita el flash EMPLOYEE→OWNER por metadata de JWT desactualizada.
+     * El JWT metadata solo actúa como fallback si la DB no responde.
      */
     const fetchUserData = async (authUser) => {
-        // Si ya hay un fetch en curso, lo ignoramos para evitar AbortError
-        if (fetchingRef.current) return;
-        fetchingRef.current = true;
-
         try {
             const { data: userData, error } = await supabase
                 .from('users')
@@ -67,20 +60,14 @@ export function AuthProvider({ children }) {
                     assigned_bodega_id: userData.assigned_bodega_id || null,
                 });
                 setUserRole(userData.role);
+                setLoading(false);
                 return;
             }
-
-            // Si la query devuelve error (ej: row not found), usamos metadata
-            console.warn('DB user not found, using metadata fallback. Error:', error?.message);
         } catch (dbErr) {
-            console.warn('DB fetch failed, using metadata fallback:', dbErr.message);
-        } finally {
-            // SIEMPRE desbloquear la UI y permitir siguiente fetch
-            setLoading(false);
-            fetchingRef.current = false;
+            console.warn('DB fetch failed, usando metadata como fallback:', dbErr.message);
         }
 
-        // Fallback: JWT metadata (solo si la DB falló)
+        // Fallback: JWT metadata (si la DB no respondió)
         const meta = authUser.user_metadata || {};
         setCurrentUser({
             uid: authUser.id,
@@ -90,6 +77,7 @@ export function AuthProvider({ children }) {
             assigned_bodega_id: meta.assigned_bodega_id || null,
         });
         setUserRole(meta.role || 'EMPLOYEE');
+        setLoading(false);
     };
 
     // Actualiza assigned_bodega_id en estado local SIN recargar página
@@ -98,8 +86,6 @@ export function AuthProvider({ children }) {
     };
 
     const login = async (email, password) => {
-        // Al hacer login, permitir nuevo fetchUserData
-        fetchingRef.current = false;
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         return data;
