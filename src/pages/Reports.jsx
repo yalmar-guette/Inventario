@@ -22,7 +22,7 @@ const Reports = () => {
     const [selectedBodega, setSelectedBodega] = useState('all'); // Por defecto mostrar TODAS las bodegas
 
     useEffect(() => {
-        if (userRole === 'OWNER') {
+        if (userRole === 'OWNER' || userRole === 'ADMIN') {
             fetchBodegas();
         }
     }, [userRole]);
@@ -225,7 +225,8 @@ const Reports = () => {
         doc.setFontSize(12);
         doc.text(`~ ${sales.reduce((a, b) => a + b.totalBs, 0).toFixed(2)} Bs`, 60, 64);
 
-        const headRow = userRole === 'OWNER'
+        const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
+        const headRow = isAdmin
             ? [['Hora', 'Usuario', 'Productos', 'Total USD', 'Total Bs', 'Pago', ...(selectedBodega === 'all' ? ['Bodega'] : [])]]
             : [['Hora', 'Productos', 'Total USD', 'Total Bs', 'Pago']];
 
@@ -261,7 +262,7 @@ const Reports = () => {
             const row = [
                 timeStr,
                 // Conditional User Column
-                ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
+                ...(isAdmin ? [getCashierName(s)] : []),
                 s.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
                 hasUsd ? `$${(s.totalUSD || 0).toFixed(2)}` : '-',
                 hasBs ? `${(s.totalBs || 0).toFixed(2)} Bs` : '-',
@@ -375,8 +376,9 @@ const Reports = () => {
     };
 
     const exportExcel = () => {
+        const isAdminExport = userRole === 'OWNER' || userRole === 'ADMIN';
         let header = "Fecha/Hora,";
-        if (userRole === 'OWNER') header += "Usuario,";
+        if (isAdminExport) header += "Usuario,";
         header += "ID Venta,Productos,Total USD,Total Bs,Metodo de Pago";
         if (selectedBodega === 'all') header += ",Bodega";
         header += "\n";
@@ -404,7 +406,7 @@ const Reports = () => {
             const rowParts = [
                 format(s.timestamp instanceof Date ? s.timestamp : new Date(s.timestamp), 'yyyy-MM-dd HH:mm'),
                 // Conditional User Column
-                ...(userRole === 'OWNER' ? [getCashierName(s)] : []),
+                ...(isAdminExport ? [getCashierName(s)] : []),
                 s.id,
                 `"${items}"`,
                 (s.totalUSD || 0).toFixed(2),
@@ -446,7 +448,7 @@ const Reports = () => {
                         onChange={(e) => setDate(e.target.value)}
                     />
 
-                    {userRole === 'OWNER' && (
+                    {(userRole === 'OWNER' || userRole === 'ADMIN') && (
                         <select
                             value={selectedBodega}
                             onChange={(e) => setSelectedBodega(e.target.value)}
@@ -495,7 +497,7 @@ const Reports = () => {
                             <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 transition-colors">
                                 <tr>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Hora</th>
-                                    {userRole === 'OWNER' && (
+                                    {(userRole === 'OWNER' || userRole === 'ADMIN') && (
                                         <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Cajero</th>
                                     )}
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Productos</th>
@@ -583,7 +585,7 @@ const Reports = () => {
     function renderSalesList() {
         // Calculate colSpan dynamically
         const baseCols = 5; // Hora, Artículos, Total USD, Total Bs, Método de Pago, (empty action col)
-        const ownerCol = userRole === 'OWNER' ? 1 : 0; // Usuario
+        const ownerCol = (userRole === 'OWNER' || userRole === 'ADMIN') ? 1 : 0; // Usuario
         const bodegaCol = selectedBodega === 'all' ? 1 : 0; // Bodega
         const totalCols = baseCols + ownerCol + bodegaCol + 1; // +1 for the action column
 
@@ -637,7 +639,7 @@ const Reports = () => {
                         <td className="px-6 py-4 text-slate-500 font-mono text-sm">
                             {dateStr}
                         </td>
-                        {userRole === 'OWNER' && (
+                        {(userRole === 'OWNER' || userRole === 'ADMIN') && (
                             <td className="px-6 py-4 text-slate-700 text-sm font-medium">
                                 {getCashierName(sale)}
                             </td>

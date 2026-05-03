@@ -69,7 +69,7 @@ const POS = () => {
             const stockA = a.stock?.[activeBodegaId] || 0;
             const stockB = b.stock?.[activeBodegaId] || 0;
             const priceA = parseFloat(a.price_usd) || 0;
-            const priceB = parseFloat(a.price_usd) || 0;
+            const priceB = parseFloat(b.price_usd) || 0;
             const salesA = a.sales_count || 0;
             const salesB = b.sales_count || 0;
 

@@ -572,10 +572,19 @@ const Settings = () => {
 
     const handleClearCache = () => {
         if (window.confirm('¿Estás seguro de limpiar el caché? Esto recargará la página y puede ayudar a resolver problemas de datos desactualizados.')) {
-            // Limpiar localStorage (excepto el tema)
+            // Preservar datos críticos antes de limpiar
             const theme = localStorage.getItem('theme');
+            const bioCred = localStorage.getItem('bio_cred_id');
+            const bioEmail = localStorage.getItem('bio_email');
+            const bioPass = localStorage.getItem('bio_pass');
+
             localStorage.clear();
+
+            // Restaurar datos que no deben perderse
             if (theme) localStorage.setItem('theme', theme);
+            if (bioCred) localStorage.setItem('bio_cred_id', bioCred);
+            if (bioEmail) localStorage.setItem('bio_email', bioEmail);
+            if (bioPass) localStorage.setItem('bio_pass', bioPass);
 
             // Limpiar sessionStorage
             sessionStorage.clear();
