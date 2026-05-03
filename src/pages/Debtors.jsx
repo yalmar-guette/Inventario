@@ -26,18 +26,16 @@ const Debtors = () => {
         try {
             const activeBodegaId = currentUser?.assigned_bodega_id;
 
-            let query = supabase.from('debtors').select('*');
+            let query = supabase
+                .from('debtors')
+                .select('*')
+                .order('created_at', { ascending: false });
 
             if (activeBodegaId) {
                 query = query.eq('bodega_id', activeBodegaId);
             }
 
-            // Timeout de seguridad de 10s
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 10000)
-            );
-
-            const { data, error } = await Promise.race([query, timeoutPromise]);
+            const { data, error } = await query;
 
             if (error) throw error;
             setDebtors(data || []);

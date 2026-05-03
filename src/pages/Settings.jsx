@@ -302,7 +302,7 @@ const Settings = () => {
         }
     };
 
-    if (userRole !== 'OWNER') {
+    if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
         return <div className="text-slate-900 dark:text-slate-100 text-center mt-20 font-medium">Acceso Restringido</div>;
     }
 

@@ -29,7 +29,7 @@ const Inventory = () => {
     const filteredProducts = useMemo(() => {
         if (!products) return [];
         const term = searchTerm.toLowerCase();
-        const targetBodega = currentUser?.assigned_bodega_id || 'bodega_1';
+        const targetBodega = currentUser?.assigned_bodega_id || null;
 
         // 1. Filtrar
         let result = products.filter(product => {
@@ -37,7 +37,10 @@ const Inventory = () => {
             const matchesText = (product.name || '').toLowerCase().includes(term) || product.barcode?.includes(term);
 
             // Visibilidad de Bodega: Mostrar si "Mostrar Global" está ACTIVADO O si el producto tiene entrada para esta bodega
-            const hasBodegaEntry = product.stock && Object.prototype.hasOwnProperty.call(product.stock, targetBodega);
+            // Si no hay bodega asignada (OWNER sin asignar), mostrar todo
+            const hasBodegaEntry = targetBodega
+                ? product.stock && Object.prototype.hasOwnProperty.call(product.stock, targetBodega)
+                : true;
             const isVisible = showGlobalCatalog || hasBodegaEntry;
 
             return matchesText && isVisible;
@@ -204,7 +207,7 @@ const Inventory = () => {
                         <span className="text-sm text-slate-500 dark:text-slate-500 whitespace-nowrap font-bold uppercase text-[10px]">
                             {filteredProducts.length} productos
                         </span>
-                        {userRole === 'OWNER' && (
+                        {(userRole === 'OWNER' || userRole === 'ADMIN') && (
                             <button onClick={openCreate} className="btn-primary whitespace-nowrap px-6">
                                 <Plus size={20} /> Nuevo Item
                             </button>
@@ -221,7 +224,7 @@ const Inventory = () => {
                                     <th className="px-6 py-4">Código</th>
                                     <th className="px-6 py-4">Precio ($)</th>
                                     <th className="px-6 py-4">Stock</th>
-                                    {userRole === 'OWNER' && <th className="px-6 py-4 text-right">Acciones</th>}
+                                    {(userRole === 'OWNER' || userRole === 'ADMIN') && <th className="px-6 py-4 text-right">Acciones</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -277,7 +280,7 @@ const Inventory = () => {
                                                         {stock} UNIDADES
                                                     </div>
                                                 </td>
-                                                {userRole === 'OWNER' && (
+                                                {(userRole === 'OWNER' || userRole === 'ADMIN') && (
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 transition-all transform md:translate-x-1 md:group-hover:translate-x-0">
                                                             <button

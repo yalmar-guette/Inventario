@@ -152,8 +152,8 @@ const Dashboard = () => {
                             <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-2xl text-blue-600 dark:text-blue-400 shadow-sm group-hover:scale-110 transition-transform">
                                 <DollarSign size={24} />
                             </div>
-                            <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-bold flex items-center gap-1 uppercase tracking-widest">
-                                <TrendingUp size={12} /> +18%
+                            <div className="px-3 py-1 bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 rounded-lg text-[10px] font-bold flex items-center gap-1 uppercase tracking-widest border border-slate-200 dark:border-slate-700">
+                                <Clock size={12} /> Hoy
                             </div>
                         </div>
                         <h3 className="text-slate-400 dark:text-slate-500 text-[10px] font-bold mb-1 uppercase tracking-[0.2em] relative z-10">Ventas Hoy (USD)</h3>
