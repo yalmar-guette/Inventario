@@ -47,10 +47,18 @@ const Settings = () => {
     const [savingBodegaRate, setSavingBodegaRate] = useState(false);
 
     useEffect(() => {
-        if (userRole === 'OWNER' || userRole === 'ADMIN') {
+        if (userRole === 'OWNER') {
             fetchBodegas();
             fetchUsers();
             fetchSyncConfig();
+        }
+        if (userRole === 'ADMIN') {
+            // ADMIN solo necesita la tasa de su bodega y la config de sincronización
+            fetchBodegas(); // Para mostrar su bodega en el selector de sincronización
+            fetchSyncConfig();
+            if (currentUser?.assigned_bodega_id) {
+                fetchBodegaRate(currentUser.assigned_bodega_id);
+            }
         }
         // EMPLOYEE: cargar tasa de su bodega asignada
         if (userRole === 'EMPLOYEE' && currentUser?.assigned_bodega_id) {
@@ -179,14 +187,28 @@ const Settings = () => {
 
     const fetchSyncConfig = async () => {
         try {
-            const { data, error } = await supabase
-                .from('system_config')
-                .select('auto_sync_type')
-                .eq('id', 'global')
-                .maybeSingle();
-
-            if (!error && data?.auto_sync_type) {
-                setAutoSyncType(data.auto_sync_type);
+            if (userRole === 'ADMIN') {
+                // ADMIN: leer el auto_sync_type de su bodega
+                const adminBodegaId = currentUser?.assigned_bodega_id;
+                if (!adminBodegaId) return;
+                const { data, error } = await supabase
+                    .from('bodegas')
+                    .select('auto_sync_type')
+                    .eq('id', adminBodegaId)
+                    .maybeSingle();
+                if (!error && data?.auto_sync_type) {
+                    setAutoSyncType(data.auto_sync_type);
+                }
+            } else {
+                // OWNER: leer de system_config global
+                const { data, error } = await supabase
+                    .from('system_config')
+                    .select('auto_sync_type')
+                    .eq('id', 'global')
+                    .maybeSingle();
+                if (!error && data?.auto_sync_type) {
+                    setAutoSyncType(data.auto_sync_type);
+                }
             }
         } catch (err) {
             console.error("Error fetching sync config:", err);
@@ -426,15 +448,26 @@ const Settings = () => {
     const handleSaveSyncConfig = async () => {
         setSavingSync(true);
         try {
-            // Actualizamos la DB. Al usar upsert falso (update directo), si la columna no existe 
-            // fallará, pero en Supabase podemos crearla luego usando la UI asumiendo que el request va bien.
-            // Para ser robustos en producción, esto asume que la migración SQL ya se corrió.
-            const { error } = await supabase
-                .from('system_config')
-                .update({ auto_sync_type: autoSyncType })
-                .eq('id', 'global');
+            if (userRole === 'ADMIN') {
+                // ADMIN: guarda el tipo de sincronización en SU bodega
+                const adminBodegaId = currentUser?.assigned_bodega_id;
+                if (!adminBodegaId) throw new Error('No tienes una bodega asignada');
 
-            if (error) throw error;
+                const { error } = await supabase
+                    .from('bodegas')
+                    .update({ auto_sync_type: autoSyncType })
+                    .eq('id', adminBodegaId);
+
+                if (error) throw error;
+            } else {
+                // OWNER: guarda en system_config global
+                const { error } = await supabase
+                    .from('system_config')
+                    .update({ auto_sync_type: autoSyncType })
+                    .eq('id', 'global');
+
+                if (error) throw error;
+            }
             toast.success('Configuración de auto-sincronización guardada');
         } catch (error) {
             console.error("Error saving sync config:", error);
@@ -774,7 +807,155 @@ const Settings = () => {
         );
     }
 
-    if (!userRole || (userRole !== 'OWNER' && userRole !== 'ADMIN')) {
+    // ─── Vista ADMIN de Bodega ────────────────────────────────────────────────
+    // El ADMIN gestiona la tasa y mantenimiento de SU bodega, pero no
+    // puede crear bodegas, gestionar todos los usuarios ni ver otras sucursales.
+    if (userRole === 'ADMIN') {
+        const myBodega = bodegas.find(b => b.id === currentUser?.assigned_bodega_id);
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors duration-300 overflow-y-auto">
+                <div className="max-w-2xl mx-auto space-y-6">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Configuración</h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+                            Panel de administrador · {myBodega?.name || 'Tu bodega'}
+                        </p>
+                    </div>
+
+                    {/* Tasa de cambio de SU bodega */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 transition-colors">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40">
+                                <DollarSign size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Tasa de Cambio</h2>
+                                <p className="text-slate-500 dark:text-slate-500 text-sm">{myBodega?.name || 'Tu sucursal'}</p>
+                            </div>
+                        </div>
+
+                        {/* Tasa actual live */}
+                        <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800 mb-8 transition-colors">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tasa Actual</span>
+                                <span className="text-3xl font-black text-slate-900 dark:text-white">{configLoading ? '...' : rate.toFixed(2)} BS/$</span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                                <RefreshCw className={`w-6 h-6 text-emerald-500 ${configLoading ? 'animate-spin' : ''}`} />
+                                {bodegaSyncType !== 'none' && (
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                        bodegaSyncType === 'bcv'
+                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                                    }`}>
+                                        Auto · {bodegaSyncType.toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Si auto-sync, no permitir edición manual */}
+                        {bodegaSyncType !== 'none' ? (
+                            <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 text-center">
+                                <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">
+                                    🔄 Modo Automático activo
+                                </p>
+                                <p className="text-[11px] text-amber-600 dark:text-amber-500 mt-1">
+                                    La tasa se sincroniza automáticamente ({bodegaSyncType === 'bcv' ? 'BCV oficial' : 'Euro BCV'}).
+                                </p>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSaveBodegaRate} className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Nueva Tasa</label>
+                                    <input
+                                        type="number" step="0.01" required placeholder="0.00"
+                                        className="w-full px-6 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-400 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all font-black text-2xl"
+                                        value={newRate}
+                                        onChange={(e) => setNewRate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button type="button" disabled={fetchingApi.bcv} onClick={() => handleFetchRate('bcv')}
+                                        className="py-3 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
+                                        {fetchingApi.bcv ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa BCV
+                                    </button>
+                                    <button type="button" disabled={fetchingApi.euro} onClick={() => handleFetchRate('euro')}
+                                        className="py-3 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-blue-100 dark:border-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
+                                        {fetchingApi.euro ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa Euro
+                                    </button>
+                                </div>
+                                <button type="submit" disabled={savingBodegaRate}
+                                    className="w-full py-4 bg-primary-600 dark:bg-primary-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-700 dark:hover:bg-primary-600 active:scale-[0.98] transition-all flex items-center gap-3 justify-center shadow-lg shadow-primary-200 dark:shadow-none disabled:opacity-50">
+                                    {savingBodegaRate ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+                                    Guardar Tasa BS/$
+                                </button>
+                            </form>
+                        )}
+
+                        {/* Modo de sincronización automática */}
+                        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 transition-colors">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Actualización Automática</h3>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <select
+                                    className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-400 text-slate-900 dark:text-white transition-all font-bold text-sm"
+                                    value={autoSyncType}
+                                    onChange={(e) => setAutoSyncType(e.target.value)}
+                                >
+                                    <option value="none">Ninguna (Manual)</option>
+                                    <option value="bcv">Tasa BCV</option>
+                                    <option value="euro">Tasa Euro</option>
+                                </select>
+                                <button
+                                    onClick={handleSaveSyncConfig}
+                                    disabled={savingSync}
+                                    className="px-6 py-3 bg-slate-900 dark:bg-slate-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-w-[140px]">
+                                    {savingSync ? <Loader2 size={16} className="animate-spin" /> : 'Guardar'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mantenimiento */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 transition-colors">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-orange-50 dark:bg-orange-950/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-900/40">
+                                <Database size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Mantenimiento</h2>
+                                <p className="text-slate-500 dark:text-slate-500 text-sm">Optimización del sistema</p>
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <button onClick={handleUpdateApp} disabled={updating || updateDone}
+                                className={`w-full py-3 font-black text-xs uppercase tracking-[0.2em] rounded-xl transition-all flex items-center gap-2 justify-center disabled:opacity-70 ${
+                                    updateDone ? 'bg-emerald-600 text-white cursor-default'
+                                    : needsUpdate ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-200 dark:shadow-none'
+                                    : 'bg-slate-800 dark:bg-slate-600 text-white hover:bg-slate-700'
+                                }`}>
+                                {updateDone ? <><CheckCircle size={16} /> Actualizando...</> : updating ? <><Loader2 size={16} className="animate-spin" /> Aplicando...</> : <><Download size={16} /> Actualizar App {needsUpdate && <span className="ml-1 px-1.5 py-0.5 bg-amber-400 text-amber-900 text-[9px] font-black rounded-full">NUEVA</span>}</>}
+                            </button>
+                            <button onClick={handleClearCache}
+                                className="w-full py-3 bg-orange-600 dark:bg-orange-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-orange-700 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-orange-200 dark:shadow-none">
+                                <RefreshCw size={16} /> Limpiar Caché
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Aviso de restricción */}
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                            🔒 La gestión de bodegas y creación de usuarios es exclusiva del propietario.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!userRole || userRole !== 'OWNER') {
         return <div className="text-slate-900 dark:text-slate-100 text-center mt-20 font-medium">Acceso Restringido</div>;
     }
 
@@ -1207,7 +1388,8 @@ const Settings = () => {
                                         onChange={e => setNewUser({ ...newUser, role: e.target.value })}
                                     >
                                         <option value="EMPLOYEE">Empleado / Cajero</option>
-                                        <option value="OWNER">Dueño / Admin</option>
+                                        <option value="ADMIN">Admin de Bodega</option>
+                                        <option value="OWNER">Propietario (Dueño)</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
@@ -1284,15 +1466,19 @@ const Settings = () => {
                                             <td className="px-8 py-6 text-slate-500 dark:text-slate-400 font-medium">{u.email}</td>
                                             <td className="px-8 py-6">
                                                 <select
-                                                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all cursor-pointer outline-none ${u.role === 'OWNER'
-                                                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
-                                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-                                                        }`}
+                                                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all cursor-pointer outline-none ${
+                                                        u.role === 'OWNER'
+                                                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
+                                                        : u.role === 'ADMIN'
+                                                            ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800'
+                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                                    }`}
                                                     value={u.role}
                                                     onChange={(e) => handleUpdateUserRole(u.id, e.target.value)}
                                                 >
                                                     <option value="EMPLOYEE">Empleado</option>
-                                                    <option value="OWNER">Dueño</option>
+                                                    <option value="ADMIN">Admin Bodega</option>
+                                                    <option value="OWNER">Propietario</option>
                                                 </select>
                                             </td>
                                             <td className="px-8 py-6">

@@ -17,15 +17,25 @@ const Reports = () => {
     const [returnModal, setReturnModal] = useState(null); // sale object
     const [returningId, setReturningId] = useState(null);
 
-    // Filtro de Bodega (Solo Owner)
+    // Filtro de Bodega
     const [bodegas, setBodegas] = useState([]);
-    const [selectedBodega, setSelectedBodega] = useState('all'); // Por defecto mostrar TODAS las bodegas
+    // OWNER: 'all' por defecto | ADMIN: su bodega fija | EMPLOYEE: su bodega fija
+    const [selectedBodega, setSelectedBodega] = useState(() => {
+        // Si el rol ya está disponible en el primer render, fijamos la bodega de ADMIN
+        return 'all';
+    });
 
+    // Inicializar selectedBodega según el rol
     useEffect(() => {
-        if (userRole === 'OWNER' || userRole === 'ADMIN') {
+        if (userRole === 'OWNER') {
             fetchBodegas();
+            // OWNER empieza con 'all'
+            setSelectedBodega('all');
+        } else if ((userRole === 'ADMIN' || userRole === 'EMPLOYEE') && currentUser?.assigned_bodega_id) {
+            // ADMIN y EMPLOYEE siempre ven su propia bodega, sin opción de cambiar
+            setSelectedBodega(currentUser.assigned_bodega_id);
         }
-    }, [userRole]);
+    }, [userRole, currentUser]);
 
     useEffect(() => {
         fetchData();
@@ -448,7 +458,7 @@ const Reports = () => {
                         onChange={(e) => setDate(e.target.value)}
                     />
 
-                    {(userRole === 'OWNER' || userRole === 'ADMIN') && (
+                    {userRole === 'OWNER' && (
                         <select
                             value={selectedBodega}
                             onChange={(e) => setSelectedBodega(e.target.value)}
@@ -456,11 +466,16 @@ const Reports = () => {
                         >
                             {/* Solo mostrar "Ver Todo" si hay más de 1 bodega */}
                             {bodegas.length > 1 && <option value="all">👁️ Ver Todas las Bodegas</option>}
-                            {/* Mostrar todas las bodegas sin filtrar main */}
                             {bodegas.map(b => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
+                    )}
+                    {userRole === 'ADMIN' && (
+                        <div className="px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl text-indigo-700 dark:text-indigo-300 font-bold text-sm flex items-center gap-2">
+                            <span className="text-indigo-400 dark:text-indigo-500">🏪</span>
+                            {bodegas.find(b => b.id === selectedBodega)?.name || 'Tu Bodega'}
+                        </div>
                     )}
                 </div>
 
