@@ -30,17 +30,10 @@ export function useInventory(bodegaId) {
 
     const fetchProducts = async () => {
         try {
-            // Timeout de seguridad: Si tarda más de 10s, cancelar
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 10000)
-            );
-
-            const fetchPromise = supabase
+            const { data, error: fetchError } = await supabase
                 .from('products')
                 .select('*')
                 .order('created_at', { ascending: false });
-
-            const { data, error: fetchError } = await Promise.race([fetchPromise, timeoutPromise]);
 
             if (fetchError) throw fetchError;
 
