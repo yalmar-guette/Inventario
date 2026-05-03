@@ -43,6 +43,7 @@ const Settings = () => {
 
     // Tasa por bodega del empleado
     const [bodegaRate, setBodegaRate] = useState(null);
+    const [bodegaSyncType, setBodegaSyncType] = useState('none'); // 'none' | 'bcv' | 'euro'
     const [savingBodegaRate, setSavingBodegaRate] = useState(false);
 
     useEffect(() => {
@@ -66,6 +67,7 @@ const Settings = () => {
                 .single();
             if (!error && data) {
                 setBodegaRate(data.exchange_rate ?? null);
+                setBodegaSyncType(data.auto_sync_type ?? 'none');
             }
         } catch (err) {
             console.error('Error fetching bodega rate:', err);
@@ -685,38 +687,64 @@ const Settings = () => {
                             <p className="text-xs text-slate-500">Ajustar tasa de tu sede</p>
                         </div>
                     </div>
+
+                    {/* Tasa actual — siempre usa el rate live del hook */}
                     <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 mb-4">
                         <div>
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Tasa Actual</span>
                             <span className="text-2xl font-black text-slate-900 dark:text-white">
-                                {bodegaRate !== null ? `${bodegaRate.toFixed(2)} BS/$` : `${rate.toFixed(2)} BS/$ (global)`}
+                                {configLoading ? '...' : `${rate.toFixed(2)} BS/$`}
                             </span>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                             <RefreshCw className={`w-6 h-6 text-emerald-500 ${configLoading ? 'animate-spin' : ''}`} />
+                            {/* Badge de modo automático */}
+                            {bodegaSyncType !== 'none' && (
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                    bodegaSyncType === 'bcv'
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                                }`}>
+                                    Auto · {bodegaSyncType.toUpperCase()}
+                                </span>
+                            )}
                         </div>
                     </div>
-                    <form onSubmit={handleSaveBodegaRate} className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <button type="button" disabled={fetchingApi.bcv}
-                                onClick={() => handleFetchRate('bcv')}
-                                className="py-3 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
-                                {fetchingApi.bcv ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa BCV
-                            </button>
-                            <button type="button" disabled={fetchingApi.euro}
-                                onClick={() => handleFetchRate('euro')}
-                                className="py-3 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-blue-100 dark:border-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
-                                {fetchingApi.euro ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa Euro
-                            </button>
+
+                    {/* Si la bodega tiene auto-sync, NO mostrar form manual */}
+                    {bodegaSyncType !== 'none' ? (
+                        <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 text-center">
+                            <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">
+                                🔄 Modo Automático activo
+                            </p>
+                            <p className="text-[11px] text-amber-600 dark:text-amber-500 mt-1">
+                                La tasa se sincroniza automáticamente ({bodegaSyncType === 'bcv' ? 'BCV oficial' : 'Euro BCV'}).<br/>
+                                Solo el administrador puede cambiarla a modo manual.
+                            </p>
                         </div>
-                        <input type="number" step="0.01" required placeholder="Nueva tasa..."
-                            className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 text-slate-900 dark:text-white font-black text-xl"
-                            value={newRate} onChange={(e) => setNewRate(e.target.value)} />
-                        <button type="submit" disabled={savingBodegaRate}
-                            className="w-full py-3 bg-primary-600 dark:bg-primary-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-700 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-primary-200 dark:shadow-none disabled:opacity-50">
-                            {savingBodegaRate ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Guardar Tasa
-                        </button>
-                    </form>
+                    ) : (
+                        <form onSubmit={handleSaveBodegaRate} className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <button type="button" disabled={fetchingApi.bcv}
+                                    onClick={() => handleFetchRate('bcv')}
+                                    className="py-3 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
+                                    {fetchingApi.bcv ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa BCV
+                                </button>
+                                <button type="button" disabled={fetchingApi.euro}
+                                    onClick={() => handleFetchRate('euro')}
+                                    className="py-3 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-blue-100 dark:border-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
+                                    {fetchingApi.euro ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa Euro
+                                </button>
+                            </div>
+                            <input type="number" step="0.01" required placeholder="Nueva tasa..."
+                                className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 text-slate-900 dark:text-white font-black text-xl"
+                                value={newRate} onChange={(e) => setNewRate(e.target.value)} />
+                            <button type="submit" disabled={savingBodegaRate}
+                                className="w-full py-3 bg-primary-600 dark:bg-primary-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-700 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-primary-200 dark:shadow-none disabled:opacity-50">
+                                {savingBodegaRate ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Guardar Tasa
+                            </button>
+                        </form>
+                    )}
                 </div>
 
                 {/* Actualizar App */}
