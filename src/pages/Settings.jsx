@@ -157,29 +157,35 @@ const Settings = () => {
         if (!window.confirm(`¿Estás seguro de eliminar a ${userEmail}? Su entrada al sistema será revocada.`)) return;
 
         try {
-            // 1. Verificar existencia tabla users
-            const { error, count } = await supabase
+            // 1. Borrar de la tabla pública users
+            const { error: deleteError } = await supabase
                 .from('users')
-                .delete({ count: 'exact' })
+                .delete()
                 .eq('id', userId);
 
-            if (count === 0) {
-                console.error("Error Supabase Delete:", error);
-                alert(`ERROR AL ELIMINAR:\nMensaje: ${error.message}\nDetalle: ${error.details || 'N/A'}\nHint: ${error.hint || 'N/A'}`);
-                return;
+            if (deleteError) throw deleteError;
+
+            // 2. Borrar de auth.users vía Admin REST API (requiere service_role key en el env)
+            //    Si no tienes VITE_SUPABASE_SERVICE_KEY configurada, esta parte se omite silenciosamente
+            //    y el email quedará bloqueado en Auth. Configura esa variable para habilitarlo.
+            const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            if (serviceKey && supabaseUrl) {
+                await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': serviceKey,
+                        'Authorization': `Bearer ${serviceKey}`
+                    }
+                });
             }
 
-            if (count === 0) {
-                alert("ALERTA: La base de datos respondió 'Éxito' pero no borró ninguna fila.\nPosibles causas:\n1. El usuario ya no existe.\n2. La política RLS (Seguridad) bloqueó la operación silenciosamente.");
-                return;
-            }
-
-            alert(`✅ ÉXITO: Usuario ${userEmail} eliminado correctamente.`);
+            toast.success(`Usuario ${userEmail} eliminado correctamente`);
             await fetchUsers();
 
         } catch (error) {
-            console.error("Catch Delete Error:", error);
-            alert("ERROR CRÍTICO DEL SISTEMA:\n" + (error.message || 'Desconocido'));
+            console.error('Error al eliminar usuario:', error);
+            toast.error('Error al eliminar usuario: ' + error.message);
         }
     };
 
@@ -213,8 +219,15 @@ const Settings = () => {
     };
 
     const handleDeleteBodega = async (id, name) => {
-        if (!window.confirm(`¿Estás seguro de eliminar la bodega "${name}"? Esta acción no se puede deshacer.`)) return;
+        if (!window.confirm(`¿Estás seguro de eliminar la bodega "${name}"? Esta acción no se puede deshacer.\n\nLos empleados asignados a esta bodega quedarán sin bodega asignada.`)) return;
         try {
+            // 1. Limpiar assigned_bodega_id de usuarios que tenían esta bodega
+            await supabase
+                .from('users')
+                .update({ assigned_bodega_id: null })
+                .eq('assigned_bodega_id', id);
+
+            // 2. Eliminar la bodega
             const { error } = await supabase
                 .from('bodegas')
                 .delete()
@@ -222,11 +235,12 @@ const Settings = () => {
 
             if (error) throw error;
 
-            toast.success('Bodega eliminada correctamente');
+            toast.success(`Bodega "${name}" eliminada. Los usuarios asignados quedan sin bodega.`);
             fetchBodegas();
+            fetchUsers(); // Refrescar para reflejar el cambio en los usuarios
         } catch (error) {
             console.error(error);
-            toast.error('Error al eliminar bodega');
+            toast.error('Error al eliminar bodega: ' + error.message);
         }
     };
 
@@ -459,30 +473,28 @@ const Settings = () => {
 
                 console.log('✅ Usuario registrado en Auth con ID:', newUserId);
 
-                // 2. Insertar en tabla pública 'users'
-                // Primero verificamos si ya existe para evitar duplicados (por si el trigger falló o funcionó a medias)
-                const { data: existingUser } = await supabase.from('users').select('id').eq('id', newUserId).single();
+                // 2. Esperar brevemente para que el trigger de Auth cree el perfil
+                await new Promise(r => setTimeout(r, 800));
 
-                if (!existingUser) {
-                    console.log('📥 Insertando perfil público...');
-                    const { error: insertError } = await supabase
-                        .from('users')
-                        .insert([{
-                            id: newUserId,
-                            email: newUser.email,
-                            name: newUser.name,
-                            role: newUser.role,
-                            assigned_bodega_id: newUser.bodega_id
-                        }]);
-
-                    if (insertError) throw insertError;
-                } else {
-                    console.log('⚠️ El perfil público ya existía, actualizando...');
-                    await supabase.from('users').update({
+                // 3. Upsert en tabla pública 'users' — sobreescribe lo que el trigger haya puesto
+                console.log('📥 Upsert de perfil público con bodega:', newUser.bodega_id);
+                const { error: upsertError } = await supabase
+                    .from('users')
+                    .upsert([{
+                        id: newUserId,
+                        email: newUser.email,
                         name: newUser.name,
                         role: newUser.role,
-                        assigned_bodega_id: newUser.bodega_id
-                    }).eq('id', newUserId);
+                        assigned_bodega_id: newUser.bodega_id || null
+                    }], { onConflict: 'id' });
+
+                if (upsertError) throw upsertError;
+
+                // 4. Verificar que la bodega quedó correctamente (doble seguro)
+                if (newUser.bodega_id) {
+                    await supabase.from('users')
+                        .update({ assigned_bodega_id: newUser.bodega_id })
+                        .eq('id', newUserId);
                 }
 
                 toast.success(`Usuario ${newUser.email} registrado y activado correctamente`);
