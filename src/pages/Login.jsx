@@ -118,16 +118,16 @@ const Login = () => {
             const session = await login(cleanEmail, cleanPassword);
             // Si biometría disponible y no guardada aún → preguntar
             if (bioAvailable && !bioSaved) {
-                const { data } = await supabase.auth.getSession();
-                if (data?.session?.refresh_token && data?.session?.user?.id) {
-                    setPendingSession({
-                        userId: data.session.user.id,
-                        refreshToken: data.session.refresh_token,
-                    });
-                    setShowBioPrompt(true);
-                    setLoading(false);
-                    return;
-                }
+                // Guardar email+password para la biometría (se pregunta al usuario)
+                const { data: sessionData } = await supabase.auth.getSession();
+                setPendingSession({
+                    userId: sessionData?.session?.user?.id,
+                    email: cleanEmail,
+                    password: cleanPassword,
+                });
+                setShowBioPrompt(true);
+                setLoading(false);
+                return;
             }
             navigate('/');
         } catch (err) {
@@ -146,7 +146,11 @@ const Login = () => {
     const handleBioAccept = async () => {
         if (!pendingSession) return;
         try {
-            await registerBiometric(pendingSession.userId, pendingSession.refreshToken);
+            await registerBiometric(
+                pendingSession.userId,
+                pendingSession.email,
+                pendingSession.password
+            );
             setBioSaved(true);
         } catch (err) {
             console.warn('Error registrando biometría:', err);
@@ -168,20 +172,19 @@ const Login = () => {
         setError('');
         setBioLoading(true);
         try {
-            const refreshToken = await authenticateWithBiometric();
-            const { data, error: refreshErr } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
-            if (refreshErr) throw refreshErr;
-            if (!data?.session) throw new Error('No se pudo restaurar la sesión');
-            // Supabase actualiza el estado de auth automáticamente → navigate via useEffect
+            // 1. Pedir verificación biométrica al dispositivo
+            const { email: savedEmail, password: savedPass } = await authenticateWithBiometric();
+            // 2. Hacer login fresco con Supabase (nunca expira)
+            await login(savedEmail, savedPass);
+            // navigate lo maneja el useEffect de currentUser
         } catch (err) {
             console.error('Bio login error:', err);
             if (err.name === 'NotAllowedError') {
                 setError('Autenticación cancelada o no reconocida.');
-            } else if (err.message?.includes('sesión')) {
-                // Credencial caducada → limpiar
+            } else if (err.message?.includes('credencial')) {
                 clearBiometricCredential();
                 setBioSaved(false);
-                setError('La sesión guardada expiró. Inicia sesión normalmente.');
+                setError('Sesión guardada inválida. Inicia sesión normalmente.');
             } else {
                 setError('No se pudo verificar la identidad. Intenta con contraseña.');
             }

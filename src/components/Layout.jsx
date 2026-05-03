@@ -73,12 +73,12 @@ const Layout = () => {
     };
 
     const navItems = [
-        { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['OWNER', 'EMPLOYEE'] },
-        { name: 'Registrar Ventas', path: '/pos', icon: ShoppingCart, roles: ['OWNER', 'EMPLOYEE'] },
-        { name: 'Inventario', path: '/inventory', icon: Package, roles: ['OWNER', 'EMPLOYEE'] },
-        { name: 'Deudores', path: '/debtors', icon: Users, roles: ['OWNER', 'EMPLOYEE'] },
-        { name: 'Reportes', path: '/reports', icon: FileText, roles: ['OWNER', 'EMPLOYEE'] },
-        { name: 'Configuración', path: '/settings', icon: Settings, roles: ['OWNER'] },
+        { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Registrar Ventas', path: '/pos', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Inventario', path: '/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Deudores', path: '/debtors', icon: Users, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Reportes', path: '/reports', icon: FileText, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Configuración', path: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN'] },
     ];
 
     const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));

@@ -2,15 +2,21 @@
  * useBiometricAuth.js
  * ───────────────────
  * Hook para registrar y autenticar con WebAuthn (Face ID / Huella / PIN).
- * Guarda el refresh_token de Supabase cifrado en localStorage,
- * protegido por la verificación biométrica del dispositivo.
+ *
+ * Estrategia: guarda las credenciales (email + password) en localStorage
+ * "protegidas" por la verificación WebAuthn del dispositivo.
+ * Al autenticar, primero pide biometría al dispositivo; si pasa,
+ * devuelve email+password para hacer un login fresco con Supabase.
+ *
+ * Esto evita el problema del refresh_token que expira rápidamente.
  */
 
-const RP_NAME = 'Gestión de Inventario';
-const STORAGE_KEY = 'bio_session';
-const CRED_ID_KEY = 'bio_cred_id';
+const RP_NAME    = 'Gestión de Inventario';
+const CRED_KEY   = 'bio_cred_id';
+const EMAIL_KEY  = 'bio_email';
+const PASS_KEY   = 'bio_pass';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers base64 ───────────────────────────────────────────────────────────
 
 const b64ToBuffer = (b64) => {
     const str = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
@@ -25,7 +31,9 @@ const bufferToB64 = (buf) =>
         .replace(/\//g, '_')
         .replace(/=/g, '');
 
-// Verificar soporte del dispositivo
+// ── API pública ──────────────────────────────────────────────────────────────
+
+/** Comprueba si el dispositivo tiene sensor biométrico/PIN disponible */
 export const isBiometricAvailable = async () => {
     if (!window.PublicKeyCredential) return false;
     try {
@@ -35,13 +43,19 @@ export const isBiometricAvailable = async () => {
     }
 };
 
-// Verificar si ya hay credencial registrada
-export const hasBiometricCredential = () => {
-    return !!localStorage.getItem(CRED_ID_KEY) && !!localStorage.getItem(STORAGE_KEY);
-};
+/** Devuelve true si ya hay una credencial registrada en este dispositivo */
+export const hasBiometricCredential = () =>
+    !!localStorage.getItem(CRED_KEY) &&
+    !!localStorage.getItem(EMAIL_KEY) &&
+    !!localStorage.getItem(PASS_KEY);
 
-// ── Registrar biometría (después del primer login exitoso) ───────────────────
-export const registerBiometric = async (userId, refreshToken) => {
+/**
+ * Registra biometría tras un login exitoso.
+ * @param {string} userId       - UID del usuario (para WebAuthn)
+ * @param {string} email        - Email con el que se loguea
+ * @param {string} password     - Password en texto plano (se guarda en localStorage)
+ */
+export const registerBiometric = async (userId, email, password) => {
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
 
@@ -53,37 +67,41 @@ export const registerBiometric = async (userId, refreshToken) => {
             rp: { name: RP_NAME },
             user: {
                 id: userId8,
-                name: userId,
-                displayName: 'Usuario',
+                name: email,
+                displayName: email,
             },
             pubKeyCredParams: [
                 { type: 'public-key', alg: -7 },   // ES256
                 { type: 'public-key', alg: -257 },  // RS256
             ],
             authenticatorSelection: {
-                authenticatorAttachment: 'platform',   // Solo sensor del dispositivo
-                userVerification: 'required',           // Obliga biometría/PIN
+                authenticatorAttachment: 'platform',
+                userVerification: 'required',
                 residentKey: 'preferred',
             },
             timeout: 60000,
         },
     });
 
-    // Guardar ID de credencial y sesión
-    localStorage.setItem(CRED_ID_KEY, bufferToB64(credential.rawId));
-    localStorage.setItem(STORAGE_KEY, refreshToken);
+    localStorage.setItem(CRED_KEY,  bufferToB64(credential.rawId));
+    localStorage.setItem(EMAIL_KEY, email);
+    localStorage.setItem(PASS_KEY,  password);
 
     return true;
 };
 
-// ── Autenticar con biometría (en futuros logins) ─────────────────────────────
+/**
+ * Pide al dispositivo que verifique la biometría.
+ * Si es exitosa, devuelve { email, password } para hacer un login fresco.
+ */
 export const authenticateWithBiometric = async () => {
-    const credIdB64 = localStorage.getItem(CRED_ID_KEY);
+    const credIdB64 = localStorage.getItem(CRED_KEY);
     if (!credIdB64) throw new Error('No hay credencial registrada');
 
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
 
+    // Esto dispara el sensor del dispositivo (huella / Face ID / PIN)
     await navigator.credentials.get({
         publicKey: {
             challenge,
@@ -97,14 +115,17 @@ export const authenticateWithBiometric = async () => {
         },
     });
 
-    // Si llegamos aquí, la biometría fue exitosa
-    const refreshToken = localStorage.getItem(STORAGE_KEY);
-    if (!refreshToken) throw new Error('No hay sesión guardada');
-    return refreshToken;
+    // Si llegamos aquí, el dispositivo verificó la identidad
+    const email    = localStorage.getItem(EMAIL_KEY);
+    const password = localStorage.getItem(PASS_KEY);
+    if (!email || !password) throw new Error('No hay sesión guardada');
+
+    return { email, password };
 };
 
-// ── Eliminar credencial guardada ──────────────────────────────────────────────
+/** Elimina todos los datos biométricos guardados */
 export const clearBiometricCredential = () => {
-    localStorage.removeItem(CRED_ID_KEY);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(CRED_KEY);
+    localStorage.removeItem(EMAIL_KEY);
+    localStorage.removeItem(PASS_KEY);
 };
