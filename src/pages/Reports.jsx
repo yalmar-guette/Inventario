@@ -9,7 +9,7 @@ import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
     const { currentUser, userRole } = useAuth();
-    const { rate: exchangeRate } = useSystemConfig();
+    const { rate: exchangeRate } = useSystemConfig(currentUser?.assigned_bodega_id ?? null);
     const [sales, setSales] = useState([]);
     const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);

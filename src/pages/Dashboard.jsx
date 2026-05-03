@@ -16,7 +16,7 @@ import { startOfDay, endOfDay, subDays } from 'date-fns';
 
 const Dashboard = () => {
     const { userRole, currentUser } = useAuth();
-    const { rate } = useSystemConfig();
+    const { rate } = useSystemConfig(currentUser?.assigned_bodega_id ?? null);
 
     const [stats, setStats] = useState({
         todaySalesUSD: 0,

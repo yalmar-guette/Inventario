@@ -6,7 +6,7 @@ import { User, CheckCircle, Phone, X, DollarSign, Wallet, AlertTriangle } from '
 
 const Debtors = () => {
     const { currentUser } = useAuth();
-    const { rate } = useSystemConfig();
+    const { rate } = useSystemConfig(currentUser?.assigned_bodega_id ?? null);
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
