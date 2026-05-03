@@ -40,27 +40,41 @@ export function AuthProvider({ children }) {
     }, []);
 
     const fetchUserData = async (authUser) => {
+        const meta = authUser.user_metadata || {};
+
+        // PASO 1: Mostrar de inmediato para evitar pantalla blanca
+        if (meta.role) {
+            setCurrentUser({
+                uid: authUser.id,
+                email: authUser.email,
+                name: meta.name || authUser.email,
+                role: meta.role,
+                assigned_bodega_id: meta.assigned_bodega_id || null,
+            });
+            setUserRole(meta.role);
+            setLoading(false);
+        } else {
+            // Sin metadata → desbloquear UI de inmediato con fallback
+            setCurrentUser({
+                uid: authUser.id,
+                email: authUser.email,
+                name: authUser.email,
+                role: 'EMPLOYEE',
+                assigned_bodega_id: null,
+            });
+            setUserRole('EMPLOYEE');
+            setLoading(false);
+        }
+
+        // PASO 2: Refrescar desde DB en background (actualiza rol/bodega real)
         try {
-            // Siempre consultar la DB para tener datos frescos (rol, bodega actualizada)
             const { data: userData, error } = await supabase
                 .from('users')
-                .select('*')
+                .select('id, email, name, role, assigned_bodega_id')
                 .eq('id', authUser.id)
                 .single();
 
-            if (error) {
-                // Solo usar metadata como último recurso si la DB falla
-                console.warn("DB query failed, using metadata fallback:", error.message);
-                const meta = authUser.user_metadata || {};
-                setCurrentUser({
-                    uid: authUser.id,
-                    email: authUser.email,
-                    name: meta.name || authUser.email,
-                    role: meta.role || "EMPLOYEE",
-                    assigned_bodega_id: meta.assigned_bodega_id || null,
-                });
-                setUserRole(meta.role || "EMPLOYEE");
-            } else {
+            if (!error && userData) {
                 setCurrentUser({
                     uid: userData.id,
                     email: userData.email,
@@ -70,20 +84,10 @@ export function AuthProvider({ children }) {
                 });
                 setUserRole(userData.role);
             }
-        } catch (error) {
-            console.error("Error in fetchUserData:", error);
-            const meta = authUser.user_metadata || {};
-            setCurrentUser({
-                uid: authUser.id,
-                email: authUser.email,
-                role: meta.role || "EMPLOYEE",
-                assigned_bodega_id: meta.assigned_bodega_id || null,
-                ...meta
-            });
-            setUserRole(meta.role || "EMPLOYEE");
-        } finally {
-            setLoading(false);
+        } catch (dbErr) {
+            console.warn('Background DB refresh failed:', dbErr.message);
         }
+        // No se necesita finally aquí — loading ya está en false desde el paso 1
     };
 
     const login = async (email, password) => {
