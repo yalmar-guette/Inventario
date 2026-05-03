@@ -7,7 +7,7 @@ import { supabase } from '../supabase';
 import ConfirmModal from '../components/ConfirmModal';
 
 const Settings = () => {
-    const { userRole, currentUser } = useAuth();
+    const { userRole, currentUser, updateAssignedBodega } = useAuth();
     const { rate, updateRate, loading: configLoading } = useSystemConfig(currentUser?.assigned_bodega_id || null);
     const [newRate, setNewRate] = useState('');
     const [autoSyncType, setAutoSyncType] = useState('none'); // 'none', 'bcv', 'euro'
@@ -337,11 +337,10 @@ const Settings = () => {
         setConfirmBodega({ isOpen: false, bodegaId: null, bodegaName: '' });
 
         // 1. Feedback inmediato
-        toast.info(`⏳ Cambiando a "${bodegaName}"...`, { duration: 1500 });
+        toast.info(`⏳ Cambiando a "${bodegaName}"...`);
 
         try {
-            // 2. Ejecutar cambio directamente
-            // Actualizar en tabla users
+            // 2. Actualizar en tabla users
             const { error } = await supabase
                 .from('users')
                 .update({ assigned_bodega_id: bodegaId })
@@ -353,22 +352,20 @@ const Settings = () => {
                 return;
             }
 
-            // Actualizar metadata de auth
-            const { error: metadataError } = await supabase.auth.updateUser({
+            // 3. Actualizar metadata de auth (en background, no bloquea)
+            supabase.auth.updateUser({
                 data: {
                     assigned_bodega_id: bodegaId,
                     role: currentUser.role,
                     name: currentUser.name
                 }
-            });
+            }).catch(err => console.warn('Metadata update failed:', err));
 
-            if (metadataError) console.error("Error updating metadata:", metadataError);
+            // 4. Actualizar estado local SIN recargar la página
+            updateAssignedBodega(bodegaId);
+            await fetchBodegas(); // Refrescar lista con datos frescos
 
-            // 3. Feedback de éxito claro
-            toast.success(`✓ Ahora estás en: ${bodegaName}`, { duration: 2000 });
-
-            // 4. Recargar brevemente después
-            setTimeout(() => window.location.reload(), 1000);
+            toast.success(`✓ Ahora estás en: ${bodegaName}`);
 
         } catch (error) {
             toast.error(`❌ Error al cambiar de bodega`);

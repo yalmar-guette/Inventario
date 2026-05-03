@@ -90,6 +90,11 @@ export function AuthProvider({ children }) {
         // No se necesita finally aquí — loading ya está en false desde el paso 1
     };
 
+    // Actualiza assigned_bodega_id en estado local SIN recargar página
+    const updateAssignedBodega = (bodegaId) => {
+        setCurrentUser(prev => prev ? { ...prev, assigned_bodega_id: bodegaId } : prev);
+    };
+
     const login = async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
@@ -110,7 +115,8 @@ export function AuthProvider({ children }) {
         userRole,
         login,
         logout,
-        loading
+        loading,
+        updateAssignedBodega,
     };
 
     return (
