@@ -666,7 +666,9 @@ const Settings = () => {
                                 {bodegaRate !== null ? `${bodegaRate.toFixed(2)} BS/$` : `${rate.toFixed(2)} BS/$ (global)`}
                             </span>
                         </div>
-                        <RefreshCw className={`w-6 h-6 text-emerald-500 ${configLoading ? 'animate-spin' : ''}`} />
+                        <div className="flex flex-col items-end gap-1">
+                            <RefreshCw className={`w-6 h-6 text-emerald-500 ${configLoading ? 'animate-spin' : ''}`} />
+                        </div>
                     </div>
                     <form onSubmit={handleSaveBodegaRate} className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
@@ -822,22 +824,56 @@ const Settings = () => {
                                                     <h3 className={`font-black text-sm uppercase tracking-tight ${isCurrent ? 'text-primary-700 dark:text-primary-400' : 'text-slate-900 dark:text-white'}`}>{bodega.name}</h3>
                                                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">{bodega.location}</p>
                                                     {/* Tasa de esta bodega */}
-                                                    <div className="mt-3 flex items-center gap-2">
-                                                        <input
-                                                            type="number" step="0.01" placeholder="Tasa Bs/$"
-                                                            defaultValue={bodega.exchange_rate ?? ''}
-                                                            onBlur={async (e) => {
-                                                                const val = parseFloat(e.target.value);
-                                                                if (isNaN(val) || val <= 0) return;
-                                                                const { error } = await supabase.from('bodegas').update({ exchange_rate: val }).eq('id', bodega.id);
-                                                                if (!error) { toast.success(`Tasa de ${bodega.name} actualizada`); fetchBodegas(); }
-                                                                else toast.error('Error al guardar tasa');
-                                                            }}
-                                                            className="w-28 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                                                        />
-                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bs/$</span>
-                                                        {bodega.exchange_rate && (
-                                                            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">{bodega.exchange_rate.toFixed(2)} actual</span>
+                                                    <div className="mt-3 space-y-2">
+                                                        {/* Selector de modo */}
+                                                        <div className="flex gap-1.5">
+                                                            {['none', 'bcv', 'euro'].map(mode => (
+                                                                <button key={mode} type="button"
+                                                                    onClick={async () => {
+                                                                        const { error } = await supabase.from('bodegas').update({ auto_sync_type: mode }).eq('id', bodega.id);
+                                                                        if (!error) { toast.success(`Modo ${mode === 'none' ? 'Manual' : mode.toUpperCase()} para ${bodega.name}`); fetchBodegas(); }
+                                                                        else toast.error('Error al cambiar modo');
+                                                                    }}
+                                                                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                                                        (bodega.auto_sync_type ?? 'none') === mode
+                                                                            ? mode === 'none' ? 'bg-slate-700 text-white border-slate-600'
+                                                                                : mode === 'bcv' ? 'bg-emerald-600 text-white border-emerald-500'
+                                                                                : 'bg-blue-600 text-white border-blue-500'
+                                                                            : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:border-slate-400'
+                                                                    }`}>
+                                                                    {mode === 'none' ? 'Manual' : mode.toUpperCase()}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        {/* Input de tasa (solo editable si modo manual) */}
+                                                        {(bodega.auto_sync_type ?? 'none') === 'none' ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="number" step="0.01" placeholder="Tasa Bs/$"
+                                                                    defaultValue={bodega.exchange_rate ?? ''}
+                                                                    onBlur={async (e) => {
+                                                                        const val = parseFloat(e.target.value);
+                                                                        if (isNaN(val) || val <= 0) return;
+                                                                        const { error } = await supabase.from('bodegas').update({ exchange_rate: val }).eq('id', bodega.id);
+                                                                        if (!error) { toast.success(`Tasa de ${bodega.name} actualizada`); fetchBodegas(); }
+                                                                        else toast.error('Error al guardar tasa');
+                                                                    }}
+                                                                    className="w-28 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                                                />
+                                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bs/$</span>
+                                                                {bodega.exchange_rate && (
+                                                                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">{bodega.exchange_rate.toFixed(2)} actual</span>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                                <span className={`text-[10px] font-black uppercase tracking-widest ${ bodega.auto_sync_type === 'bcv' ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                                                    Auto {bodega.auto_sync_type?.toUpperCase()}
+                                                                </span>
+                                                                {bodega.exchange_rate && (
+                                                                    <span className="text-xs font-black text-slate-700 dark:text-slate-300">{bodega.exchange_rate.toFixed(2)} BS/$</span>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
                                                     {isCurrent ? (
