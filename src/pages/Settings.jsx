@@ -61,7 +61,7 @@ const Settings = () => {
         try {
             const { data, error } = await supabase
                 .from('bodegas')
-                .select('exchange_rate, name')
+                .select('exchange_rate, auto_sync_type, name')
                 .eq('id', bodegaId)
                 .single();
             if (!error && data) {
@@ -74,15 +74,44 @@ const Settings = () => {
 
     const handleSaveBodegaRate = async (e) => {
         e.preventDefault();
-        if (!newRate || !currentUser?.assigned_bodega_id) return;
+        if (!newRate) {
+            toast.error('Ingresa un valor para la tasa');
+            return;
+        }
         setSavingBodegaRate(true);
         try {
+            // Obtener el bodega_id del usuario — primero del contexto,
+            // si no existe, consultarlo directamente a la DB
+            let bodegaId = currentUser?.assigned_bodega_id;
+            if (!bodegaId) {
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('assigned_bodega_id')
+                    .eq('id', currentUser.uid)
+                    .single();
+                bodegaId = userData?.assigned_bodega_id ?? null;
+            }
+
+            if (!bodegaId) {
+                toast.error('No tienes una sede asignada. Pide al administrador que te asigne a una bodega.');
+                setSavingBodegaRate(false);
+                return;
+            }
+
             const val = parseFloat(parseFloat(newRate).toFixed(2));
             const { error } = await supabase
                 .from('bodegas')
                 .update({ exchange_rate: val })
-                .eq('id', currentUser.assigned_bodega_id);
-            if (error) throw error;
+                .eq('id', bodegaId);
+            if (error) {
+                // Error de RLS: el empleado no tiene permiso sobre esa bodega
+                if (error.code === '42501' || error.message?.includes('policy')) {
+                    toast.error('Sin permiso. Solo puedes actualizar la tasa de tu sede asignada.');
+                } else {
+                    throw error;
+                }
+                return;
+            }
             setBodegaRate(val);
             setNewRate('');
             toast.success('Tasa de la sede actualizada');
