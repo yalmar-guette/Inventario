@@ -346,88 +346,6 @@ const Settings = () => {
         }
     };
 
-    // Vista reducida para EMPLOYEE
-    if (userRole === 'EMPLOYEE') {
-        return (
-            <div className="p-6 max-w-lg mx-auto space-y-6 pt-8">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-black text-slate-900 dark:text-white">Configuración</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Opciones disponibles para tu cuenta</p>
-                </div>
-
-                {/* Tasa de la sede */}
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-                    <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                            <DollarSign size={20} />
-                        </div>
-                        <div>
-                            <h2 className="font-bold text-slate-900 dark:text-white">Tasa de Cambio</h2>
-                            <p className="text-xs text-slate-500">Ajustar tasa de tu sede</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 mb-4">
-                        <div>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Tasa Actual</span>
-                            <span className="text-2xl font-black text-slate-900 dark:text-white">
-                                {bodegaRate !== null ? `${bodegaRate.toFixed(2)} BS/$` : `${rate.toFixed(2)} BS/$ (global)`}
-                            </span>
-                        </div>
-                        <RefreshCw className={`w-6 h-6 text-emerald-500 ${configLoading ? 'animate-spin' : ''}`} />
-                    </div>
-                    <form onSubmit={handleSaveBodegaRate} className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <button type="button" disabled={fetchingApi.bcv}
-                                onClick={() => handleFetchRate('bcv')}
-                                className="py-3 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
-                                {fetchingApi.bcv ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa BCV
-                            </button>
-                            <button type="button" disabled={fetchingApi.euro}
-                                onClick={() => handleFetchRate('euro')}
-                                className="py-3 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-blue-100 dark:border-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
-                                {fetchingApi.euro ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa Euro
-                            </button>
-                        </div>
-                        <input type="number" step="0.01" required placeholder="Nueva tasa..."
-                            className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 text-slate-900 dark:text-white font-black text-xl"
-                            value={newRate} onChange={(e) => setNewRate(e.target.value)} />
-                        <button type="submit" disabled={savingBodegaRate}
-                            className="w-full py-3 bg-primary-600 dark:bg-primary-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-700 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-primary-200 dark:shadow-none disabled:opacity-50">
-                            {savingBodegaRate ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Guardar Tasa
-                        </button>
-                    </form>
-                </div>
-
-                {/* Actualizar App */}
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-orange-50 dark:bg-orange-950/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400">
-                            <Database size={20} />
-                        </div>
-                        <h2 className="font-bold text-slate-900 dark:text-white">Mantenimiento</h2>
-                    </div>
-                    <div className="space-y-3">
-                        <button onClick={handleUpdateApp} disabled={updating || updateDone}
-                            className={`w-full py-3 font-black text-xs uppercase tracking-[0.2em] rounded-xl transition-all flex items-center gap-2 justify-center disabled:opacity-70 ${
-                                updateDone ? 'bg-emerald-600 text-white cursor-default'
-                                : needsUpdate ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-200 dark:shadow-none'
-                                : 'bg-slate-800 dark:bg-slate-600 text-white hover:bg-slate-700'
-                            }`}>
-                            {updateDone ? <><CheckCircle size={16} /> Actualizando...</> : updating ? <><Loader2 size={16} className="animate-spin" /> Aplicando...</> : <><Download size={16} /> Actualizar App {needsUpdate && <span className="ml-1 px-1.5 py-0.5 bg-amber-400 text-amber-900 text-[9px] font-black rounded-full">NUEVA</span>}</>}
-                        </button>
-                        <button onClick={handleClearCache}
-                            className="w-full py-3 bg-orange-600 dark:bg-orange-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-orange-700 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-orange-200 dark:shadow-none">
-                            <RefreshCw size={16} /> Limpiar Caché
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (!userRole || (userRole !== 'OWNER' && userRole !== 'ADMIN')) {
-        return <div className="text-slate-900 dark:text-slate-100 text-center mt-20 font-medium">Acceso Restringido</div>;
-    }
 
     const handleUpdateRate = async (e) => {
         e.preventDefault();
@@ -720,6 +638,89 @@ const Settings = () => {
             }, 1000);
         }
     };
+
+    // Vista reducida para EMPLOYEE (aqui, despues de todos los handlers)
+    if (userRole === 'EMPLOYEE') {
+        return (
+            <div className="p-6 max-w-lg mx-auto space-y-6 pt-8">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-black text-slate-900 dark:text-white">Configuración</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Opciones disponibles para tu cuenta</p>
+                </div>
+
+                {/* Tasa de la sede */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                            <DollarSign size={20} />
+                        </div>
+                        <div>
+                            <h2 className="font-bold text-slate-900 dark:text-white">Tasa de Cambio</h2>
+                            <p className="text-xs text-slate-500">Ajustar tasa de tu sede</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 mb-4">
+                        <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Tasa Actual</span>
+                            <span className="text-2xl font-black text-slate-900 dark:text-white">
+                                {bodegaRate !== null ? `${bodegaRate.toFixed(2)} BS/$` : `${rate.toFixed(2)} BS/$ (global)`}
+                            </span>
+                        </div>
+                        <RefreshCw className={`w-6 h-6 text-emerald-500 ${configLoading ? 'animate-spin' : ''}`} />
+                    </div>
+                    <form onSubmit={handleSaveBodegaRate} className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <button type="button" disabled={fetchingApi.bcv}
+                                onClick={() => handleFetchRate('bcv')}
+                                className="py-3 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
+                                {fetchingApi.bcv ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa BCV
+                            </button>
+                            <button type="button" disabled={fetchingApi.euro}
+                                onClick={() => handleFetchRate('euro')}
+                                className="py-3 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-blue-100 dark:border-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-[0.98] transition-all flex items-center gap-2 justify-center disabled:opacity-50">
+                                {fetchingApi.euro ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Tasa Euro
+                            </button>
+                        </div>
+                        <input type="number" step="0.01" required placeholder="Nueva tasa..."
+                            className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 text-slate-900 dark:text-white font-black text-xl"
+                            value={newRate} onChange={(e) => setNewRate(e.target.value)} />
+                        <button type="submit" disabled={savingBodegaRate}
+                            className="w-full py-3 bg-primary-600 dark:bg-primary-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-700 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-primary-200 dark:shadow-none disabled:opacity-50">
+                            {savingBodegaRate ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Guardar Tasa
+                        </button>
+                    </form>
+                </div>
+
+                {/* Actualizar App */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-orange-50 dark:bg-orange-950/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400">
+                            <Database size={20} />
+                        </div>
+                        <h2 className="font-bold text-slate-900 dark:text-white">Mantenimiento</h2>
+                    </div>
+                    <div className="space-y-3">
+                        <button onClick={handleUpdateApp} disabled={updating || updateDone}
+                            className={`w-full py-3 font-black text-xs uppercase tracking-[0.2em] rounded-xl transition-all flex items-center gap-2 justify-center disabled:opacity-70 ${
+                                updateDone ? 'bg-emerald-600 text-white cursor-default'
+                                : needsUpdate ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-200 dark:shadow-none'
+                                : 'bg-slate-800 dark:bg-slate-600 text-white hover:bg-slate-700'
+                            }`}>
+                            {updateDone ? <><CheckCircle size={16} /> Actualizando...</> : updating ? <><Loader2 size={16} className="animate-spin" /> Aplicando...</> : <><Download size={16} /> Actualizar App {needsUpdate && <span className="ml-1 px-1.5 py-0.5 bg-amber-400 text-amber-900 text-[9px] font-black rounded-full">NUEVA</span>}</>}
+                        </button>
+                        <button onClick={handleClearCache}
+                            className="w-full py-3 bg-orange-600 dark:bg-orange-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-orange-700 active:scale-[0.98] transition-all flex items-center gap-2 justify-center shadow-lg shadow-orange-200 dark:shadow-none">
+                            <RefreshCw size={16} /> Limpiar Caché
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!userRole || (userRole !== 'OWNER' && userRole !== 'ADMIN')) {
+        return <div className="text-slate-900 dark:text-slate-100 text-center mt-20 font-medium">Acceso Restringido</div>;
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 transition-colors duration-300 overflow-y-auto">
