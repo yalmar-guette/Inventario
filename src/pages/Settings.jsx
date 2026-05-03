@@ -42,7 +42,7 @@ const Settings = () => {
     const toast = useToast();
 
     useEffect(() => {
-        if (userRole === 'OWNER') {
+        if (userRole === 'OWNER' || userRole === 'ADMIN') {
             fetchBodegas();
             fetchUsers();
             fetchSyncConfig();

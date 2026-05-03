@@ -41,80 +41,46 @@ export function AuthProvider({ children }) {
 
     const fetchUserData = async (authUser) => {
         try {
-            // ESTRATEGIA DE VELOCIDAD:
-            // 1. Si tenemos datos en los metadatos (JWT), usarlos DE INMEDIATO.
-            // Esto elimina el tiempo de espera "Iniciando sesión..."
-            const metadata = authUser.user_metadata || {};
-
-            if (metadata.role) {
-                setCurrentUser({
-                    uid: authUser.id,
-                    email: authUser.email,
-                    name: metadata.name,
-                    role: metadata.role,
-                    assigned_bodega_id: metadata.assigned_bodega_id || 'bodega_1',
-                    ...metadata
-                });
-                setUserRole(metadata.role);
-                setLoading(false);
-                return; // ¡Salimos ya! No esperamos a la DB.
-            }
-
-            // 2. Si NO hay metadatos, consultamos la DB (Lento, pero necesario la primera vez)
-            // Timeout de seguridad de 5s para evitar bloqueo de login
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Timeout fetching user data')), 5000)
-            );
-
-            // Obtener datos adicionales del usuario desde la tabla users
-            const queryPromise = supabase
+            // Siempre consultar la DB para tener datos frescos (rol, bodega actualizada)
+            const { data: userData, error } = await supabase
                 .from('users')
                 .select('*')
                 .eq('id', authUser.id)
                 .single();
 
-            const { data: userData, error } = await Promise.race([queryPromise, timeoutPromise]);
-
             if (error) {
-                console.warn("Error fetching user details (using metadata fallback):", error.message);
-
-                // FALLBACK ROBUSTO: Usar metadata del usuario (JWT)
-                const metadataRole = authUser.user_metadata?.role;
-                const metadataName = authUser.user_metadata?.name;
-
+                // Solo usar metadata como último recurso si la DB falla
+                console.warn("DB query failed, using metadata fallback:", error.message);
+                const meta = authUser.user_metadata || {};
                 setCurrentUser({
                     uid: authUser.id,
                     email: authUser.email,
-                    name: metadataName,
-                    role: metadataRole || "EMPLOYEE", // Usar rol del metadata o default
-                    ...authUser.user_metadata
+                    name: meta.name || authUser.email,
+                    role: meta.role || "EMPLOYEE",
+                    assigned_bodega_id: meta.assigned_bodega_id || null,
                 });
-
-                setUserRole(metadataRole || "EMPLOYEE");
+                setUserRole(meta.role || "EMPLOYEE");
             } else {
-                // Combinar datos de auth con datos de la tabla users
                 setCurrentUser({
                     uid: userData.id,
                     email: userData.email,
                     name: userData.name,
                     role: userData.role,
-                    assigned_bodega_id: userData.assigned_bodega_id
+                    assigned_bodega_id: userData.assigned_bodega_id || null,
                 });
                 setUserRole(userData.role);
             }
         } catch (error) {
-            console.error("Error/Timeout in fetchUserData:", error);
-
-            // FALLBACK EN CATCH
-            const metadataRole = authUser.user_metadata?.role;
-
+            console.error("Error in fetchUserData:", error);
+            const meta = authUser.user_metadata || {};
             setCurrentUser({
                 uid: authUser.id,
                 email: authUser.email,
-                role: metadataRole || "EMPLOYEE",
-                ...authUser.user_metadata
+                role: meta.role || "EMPLOYEE",
+                assigned_bodega_id: meta.assigned_bodega_id || null,
+                ...meta
             });
-            setUserRole(metadataRole || "EMPLOYEE");
+            setUserRole(meta.role || "EMPLOYEE");
         } finally {
             setLoading(false);
         }
