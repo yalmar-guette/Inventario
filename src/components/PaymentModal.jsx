@@ -25,6 +25,10 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
     const [showNewForm, setShowNewForm] = useState(false);         // modo nuevo cliente
     const [newDebtorInfo, setNewDebtorInfo] = useState({ name: '', phone: '' });
     const [showDropdown, setShowDropdown] = useState(false);
+    
+    // --- Estado de cuotas (Installments) ---
+    const [installments, setInstallments] = useState([]);
+    
     const searchRef = useRef(null);
     const debounceRef = useRef(null);
 
@@ -58,6 +62,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             setShowNewForm(false);
             setNewDebtorInfo({ name: '', phone: '' });
             setShowDropdown(false);
+            setInstallments([]); // Reset installments
         }
     }, [isOpen, totalUSD]);
 
@@ -147,6 +152,19 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             const distributed = getDistributedRows(nextRows, totalUSD);
             setRows(distributed);
         }
+    };
+
+    // --- Funciones para manejar cuotas (Installments) ---
+    const addInstallment = () => {
+        setInstallments([...installments, { id: Date.now(), date: '', amountUSD: '' }]);
+    };
+
+    const updateInstallment = (id, field, value) => {
+        setInstallments(installments.map(inst => inst.id === id ? { ...inst, [field]: value } : inst));
+    };
+
+    const removeInstallment = (id) => {
+        setInstallments(installments.filter(inst => inst.id !== id));
     };
 
     const removeRow = (id) => {
@@ -261,10 +279,15 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
             // Construir objeto deudor para el POS
             let debtorPayload = null;
             if (hasFiado) {
+                const validInstallments = installments.filter(inst => inst.date && parseFloat(inst.amountUSD) > 0).map(inst => ({
+                    date: inst.date,
+                    amountUSD: parseFloat(inst.amountUSD)
+                }));
+                
                 if (selectedDebtor) {
-                    debtorPayload = { existingId: selectedDebtor.id, name: selectedDebtor.name };
+                    debtorPayload = { existingId: selectedDebtor.id, name: selectedDebtor.name, installments: validInstallments };
                 } else if (showNewForm && newDebtorInfo.name.trim()) {
-                    debtorPayload = { isNew: true, name: newDebtorInfo.name.trim(), phone: newDebtorInfo.phone.trim() };
+                    debtorPayload = { isNew: true, name: newDebtorInfo.name.trim(), phone: newDebtorInfo.phone.trim(), installments: validInstallments };
                 }
             }
 
@@ -511,6 +534,50 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                     onSelectNew={() => setShowNewForm(true)}
                                 />
                             )}
+
+                            {/* --- Sección de Cuotas (Installments) --- */}
+                            <div className="mt-8 border-t border-amber-200 dark:border-amber-900/50 pt-6 relative z-10">
+                                <h5 className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <Calendar size={14} /> Fechas Tentativas de Pago (Opcional)
+                                </h5>
+                                
+                                <div className="space-y-3 mb-4">
+                                    {installments.map((inst) => (
+                                        <div key={inst.id} className="flex gap-2">
+                                            <input 
+                                                type="date"
+                                                className="w-1/2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 transition-all"
+                                                value={inst.date}
+                                                onChange={(e) => updateInstallment(inst.id, 'date', e.target.value)}
+                                            />
+                                            <div className="relative w-1/2">
+                                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-xs">$</div>
+                                                <input 
+                                                    type="number"
+                                                    placeholder="Monto"
+                                                    className="w-full pl-8 pr-3 py-2.5 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 transition-all"
+                                                    value={inst.amountUSD}
+                                                    onChange={(e) => updateInstallment(inst.id, 'amountUSD', e.target.value)}
+                                                />
+                                            </div>
+                                            <button 
+                                                onClick={() => removeInstallment(inst.id)} 
+                                                className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors shrink-0"
+                                            >
+                                                <Trash2 size={16}/>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <button 
+                                    onClick={addInstallment} 
+                                    className="text-xs font-bold text-amber-600 hover:text-amber-700 dark:text-amber-500 flex items-center gap-2 px-3 py-2 bg-amber-100 dark:bg-amber-900/30 rounded-xl transition-colors"
+                                >
+                                    <PlusCircle size={14} /> Añadir cuota
+                                </button>
+                            </div>
+                            {/* --- Fin Sección de Cuotas --- */}
 
                             <div className="absolute bottom-0 right-0 w-32 h-32 bg-amber-500/5 dark:bg-amber-400/5 -mr-12 -mb-12 rounded-full blur-2xl" />
                         </div>

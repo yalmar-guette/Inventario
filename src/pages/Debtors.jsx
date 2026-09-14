@@ -35,7 +35,7 @@ const Debtors = () => {
 
             let query = supabase
                 .from('debtors')
-                .select('*')
+                .select('*, payment_installments(*)')
                 .order('created_at', { ascending: false });
 
             if (activeBodegaId) {
@@ -217,8 +217,24 @@ const Debtors = () => {
                             <p className="text-slate-500 dark:text-slate-500 font-bold uppercase text-[10px] tracking-widest">No hay deudores registrados.</p>
                         </div>
                     ) : (
-                        debtors.map(debtor => (
-                            <div key={debtor.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all p-6 flex flex-col justify-between group">
+                        debtors.map(debtor => {
+                            // Check for overdue installments
+                            const today = new Date();
+                            today.setHours(0,0,0,0);
+                            const isOverdue = debtor.payment_installments?.some(inst => {
+                                if (inst.status !== 'pending') return false;
+                                const dueDate = new Date(inst.due_date);
+                                dueDate.setHours(0,0,0,0);
+                                return dueDate < today;
+                            });
+
+                            return (
+                            <div key={debtor.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all p-6 flex flex-col justify-between group relative overflow-hidden">
+                                {isOverdue && (
+                                    <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+                                        <AlertTriangle size={10} /> Cuota Vencida
+                                    </div>
+                                )}
                                 <div>
                                     <div className="flex items-center gap-4 mb-6">
                                         <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-600 dark:text-primary-400 shadow-sm transition-colors border border-primary-100 dark:border-primary-800">
@@ -267,7 +283,7 @@ const Debtors = () => {
                                     </button>
                                 </div>
                             </div>
-                        ))
+                        )})
                     )}
                 </div>
 

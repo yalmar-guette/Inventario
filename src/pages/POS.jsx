@@ -205,6 +205,8 @@ const POS = () => {
                 const debtAmountUSD = debtPayments.reduce((sum, p) =>
                     sum + (p.isUsd ? p.amount : p.amount / validRate), 0);
 
+                let finalDebtorId = debtor.existingId;
+
                 if (debtor.existingId) {
                     // Deudor existente seleccionado: acumular deuda
                     const { data: current } = await supabase
@@ -217,7 +219,7 @@ const POS = () => {
                     if (debtorError) throw debtorError;
                 } else if (debtor.isNew) {
                     // Nuevo cliente: insertar (code se asigna automáticamente por la DB)
-                    const { error: debtorError } = await supabase
+                    const { data: newDebtor, error: debtorError } = await supabase
                         .from('debtors')
                         .insert([{
                             name: debtor.name,
@@ -226,8 +228,27 @@ const POS = () => {
                             total_debt_usd: debtAmountUSD,
                             total_debt_bs: debtAmountUSD * validRate,
                             sale_id: saleRecord.id
-                        }]);
+                        }])
+                        .select()
+                        .single();
                     if (debtorError) throw debtorError;
+                    finalDebtorId = newDebtor.id;
+                }
+
+                // 2.5 Guardar Cuotas / Fechas Tentativas si existen
+                if (finalDebtorId && debtor.installments && debtor.installments.length > 0) {
+                    const installmentsToInsert = debtor.installments.map(inst => ({
+                        debtor_id: finalDebtorId,
+                        due_date: inst.date,
+                        amount_usd: inst.amountUSD,
+                        amount_bs: inst.amountUSD * validRate,
+                        status: 'pending'
+                    }));
+                    const { error: instError } = await supabase.from('payment_installments').insert(installmentsToInsert);
+                    if (instError) {
+                        console.error("Error guardando cuotas:", instError);
+                        throw instError;
+                    }
                 }
             }
 
