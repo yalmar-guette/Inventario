@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { supabase } from '../supabase';
-import { User, CheckCircle, Phone, X, DollarSign, Wallet, AlertTriangle } from 'lucide-react';
+import { User, CheckCircle, Phone, X, DollarSign, Wallet, AlertTriangle, History, Calendar, FileText } from 'lucide-react';
 
 const Debtors = () => {
     const { currentUser } = useAuth();
@@ -17,6 +17,13 @@ const Debtors = () => {
     const [paymentAmount, setPaymentAmount] = useState('');
     const [isUsd, setIsUsd] = useState(true);
     const [paymentMethod, setPaymentMethod] = useState('EFECTIVO');
+    const [paymentNotes, setPaymentNotes] = useState('');
+
+    // Estado del Historial
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [selectedDebtorHistory, setSelectedDebtorHistory] = useState(null);
+    const [paymentHistory, setPaymentHistory] = useState([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
     useEffect(() => {
         fetchDebtors();
@@ -51,7 +58,30 @@ const Debtors = () => {
         setSelectedDebtor(debtor);
         setPaymentAmount('');
         setIsUsd(true);
+        setPaymentNotes('');
         setIsModalOpen(true);
+    };
+
+    const openHistoryModal = async (debtor) => {
+        setSelectedDebtorHistory(debtor);
+        setIsHistoryModalOpen(true);
+        setIsLoadingHistory(true);
+        setPaymentHistory([]);
+        
+        try {
+            const { data, error } = await supabase
+                .from('debt_payments')
+                .select('*')
+                .eq('debtor_id', debtor.id)
+                .order('created_at', { ascending: false });
+                
+            if (error) throw error;
+            setPaymentHistory(data || []);
+        } catch (err) {
+            console.error("Error fetching payment history", err);
+        } finally {
+            setIsLoadingHistory(false);
+        }
     };
 
     // Sincronizar moneda con método de pago automáticamente
@@ -142,8 +172,20 @@ const Debtors = () => {
                 alert('Abono registrado exitosamente. Restan: $' + newDebt.toFixed(2));
             }
 
-            // 2. Opcional: Registrar la transacción de pago si tuvieras una tabla 'payments'
-            // Por ahora, solo actualizamos la deuda según lo solicitado.
+            // 2. Registrar la transacción de pago
+            const { error: paymentError } = await supabase
+                .from('debt_payments')
+                .insert({
+                    debtor_id: selectedDebtor.id,
+                    amount_usd: amountInUSD,
+                    amount_bs: isUsd ? amountInput * rate : amountInput,
+                    payment_method: paymentMethod,
+                    notes: paymentNotes || null
+                });
+                
+            if (paymentError) {
+                console.error("Error guardando historial de abono:", paymentError);
+            }
 
             setIsModalOpen(false);
             // Pequeño delay para asegurar que la DB procesó el cambio antes de leer
@@ -221,12 +263,20 @@ const Debtors = () => {
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => openPaymentModal(debtor)}
-                                    className="w-full px-5 py-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-[0.98] transition-all duration-200 flex items-center gap-2 justify-center border border-emerald-100 dark:border-emerald-900/40"
-                                >
-                                    <CheckCircle size={18} /> Registrar Abono
-                                </button>
+                                <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                                    <button
+                                        onClick={() => openHistoryModal(debtor)}
+                                        className="flex-1 px-3 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
+                                    >
+                                        <History size={16} /> Historial
+                                    </button>
+                                    <button
+                                        onClick={() => openPaymentModal(debtor)}
+                                        className="flex-1 px-3 py-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 border border-emerald-100 dark:border-emerald-900/40"
+                                    >
+                                        <CheckCircle size={16} /> Abono
+                                    </button>
+                                </div>
                             </div>
                         ))
                     )}
@@ -365,6 +415,20 @@ const Debtors = () => {
                                     </div>
                                 </div>
 
+                                {/* Notas (Opcional) */}
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Notas (Opcional)</label>
+                                    <div className="flex rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden focus-within:ring-4 focus-within:ring-primary-500/10 focus-within:border-primary-500 dark:focus-within:border-primary-400 transition-all bg-slate-50 dark:bg-slate-800">
+                                        <input
+                                            type="text"
+                                            className="flex-1 px-6 py-4 bg-transparent outline-none font-medium text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                            placeholder="Detalles del abono..."
+                                            value={paymentNotes}
+                                            onChange={(e) => setPaymentNotes(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
                                 <button
                                     type="submit"
                                     className="w-full py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-3xl shadow-xl shadow-emerald-200 dark:shadow-none hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
@@ -373,6 +437,88 @@ const Debtors = () => {
                                     Confirmar Abono
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL DE HISTORIAL DE PAGOS */}
+                {isHistoryModalOpen && selectedDebtorHistory && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md transition-all duration-300">
+                        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
+                            {/* Encabezado */}
+                            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20 shrink-0">
+                                <div>
+                                    <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                        <History className="text-primary-500" /> Historial de Abonos
+                                    </h3>
+                                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
+                                        Cliente: {selectedDebtorHistory.name}
+                                    </p>
+                                </div>
+                                <button onClick={() => setIsHistoryModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-all shrink-0">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            
+                            {/* Info Saldo Actual */}
+                            <div className="px-8 py-4 bg-slate-50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800 shrink-0 flex justify-between items-center">
+                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Saldo Actual Pendiente</span>
+                                <div className="text-right">
+                                    <span className="font-black text-lg text-red-500 dark:text-red-400">${(parseFloat(selectedDebtorHistory.total_debt_usd) || 0).toFixed(2)}</span>
+                                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 ml-2">({((parseFloat(selectedDebtorHistory.total_debt_usd) || 0) * rate).toFixed(2)} Bs)</span>
+                                </div>
+                            </div>
+
+                            {/* Lista de Pagos */}
+                            <div className="p-6 sm:p-8 overflow-y-auto flex-1">
+                                {isLoadingHistory ? (
+                                    <div className="flex flex-col gap-4 animate-pulse">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800/50 rounded-2xl"></div>
+                                        ))}
+                                    </div>
+                                ) : paymentHistory.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <History className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                                        </div>
+                                        <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-widest">No hay abonos registrados para este cliente.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {paymentHistory.map(payment => (
+                                            <div key={payment.id} className="p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 hover:border-primary-300 dark:hover:border-primary-500/50 transition-colors">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                        <Calendar size={12} />
+                                                        {new Date(payment.created_at).toLocaleString()}
+                                                    </div>
+                                                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                                                        {payment.payment_method}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-end justify-between">
+                                                    <div>
+                                                        <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 flex items-center">
+                                                            <span className="text-lg mr-1">$</span>
+                                                            {(parseFloat(payment.amount_usd) || 0).toFixed(2)}
+                                                        </span>
+                                                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500">
+                                                            {(parseFloat(payment.amount_bs) || 0).toFixed(2)} Bs
+                                                        </span>
+                                                    </div>
+                                                    {payment.notes && (
+                                                        <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs mt-2 max-w-[50%] text-right bg-slate-50 dark:bg-slate-800 p-2 rounded-lg">
+                                                            <FileText size={12} className="shrink-0" />
+                                                            <span className="truncate" title={payment.notes}>{payment.notes}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
