@@ -35,7 +35,7 @@ const ClientDetail = () => {
     const fetchClientData = async () => {
         setLoading(true);
         try {
-            // 1. Obtener info del cliente
+            // 1. Obtener info del deudor
             const { data: clientData, error: clientErr } = await supabase
                 .from('debtors')
                 .select('*')
@@ -48,67 +48,71 @@ const ClientDetail = () => {
             }
             setClient(clientData);
 
-            // 2. Obtener estado de cuenta (RPC)
-            const { data: stData, error: stErr } = await supabase
-                .rpc('get_client_statement', { client_id_param: id });
-            if (!stErr && stData && stData.length > 0) {
-                setStatement({
-                    fiado: parseFloat(stData[0].total_fiado) || 0,
-                    abonado: parseFloat(stData[0].total_abonado) || 0,
-                    saldo: parseFloat(stData[0].saldo_actual) || 0
+            // 2. Obtener pagos del deudor (Historial real)
+            const { data: payments, error: payErr } = await supabase
+                .from('debt_payments')
+                .select('*')
+                .eq('debtor_id', id)
+                .order('created_at', { ascending: true });
+                
+            if (payErr) {
+                console.error("[ClientDetail] Error al cargar pagos:", payErr);
+            }
+
+            // 3. Cálculos matemáticos locales (Sin necesidad de RPC)
+            // Saldo = Fiado - Abonado, por ende: Fiado = Saldo + Abonado
+            const saldoActual = parseFloat(clientData.total_debt_usd) || 0;
+            
+            let totalAbonado = 0;
+            const paymentsLedger = (payments || []).map(p => {
+                const amount = parseFloat(p.amount_usd) || 0;
+                totalAbonado += amount;
+                return {
+                    id: `p_${p.id}`,
+                    type: 'PAYMENT',
+                    date: new Date(p.created_at),
+                    amount: amount,
+                    amount_bs: parseFloat(p.amount_bs) || 0,
+                    method: p.payment_method || 'Abono',
+                    reference: p.notes
+                };
+            });
+
+            const totalFiado = saldoActual + totalAbonado;
+
+            setStatement({
+                fiado: totalFiado,
+                abonado: totalAbonado,
+                saldo: saldoActual
+            });
+
+            // 4. Reconstruir el Ledger visual
+            // Insertamos un registro inicial ficticio de deuda para que el historial cuadre
+            const ledgerItems = [];
+            if (totalFiado > 0) {
+                ledgerItems.push({
+                    id: 'deuda_historica',
+                    type: 'DEBT',
+                    // Ponemos una fecha anterior al primer pago, o la fecha de creación del deudor
+                    date: new Date(clientData.created_at),
+                    amount: totalFiado,
+                    amount_bs: totalFiado * rate, // Aproximación
+                    method: 'Crédito Inicial',
+                    reference: 'Histórico'
                 });
             }
 
-            // 3. Obtener Ledger (Pagos + Ventas)
-            // Abonos
-            const { data: payments } = await supabase
-                .from('client_payments')
-                .select('*')
-                .eq('client_id', id);
-                
-            const paymentsLedger = (payments || []).map(p => ({
-                id: `p_${p.id}`,
-                type: 'PAYMENT',
-                date: new Date(p.created_at),
-                amount: parseFloat(p.amount_usd),
-                amount_bs: parseFloat(p.amount_bs),
-                method: p.payment_method,
-                reference: p.reference
-            }));
-
-            // Compras (Ventas fiadas)
-            const { data: sales } = await supabase
-                .from('sales')
-                .select('*')
-                .eq('client_id', id);
-                
-            const salesLedger = [];
-            (sales || []).forEach(sale => {
-                // Buscar pago FIADO en la venta
-                const fiadoPayment = (sale.payments || []).find(p => p.method === 'FIADO');
-                if (fiadoPayment) {
-                    salesLedger.push({
-                        id: `s_${sale.id}`,
-                        type: 'DEBT',
-                        date: new Date(sale.timestamp),
-                        amount: parseFloat(fiadoPayment.amount) || 0,
-                        method: 'Compra a Crédito',
-                        reference: `Ref #${sale.id.split('-')[0]}`
-                    });
-                }
-            });
-
-            // Unificar, ordenar y calcular saldos progresivos
-            const combined = [...paymentsLedger, ...salesLedger].sort((a, b) => a.date - b.date);
+            const combined = [...ledgerItems, ...paymentsLedger].sort((a, b) => a.date - b.date);
             
+            // Calculamos saldo progresivo
             let runningBalance = 0;
             const computedLedger = combined.map(item => {
                 if (item.type === 'DEBT') runningBalance += item.amount;
-                if (item.type === 'PAYMENT') runningBalance = Math.max(0, runningBalance - item.amount); // Simplificado
+                if (item.type === 'PAYMENT') runningBalance = Math.max(0, runningBalance - item.amount);
                 return { ...item, runningBalance };
             });
 
-            // Revertir para mostrar lo más reciente arriba
+            // Revertimos para que lo más reciente salga arriba
             setLedger(computedLedger.reverse());
 
         } catch (err) {
@@ -128,20 +132,37 @@ const ClientDetail = () => {
         const amountBS = isUsd ? amountInput * rate : amountInput;
 
         try {
-            const { error } = await supabase.from('client_payments').insert({
-                client_id: id,
+            // 1. Registrar el pago en el historial
+            const { error: payErr } = await supabase.from('debt_payments').insert({
+                debtor_id: id,
                 amount_usd: amountUSD,
                 amount_bs: amountBS,
-                exchange_rate: rate,
                 payment_method: paymentMethod,
-                reference: paymentNotes || null
+                notes: paymentNotes || null
             });
-            if (error) throw error;
+            if (payErr) throw payErr;
             
+            // 2. Descontar el saldo en la tabla debtors
+            const currentDebt = parseFloat(client.total_debt_usd) || 0;
+            let newDebtRaw = currentDebt - amountUSD;
+            const newDebt = Math.round(newDebtRaw * 100) / 100;
+            
+            if (newDebt <= 0.05) {
+                // Liquidado
+                await supabase.from('debtors').update({ total_debt_usd: 0, total_debt_bs: 0 }).eq('id', id);
+                await supabase.from('debtors').delete().eq('id', id); // Opcional, pero así era tu lógica vieja
+            } else {
+                // Abono parcial
+                await supabase.from('debtors').update({
+                    total_debt_usd: newDebt,
+                    total_debt_bs: newDebt * rate
+                }).eq('id', id);
+            }
+
             setIsPaymentModalOpen(false);
             setPaymentAmount('');
             setPaymentNotes('');
-            fetchClientData(); // recargar
+            fetchClientData(); // recargar vista
         } catch (err) {
             console.error(err);
             alert("Error al registrar el abono");
@@ -174,7 +195,6 @@ const ClientDetail = () => {
             {/* Header Móvil y Sidebar Desktop (Izquierda) */}
             <div className="md:w-1/3 lg:w-1/4 bg-white dark:bg-slate-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-col z-20">
                 
-                {/* Header (Sticky en móvil) */}
                 <div className="sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md z-10 px-4 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
                     <button onClick={() => navigate('/clients')} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0">
                         <ArrowLeft size={20} className="text-slate-700 dark:text-slate-300" />
@@ -182,11 +202,11 @@ const ClientDetail = () => {
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-lg tracking-widest shrink-0">
-                                #{String(client.code || '?').padStart(3, '0')}
+                                #{String(client?.code || '?').padStart(3, '0')}
                             </span>
-                            <h2 className="font-bold text-slate-900 dark:text-white truncate text-lg">{client.name}</h2>
+                            <h2 className="font-bold text-slate-900 dark:text-white truncate text-lg">{client?.name || 'Cliente sin nombre'}</h2>
                         </div>
-                        {client.nickname && <p className="text-xs text-slate-500 truncate">"{client.nickname}"</p>}
+                        {client?.nickname && <p className="text-xs text-slate-500 truncate">"{client.nickname}"</p>}
                     </div>
                 </div>
 
@@ -195,25 +215,25 @@ const ClientDetail = () => {
                     {/* Tarjeta de Saldo */}
                     <div className={clsx(
                         "p-5 rounded-3xl border shadow-sm relative overflow-hidden transition-all",
-                        statement.saldo > 0.05 ? "bg-rose-50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/30" : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30"
+                        (statement?.saldo || 0) > 0.05 ? "bg-rose-50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/30" : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30"
                     )}>
-                        <p className={clsx("text-[10px] font-black uppercase tracking-widest mb-1", statement.saldo > 0.05 ? "text-rose-500" : "text-emerald-500")}>Saldo Pendiente Actual</p>
-                        <p className={clsx("text-4xl font-black", statement.saldo > 0.05 ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400")}>
-                            ${statement.saldo.toFixed(2)}
+                        <p className={clsx("text-[10px] font-black uppercase tracking-widest mb-1", (statement?.saldo || 0) > 0.05 ? "text-rose-500" : "text-emerald-500")}>Saldo Pendiente Actual</p>
+                        <p className={clsx("text-4xl font-black", (statement?.saldo || 0) > 0.05 ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400")}>
+                            ${(statement?.saldo || 0).toFixed(2)}
                         </p>
-                        <p className={clsx("text-xs font-bold mt-1", statement.saldo > 0.05 ? "text-rose-600/70 dark:text-rose-500/70" : "text-emerald-600/70 dark:text-emerald-500/70")}>
-                            ~ {(statement.saldo * rate).toFixed(2)} Bs
+                        <p className={clsx("text-xs font-bold mt-1", (statement?.saldo || 0) > 0.05 ? "text-rose-600/70 dark:text-rose-500/70" : "text-emerald-600/70 dark:text-emerald-500/70")}>
+                            ~ {((statement?.saldo || 0) * (rate || 1)).toFixed(2)} Bs
                         </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50">
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Comprado</p>
-                            <p className="text-lg font-black text-slate-900 dark:text-white">${statement.fiado.toFixed(2)}</p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">${(statement?.fiado || 0).toFixed(2)}</p>
                         </div>
                         <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50">
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Abonado</p>
-                            <p className="text-lg font-black text-slate-900 dark:text-white">${statement.abonado.toFixed(2)}</p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">${(statement?.abonado || 0).toFixed(2)}</p>
                         </div>
                     </div>
 
@@ -225,7 +245,7 @@ const ClientDetail = () => {
                         <Wallet size={18} /> Registrar Abono
                     </button>
                     
-                    {client.phone && (
+                    {client?.phone && (
                         <button 
                             onClick={() => window.open(`https://wa.me/${client.phone.replace(/\D/g,'')}`, '_blank')}
                             className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 p-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
@@ -278,27 +298,27 @@ const ClientDetail = () => {
                                                 </p>
                                             </div>
                                             <p className="text-[10px] font-bold text-slate-400 text-right whitespace-nowrap pl-2">
-                                                {item.date.toLocaleDateString()} <br className="md:hidden" />
-                                                {item.date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                {item?.date instanceof Date && !isNaN(item.date.getTime()) ? item.date.toLocaleDateString() : 'Fecha Inválida'} <br className="md:hidden" />
+                                                {item?.date instanceof Date && !isNaN(item.date.getTime()) ? item.date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
                                             </p>
                                         </div>
                                         
-                                        {item.reference && <p className="text-xs text-slate-500 italic mb-2">Ref: {item.reference}</p>}
+                                        {item?.reference && <p className="text-xs text-slate-500 italic mb-2">Ref: {item.reference}</p>}
 
                                         <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                             <div>
                                                 <p className="text-[9px] text-slate-400 uppercase tracking-widest font-black">Saldo Restante</p>
-                                                <p className="font-bold text-slate-600 dark:text-slate-300 text-xs">${item.runningBalance.toFixed(2)}</p>
+                                                <p className="font-bold text-slate-600 dark:text-slate-300 text-xs">${(item?.runningBalance || 0).toFixed(2)}</p>
                                             </div>
                                             <div className="text-right">
                                                 <p className={clsx("font-black text-lg", item.type === 'PAYMENT' ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
-                                                    {item.type === 'PAYMENT' ? '-' : '+'}${item.amount.toFixed(2)}
+                                                    {item.type === 'PAYMENT' ? '-' : '+'}${(item?.amount || 0).toFixed(2)}
                                                 </p>
                                             </div>
                                         </div>
 
                                         {/* Action: Share Receipt if Payment */}
-                                        {item.type === 'PAYMENT' && client.phone && (
+                                        {item?.type === 'PAYMENT' && client?.phone && (
                                             <button 
                                                 onClick={() => shareReceipt(item)}
                                                 className="w-full mt-3 flex items-center justify-center gap-2 py-2 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
@@ -323,7 +343,7 @@ const ClientDetail = () => {
                         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20 shrink-0">
                             <div>
                                 <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">Registrar Abono</h3>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{client.name}</p>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{client?.name || 'Cliente'}</p>
                             </div>
                             <button onClick={() => setIsPaymentModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 transition-all shrink-0">
                                 <X size={20} />
@@ -355,7 +375,7 @@ const ClientDetail = () => {
                                         <div className="text-right px-2">
                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                                 Equivale a: <span className="text-slate-700 dark:text-slate-300">
-                                                    {isUsd ? `${(parseFloat(paymentAmount) * rate).toFixed(2)} Bs` : `$${(parseFloat(paymentAmount) / rate).toFixed(2)}`}
+                                                    {isUsd ? `${(parseFloat(paymentAmount) * (rate || 1)).toFixed(2)} Bs` : `$${(parseFloat(paymentAmount) / (rate || 1)).toFixed(2)}`}
                                                 </span>
                                             </span>
                                         </div>
