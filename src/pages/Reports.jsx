@@ -249,7 +249,7 @@ const Reports = () => {
             const paymentsSize = payments.length;
             let paymentStr = 'N/A';
             if (paymentsSize > 1) {
-                paymentStr = 'Mixto';
+                paymentStr = `Mixto (${payments.map(p => `${p.name}: ${p.isUsd ? '$' : 'Bs'}${parseFloat(p.amount).toFixed(2)}`).join(' + ')})`;
             } else if (paymentsSize === 1) {
                 const p = payments[0];
                 if (p.method === 'EFECTIVO_USD') paymentStr = 'Efectivo $';
@@ -402,7 +402,7 @@ const Reports = () => {
             const paymentsSize = s.payments?.length || 0;
             let paymentStr = 'N/A';
             if (paymentsSize > 1) {
-                paymentStr = 'Mixto';
+                paymentStr = `Mixto (${s.payments.map(p => `${p.name}: ${p.isUsd ? '$' : 'Bs'}${parseFloat(p.amount).toFixed(2)}`).join(' + ')})`;
             } else if (paymentsSize === 1) {
                 const p = s.payments[0];
                 if (p.method === 'EFECTIVO_USD') paymentStr = 'Efectivo $';
@@ -685,7 +685,20 @@ const Reports = () => {
 
                                 // Si hay múltiples métodos de pago
                                 if (payments.length > 1) {
-                                    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🔀 Mixto</span>;
+                                    return (
+                                        <div className="flex flex-col gap-1 items-center justify-center">
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-800">
+                                                🔀 Mixto
+                                            </span>
+                                            <div className="flex flex-col mt-1">
+                                                {payments.map((p, i) => (
+                                                    <span key={i} className="text-[9px] font-bold text-slate-500 whitespace-nowrap">
+                                                        {p.name}: {p.isUsd ? '$' : 'Bs'} {parseFloat(p.amount).toFixed(2)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
                                 }
 
                                 // Un solo método de pago

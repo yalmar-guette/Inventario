@@ -168,6 +168,7 @@ const Debtors = () => {
                     debtor_id: selectedDebtor.id,
                     amount_usd: amountInUSD,
                     amount_bs: isUsd ? amountInput * rate : amountInput,
+                    exchange_rate: rate,
                     payment_method: paymentMethod,
                     notes: paymentNotes || null
                 });

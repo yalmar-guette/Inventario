@@ -187,7 +187,8 @@ const POS = () => {
                 payment_method: payments[0]?.method || 'CASH', // Método principal
                 payments: payments,
                 total_usd: totalUSD,
-                total_bs: totalBs
+                total_bs: totalBs,
+                exchange_rate: validRate
             };
 
             // 1. Crear Registro de Venta
