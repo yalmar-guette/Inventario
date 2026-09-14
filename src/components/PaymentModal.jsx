@@ -468,28 +468,8 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                 Cliente a Crédito
                             </h4>
 
-                            {/* Estado: deudor ya seleccionado */}
-                            {selectedDebtor ? (
-                                <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-5 py-4 relative z-10">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[10px] font-black bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-lg tracking-widest">
-                                                #{String(selectedDebtor.code || '?').padStart(3, '0')}
-                                            </span>
-                                            <span className="font-black text-slate-900 dark:text-white">{selectedDebtor.name}</span>
-                                        </div>
-                                        <p className="text-xs text-rose-500 font-bold">
-                                            Deuda actual: ${(parseFloat(selectedDebtor.total_debt_usd) || 0).toFixed(2)}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={() => { setSelectedDebtor(null); setDebtorSearch(''); }}
-                                        className="text-slate-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                                    >
-                                        <X size={18} />
-                                    </button>
-                                </div>
-                            ) : showNewForm ? (
+                            {/* Estado: deudor ya seleccionado o búsqueda predictiva */}
+                            {showNewForm ? (
                                 /* Estado: formulario nuevo cliente */
                                 <div className="space-y-4 relative z-10">
                                     <div className="space-y-1.5">
@@ -523,76 +503,12 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                                     </button>
                                 </div>
                             ) : (
-                                /* Estado: buscador */
-                                <div className="relative z-10" ref={searchRef}>
-                                    <div className="relative">
-                                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        {searchLoading && <Loader2 size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 animate-spin" />}
-                                        <input
-                                            type="text"
-                                            placeholder="Buscar por nombre o código (001)..."
-                                            className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-800 border-2 border-amber-100 dark:border-amber-900/30 rounded-2xl focus:outline-none focus:border-amber-400 text-slate-900 dark:text-white font-bold transition-all"
-                                            value={debtorSearch}
-                                            onChange={e => setDebtorSearch(e.target.value)}
-                                            onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-                                        />
-                                    </div>
-
-                                    {/* Resultados inline (no absolute, para evitar clip por overflow) */}
-                                    {showDropdown && (
-                                        <div className="mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg overflow-hidden">
-                                            {searchResults.length > 0 ? (
-                                                <>
-                                                    {searchResults.map(d => (
-                                                        <button
-                                                            key={d.id}
-                                                            type="button"
-                                                            onClick={() => { setSelectedDebtor(d); setShowDropdown(false); setDebtorSearch(''); }}
-                                                            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors text-left border-b border-slate-100 dark:border-slate-700 last:border-0"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-lg">
-                                                                    #{String(d.code || '?').padStart(3, '0')}
-                                                                </span>
-                                                                <div>
-                                                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{d.name}</p>
-                                                                    {d.phone && <p className="text-[10px] text-slate-400">{d.phone}</p>}
-                                                                </div>
-                                                            </div>
-                                                            <span className="text-xs font-black text-rose-500">${(parseFloat(d.total_debt_usd) || 0).toFixed(2)}</span>
-                                                        </button>
-                                                    ))}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setShowNewForm(true); setShowDropdown(false); }}
-                                                        className="w-full flex items-center gap-3 px-5 py-3.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/20 transition-colors font-bold text-sm"
-                                                    >
-                                                        <UserPlus size={16} /> Nuevo cliente
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <div className="px-5 py-4">
-                                                    <p className="text-sm text-slate-400 font-bold mb-3">Sin resultados para "{debtorSearch}"</p>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setShowNewForm(true); setShowDropdown(false); }}
-                                                        className="flex items-center gap-2 text-primary-600 dark:text-primary-400 font-bold text-sm hover:underline"
-                                                    >
-                                                        <UserPlus size={16} /> Registrar como nuevo cliente
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <button
-                                        type="button"
-                                        onClick={() => { setShowNewForm(true); setShowDropdown(false); }}
-                                        className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                                    >
-                                        <UserPlus size={14} /> Es un cliente nuevo
-                                    </button>
-                                </div>
+                                <ClientSearchCombobox
+                                    selectedClient={selectedDebtor}
+                                    onSelect={(client) => setSelectedDebtor(client)}
+                                    onClear={() => setSelectedDebtor(null)}
+                                    onSelectNew={() => setShowNewForm(true)}
+                                />
                             )}
 
                             <div className="absolute bottom-0 right-0 w-32 h-32 bg-amber-500/5 dark:bg-amber-400/5 -mr-12 -mb-12 rounded-full blur-2xl" />

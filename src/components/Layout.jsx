@@ -78,7 +78,8 @@ const Layout = () => {
         { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Registrar Ventas', path: '/pos', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Inventario', path: '/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
-        { name: 'Deudores', path: '/debtors', icon: Users, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Clientes', path: '/clients', icon: Users, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Deudores (Antiguo)', path: '/debtors', icon: Users, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Reportes', path: '/reports', icon: FileText, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Configuración', path: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
     ];

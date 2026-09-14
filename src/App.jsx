@@ -10,6 +10,8 @@ import POS from './pages/POS';
 import Settings from './pages/Settings';
 import Reports from './pages/Reports';
 import Debtors from './pages/Debtors';
+import Clients from './pages/Clients';
+import ClientDetail from './pages/ClientDetail';
 import InstallPrompt from './components/InstallPrompt';
 
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
@@ -50,6 +52,8 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="pos" element={<POS />} />
                 <Route path="inventory" element={<Inventory />} />
+                <Route path="clients" element={<Clients />} />
+                <Route path="clients/:id" element={<ClientDetail />} />
                 <Route path="debtors" element={<Debtors />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
