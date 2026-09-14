@@ -144,20 +144,9 @@ const Debtors = () => {
                     throw updateError;
                 }
 
-                // PASO 2: Intentar borrar el registro
-                console.log("Intentando eliminar registro...");
-                const { error: deleteError } = await supabase
-                    .from('debtors')
-                    .delete()
-                    .eq('id', selectedDebtor.id);
-
-                if (deleteError) {
-                    console.warn("No se pudo borrar el registro (probablemente permisos), pero la deuda ya es 0.", deleteError);
-                    alert('Deuda pagada por completo. (Registro mantenido en historial).');
-                } else {
-                    console.log("Registro eliminado correctamente.");
-                    alert('Deuda pagada por completo y cliente eliminado.');
-                }
+                // IMPORTANTE: Ya no borramos el registro del deudor, se queda como cliente
+                console.log("Deuda saldada.");
+                alert('Deuda pagada por completo. El cliente permanecerá en el directorio.');
             } else {
                 console.log("Abono parcial. Actualizando saldo...");
                 const { error } = await supabase

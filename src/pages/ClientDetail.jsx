@@ -148,9 +148,8 @@ const ClientDetail = () => {
             const newDebt = Math.round(newDebtRaw * 100) / 100;
             
             if (newDebt <= 0.05) {
-                // Liquidado
+                // Liquidado - Mantenemos el registro del cliente pero con deuda 0
                 await supabase.from('debtors').update({ total_debt_usd: 0, total_debt_bs: 0 }).eq('id', id);
-                await supabase.from('debtors').delete().eq('id', id); // Opcional, pero así era tu lógica vieja
             } else {
                 // Abono parcial
                 await supabase.from('debtors').update({
@@ -200,7 +199,7 @@ const ClientDetail = () => {
 
     return (
         <>
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row transition-colors duration-300">
+            <div className="min-h-[100dvh] bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row transition-colors duration-300 pb-20 md:pb-0">
                 {/* Header Móvil y Sidebar Desktop (Izquierda) */}
                 <div className="md:w-1/3 lg:w-1/4 bg-white dark:bg-slate-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-col z-20">
                     
@@ -342,8 +341,8 @@ const ClientDetail = () => {
 
                 {/* Bottom Sheet / Modal de Pago */}
                 {isPaymentModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-                        <div className="bg-white dark:bg-slate-900 w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-8 overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in h-[100dvh]">
+                        <div className="bg-white dark:bg-slate-900 w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-8 overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[90vh]">
                             
                             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20 shrink-0">
                                 <div>
@@ -355,7 +354,7 @@ const ClientDetail = () => {
                                 </button>
                             </div>
 
-                            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 pb-32 sm:pb-6">
                                 <form onSubmit={handleProcessPayment} className="space-y-5">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monto a abonar</label>
