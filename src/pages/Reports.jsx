@@ -156,7 +156,11 @@ const Reports = () => {
         setReturningId(sale.id);
         try {
             // 1. Marcar venta como devuelta
-            await supabase.from('sales').update({ returned: true }).eq('id', sale.id);
+            const { error: salesError } = await supabase.from('sales').update({ returned: true }).eq('id', sale.id);
+            if (salesError) {
+                console.error("Supabase Error (sales):", salesError.message, salesError.details);
+                throw salesError;
+            }
 
             // 2. Devolver stock al inventario (JSONB stock por bodega)
             const bodegaId = sale.bodega_id;
