@@ -26,33 +26,31 @@ const Clients = () => {
     const fetchClients = async () => {
         try {
             const activeBodegaId = currentUser?.assigned_bodega_id;
-            let query = supabase.from('clients').select('*').order('created_at', { ascending: false });
+            let query = supabase.from('debtors').select('*').order('created_at', { ascending: false });
 
             if (activeBodegaId) {
                 query = query.eq('bodega_id', activeBodegaId);
             }
 
             const { data, error } = await query;
-            if (error) throw error;
+            if (error) {
+                console.error("[Directorio] Error al cargar debtors:", error);
+                throw error;
+            }
             
-            // Para poder filtrar, necesitamos obtener el saldo.
-            // Para simplificar esta vista inicial, usaremos un RPC o 
-            // asumiremos que la DB devuelve un cálculo si tuviéramos una vista.
-            // Como no tenemos vista todavía que exponga saldos a esta query,
-            // iteraremos para llamar a get_client_statement. (NOTA: en prod es mejor una VIEW).
-            
-            const clientsWithBalances = await Promise.all((data || []).map(async (client) => {
-                const { data: stData, error: stError } = await supabase.rpc('get_client_statement', { client_id_param: client.id });
-                let balance = 0;
-                if (!stError && stData && stData.length > 0) {
-                    balance = parseFloat(stData[0].saldo_actual) || 0;
-                }
-                return { ...client, current_balance: balance };
-            }));
+            // Mapeamos los debtors para la vista. 
+            // Usamos directamente total_debt_usd para evitar llamadas lentas a RPC.
+            const clientsWithBalances = (data || []).map((client) => {
+                return { 
+                    ...client, 
+                    current_balance: parseFloat(client.total_debt_usd) || 0,
+                    nickname: client.nickname || '', // Si debtors no tiene nickname, no romperá la vista
+                };
+            });
 
             setClients(clientsWithBalances);
         } catch (err) {
-            console.error("Error fetching clients", err);
+            console.error("[Directorio] Error general fetching clients:", err);
         } finally {
             setLoading(false);
         }
@@ -62,15 +60,22 @@ const Clients = () => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const { error } = await supabase.from('clients').insert({
+            // Nota: Si vas a crear nuevos clientes en debtors, asegúrate de que 
+            // la tabla soporte estas columnas o de lo contrario Supabase arrojará error.
+            const { error } = await supabase.from('debtors').insert({
                 name: newClient.name,
                 nickname: newClient.nickname || null,
                 phone: newClient.phone || null,
                 address: newClient.address || null,
                 notes: newClient.notes || null,
-                bodega_id: currentUser?.assigned_bodega_id
+                bodega_id: currentUser?.assigned_bodega_id,
+                total_debt_usd: 0,
+                total_debt_bs: 0
             });
-            if (error) throw error;
+            if (error) {
+                console.error("[Directorio] Error al crear debtor:", error);
+                throw error;
+            }
             
             setIsNewModalOpen(false);
             setNewClient({ name: '', nickname: '', phone: '', address: '', notes: '' });
