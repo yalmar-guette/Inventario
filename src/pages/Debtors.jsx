@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { supabase } from '../supabase';
-import { User, CheckCircle, Phone, X, DollarSign, Wallet, AlertTriangle, History, Calendar, FileText } from 'lucide-react';
+import { User, CheckCircle, Phone, X, DollarSign, Wallet, AlertTriangle, History, Calendar, FileText, Search, Filter, ChevronDown } from 'lucide-react';
 
 const Debtors = () => {
     const { currentUser } = useAuth();
@@ -10,6 +10,8 @@ const Debtors = () => {
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState('recent'); // recent, highest_debt, lowest_debt
 
     // Estado del Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,6 +38,7 @@ const Debtors = () => {
             let query = supabase
                 .from('debtors')
                 .select('*, payment_installments(*)')
+                .gt('total_debt_usd', 0)
                 .order('created_at', { ascending: false });
 
             if (activeBodegaId) {
@@ -195,6 +198,41 @@ const Debtors = () => {
                     <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Gestión de cuentas por cobrar</p>
                 </div>
 
+                {/* Buscador y Filtros */}
+                <div className="flex flex-col md:flex-row gap-4 mb-8">
+                    {/* Buscador */}
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <Search size={20} />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre, apodo o teléfono..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-500 transition-all font-medium text-slate-700 dark:text-slate-200 shadow-sm"
+                        />
+                    </div>
+                    {/* Filtro */}
+                    <div className="relative min-w-[220px]">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <Filter size={20} />
+                        </div>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="w-full pl-11 pr-10 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 dark:focus:border-primary-500 transition-all font-medium text-slate-700 dark:text-slate-200 shadow-sm appearance-none cursor-pointer"
+                        >
+                            <option value="recent">Más recientes</option>
+                            <option value="highest_debt">Mayor deuda a menor</option>
+                            <option value="lowest_debt">Menor deuda a mayor</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                            <ChevronDown size={16} />
+                        </div>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {error ? (
                         <div className="col-span-full text-center py-12 flex flex-col items-center">
@@ -218,7 +256,18 @@ const Debtors = () => {
                             <p className="text-slate-500 dark:text-slate-500 font-bold uppercase text-[10px] tracking-widest">No hay deudores registrados.</p>
                         </div>
                     ) : (
-                        debtors.map(debtor => {
+                        debtors
+                            .filter((d) => {
+                                if (!searchTerm) return true;
+                                const term = searchTerm.toLowerCase();
+                                return (d.name?.toLowerCase().includes(term) || d.nickname?.toLowerCase().includes(term) || d.phone?.toLowerCase().includes(term));
+                            })
+                            .sort((a, b) => {
+                                if (sortBy === 'highest_debt') return (b.total_debt_usd || 0) - (a.total_debt_usd || 0);
+                                if (sortBy === 'lowest_debt') return (a.total_debt_usd || 0) - (b.total_debt_usd || 0);
+                                return new Date(b.created_at) - new Date(a.created_at);
+                            })
+                            .map(debtor => {
                             // Check for overdue installments
                             const today = new Date();
                             today.setHours(0,0,0,0);

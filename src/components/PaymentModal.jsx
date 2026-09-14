@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Loader2, Search, UserPlus, ChevronRight, Hash } from 'lucide-react';
+import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Loader2, Search, UserPlus, ChevronRight, Hash, Calendar } from 'lucide-react';
 import clsx from 'clsx';
 import { supabase } from '../supabase';
 import ClientSearchCombobox from './ui/ClientSearchCombobox';
