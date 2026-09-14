@@ -4,12 +4,14 @@ import { useSystemConfig } from '../hooks/useSystemConfig';
 import { supabase } from '../supabase';
 import { startOfDay, endOfDay, format } from 'date-fns';
 import { FileText, Download, Table, ExternalLink, Undo2, AlertTriangle, X } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
     const { currentUser, userRole } = useAuth();
     const { rate: exchangeRate } = useSystemConfig(currentUser?.assigned_bodega_id ?? null);
+    const toast = useToast();
     const [sales, setSales] = useState([]);
     const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);
@@ -156,16 +158,28 @@ const Reports = () => {
             // 1. Marcar venta como devuelta
             await supabase.from('sales').update({ returned: true }).eq('id', sale.id);
 
-            // 2. Devolver stock al inventario
+            // 2. Devolver stock al inventario (JSONB stock por bodega)
+            const bodegaId = sale.bodega_id;
             for (const item of (sale.items || [])) {
                 const pid = item.product_id || item.id;
                 if (!pid) continue;
+                
                 const { data: prod } = await supabase
-                    .from('products').select('quantity').eq('id', pid).single();
+                    .from('products').select('stock').eq('id', pid).single();
+                    
                 if (prod) {
-                    await supabase.from('products')
-                        .update({ quantity: (prod.quantity || 0) + (item.quantity || 1) })
+                    const currentStock = prod.stock || {};
+                    const currentBodegaStock = currentStock[bodegaId] || 0;
+                    const newStock = { 
+                        ...currentStock, 
+                        [bodegaId]: currentBodegaStock + (item.quantity || 1) 
+                    };
+                    
+                    const { error: updateError } = await supabase.from('products')
+                        .update({ stock: newStock })
                         .eq('id', pid);
+                        
+                    if (updateError) throw updateError;
                 }
             }
 
@@ -188,9 +202,10 @@ const Reports = () => {
 
             await fetchData();
             setReturnModal(null);
+            toast.success("Venta devuelta correctamente");
         } catch (err) {
             console.error('Error en devolución:', err);
-            alert('Error al procesar la devolución: ' + err.message);
+            toast.error('Error al procesar la devolución: ' + err.message);
         } finally {
             setReturningId(null);
         }

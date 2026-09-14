@@ -95,7 +95,7 @@ const POS = () => {
 
             if (existingItem) {
                 if (existingItem.quantity >= availableStock) {
-                    alert(`Stock máximo alcanzado (${availableStock})`);
+                    toast.error(`Stock máximo alcanzado (${availableStock})`);
                     return currentCart;
                 }
                 return currentCart.map(item =>
@@ -119,7 +119,7 @@ const POS = () => {
 
                 // Bloquear incremento si se alcanza el stock
                 if (change > 0 && item.quantity >= availableStock) {
-                    alert(`Stock máximo alcanzado (${availableStock})`);
+                    toast.error(`Stock máximo alcanzado (${availableStock})`);
                     return item;
                 }
 
