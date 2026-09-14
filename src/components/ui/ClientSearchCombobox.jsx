@@ -43,27 +43,35 @@ const ClientSearchCombobox = ({ onSelect, selectedClient, onClear, onSelectNew }
             try {
                 const term = searchTerm.trim();
                 const isCode = /^\d+$/.test(term);
+                console.log(`[Buscador POS] Ejecutando búsqueda para término: "${term}"`);
                 
                 let query = supabase
-                    .from('clients')
+                    .from('debtors') // Apuntando a debtors como solicitaste
                     .select('*')
-                    .order('code', { ascending: true })
                     .limit(8);
                 
                 if (isCode) {
                     query = query.eq('code', parseInt(term));
                 } else {
-                    query = query.ilike('name', `%${term}%`);
+                    // Nota: Asumiendo que debtors no tiene 'nickname', filtramos por nombre y teléfono.
+                    // Si tu tabla debtors SÍ tiene nickname, cámbialo a: `name.ilike.%${term}%,nickname.ilike.%${term}%,phone.ilike.%${term}%`
+                    query = query.or(`name.ilike.%${term}%,phone.ilike.%${term}%`);
                 }
 
                 const { data, error } = await query;
-                if (error) throw error;
+                
+                if (error) {
+                    console.error("[Buscador POS] Error en Supabase:", error);
+                    throw error;
+                }
+                
+                console.log(`[Buscador POS] Resultados encontrados:`, data);
                 
                 setResults(data || []);
                 setIsOpen(true);
                 setHighlightedIndex(-1);
             } catch (err) {
-                console.error("Error searching clients:", err);
+                console.error("[Buscador POS] Error general:", err);
             } finally {
                 setIsLoading(false);
             }
