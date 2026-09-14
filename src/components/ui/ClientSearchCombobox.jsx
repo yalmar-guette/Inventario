@@ -45,7 +45,7 @@ const ClientSearchCombobox = ({ onSelect, selectedClient, onClear, onSelectNew }
                 const isCode = /^\d+$/.test(term);
                 
                 let query = supabase
-                    .from('debtors') // Usa 'clients' si ya migraste la base de datos
+                    .from('clients')
                     .select('*')
                     .order('code', { ascending: true })
                     .limit(8);

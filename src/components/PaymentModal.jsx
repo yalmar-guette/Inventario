@@ -461,7 +461,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
                     {/* Debtor Search Section */}
                     {hasFiado && (
-                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-6 rounded-[2rem] mb-8 animate-in zoom-in-95 duration-300 transition-colors relative overflow-hidden">
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-6 rounded-[2rem] mb-8 animate-in zoom-in-95 duration-300 transition-colors relative">
                             <h4 className="text-amber-700 dark:text-amber-400 font-black text-xs uppercase tracking-widest mb-5 flex items-center gap-3 relative z-10">
                                 <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
                                     <User size={18} />
