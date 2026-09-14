@@ -37,11 +37,15 @@ const ClientDetail = () => {
         try {
             // 1. Obtener info del cliente
             const { data: clientData, error: clientErr } = await supabase
-                .from('clients')
+                .from('debtors')
                 .select('*')
                 .eq('id', id)
                 .single();
-            if (clientErr) throw clientErr;
+                
+            if (clientErr) {
+                console.error(`[ClientDetail] Error al cargar deudor con ID: ${id}`, clientErr);
+                throw clientErr;
+            }
             setClient(clientData);
 
             // 2. Obtener estado de cuenta (RPC)
