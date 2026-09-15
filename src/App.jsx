@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import POS from './pages/POS';
 import Settings from './pages/Settings';
+import Analytics from './pages/Analytics';
 import Reports from './pages/Reports';
 import Debtors from './pages/Debtors';
 import Clients from './pages/Clients';
@@ -56,6 +57,7 @@ function App() {
                 <Route path="clients/:id" element={<ClientDetail />} />
                 <Route path="debtors" element={<Debtors />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="analytics" element={<Analytics />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Routes>

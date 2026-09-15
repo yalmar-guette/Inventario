@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -80,7 +80,8 @@ const Layout = () => {
         { name: 'Inventario', path: '/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Clientes', path: '/clients', icon: Users, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
         { name: 'Deudores', path: '/debtors', icon: Users, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
-        { name: 'Reportes', path: '/reports', icon: FileText, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'Cierre Diario', path: '/reports', icon: FileText, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
+        { name: 'MÃ©tricas (Semanal)', path: '/analytics', icon: TrendingUp, roles: ['OWNER', 'ADMIN'] },
         { name: 'Configuración', path: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN', 'EMPLOYEE'] },
     ];
 

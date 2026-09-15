@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../contexts/AuthContext';
