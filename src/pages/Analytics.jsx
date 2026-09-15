@@ -32,9 +32,9 @@ const Analytics = () => {
 
             const { data, error } = await supabase
                 .from('sales')
-                .select('id, created_at, total_usd, items')
-                .gte('created_at', startOfDay(sevenDaysAgo).toISOString())
-                .lte('created_at', endOfDay(today).toISOString())
+                .select('id, timestamp, total_usd, items')
+                .gte('timestamp', startOfDay(sevenDaysAgo).toISOString())
+                .lte('timestamp', endOfDay(today).toISOString())
                 .eq('status', 'COMPLETED')
                 .eq('bodega_id', activeBodegaId);
 
@@ -71,7 +71,7 @@ const Analytics = () => {
             const daysInterval = eachDayOfInterval({ start: sevenDaysAgo, end: today });
             
             const groupedData = daysInterval.map(day => {
-                const daySales = sales.filter(s => isSameDay(new Date(s.created_at), day));
+                const daySales = sales.filter(s => isSameDay(new Date(s.timestamp), day));
                 
                 let dayRevenue = 0;
                 let dayCost = 0;
@@ -139,7 +139,7 @@ const Analytics = () => {
                 <div>
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
                         <TrendingUp className="text-primary-600 dark:text-primary-400" size={32} />
-                        MÃ©tricas Semanales
+                        Métricas Semanales
                     </h1>
                     <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">
                         Inteligencia de Negocios
