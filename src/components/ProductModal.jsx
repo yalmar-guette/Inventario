@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle, Package, DollarSign, ScanLine } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import BarcodeScanner from './BarcodeScanner';
@@ -21,12 +21,12 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
             setFormData({
                 name: productToEdit.name,
                 price_usd: productToEdit.price_usd,
-                cost_usd: productToEdit.cost_usd || 0,
+                cost_price_usd: productToEdit.cost_price_usd || 0,
                 barcode: productToEdit.barcode || '',
                 stock: currentStock
             });
         } else {
-            setFormData({ name: '', price_usd: '', cost_usd: '', barcode: '', stock: '' });
+            setFormData({ name: '', price_usd: '', cost_price_usd: '', barcode: '', stock: '' });
         }
     }, [productToEdit, isOpen, currentUser]);
 
@@ -37,7 +37,7 @@ const ProductModal = ({ isOpen, onClose, onSave, productToEdit }) => {
         onSave({
             ...formData,
             price_usd: parseFloat(formData.price_usd),
-            cost_usd: parseFloat(formData.cost_usd) || 0,
+            cost_price_usd: parseFloat(formData.cost_price_usd) || 0,
             initialStock: parseInt(formData.stock) || 0
         });
     };
