@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { supabase } from '../supabase';
 import { 
@@ -13,6 +14,7 @@ const ClientDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const toast = useToast();
     const { rate } = useSystemConfig(currentUser?.assigned_bodega_id ?? null);
     
     const [client, setClient] = useState(null);
@@ -57,6 +59,17 @@ const ClientDetail = () => {
                 
             if (payErr) {
                 console.error("[ClientDetail] Error al cargar pagos:", payErr);
+            }
+
+            // 2.5. Obtener ventas a crÃ©dito individuales con sus items
+            const { data: creditSales, error: salesErr } = await supabase
+                .from('sales')
+                .select('id, created_at, total_usd, items')
+                .eq('debtor_id', id)
+                .order('created_at', { ascending: true });
+
+            if (salesErr) {
+                console.error("[ClientDetail] Error al cargar ventas fiadas:", salesErr);
             }
 
             // 3. Cálculos matemáticos locales (Sin necesidad de RPC)
@@ -164,14 +177,14 @@ const ClientDetail = () => {
             fetchClientData(); // recargar vista
         } catch (err) {
             console.error(err);
-            alert("Error al registrar el abono");
+            toast.error("Error al registrar el abono");
         } finally {
             setIsProcessing(false);
         }
     };
 
     const shareReceipt = (item) => {
-        if (!client?.phone) return alert("El cliente no tiene un teléfono registrado.");
+        if (!client?.phone) return toast.error("El cliente no tiene un teléfono registrado.");
         
         const dateStr = item.date.toLocaleString();
         let msg = `Hola *${client.name}*,\n\n`;
@@ -310,6 +323,17 @@ const ClientDetail = () => {
                                             </div>
                                             
                                             {item?.reference && <p className="text-xs text-slate-500 italic mb-2">Ref: {item.reference}</p>}
+
+                                            {item.type === 'DEBT' && item.items?.length > 0 && (
+                                                <ul className="mb-2 space-y-0.5">
+                                                    {item.items.map((prod, idx) => (
+                                                        <li key={idx} className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+                                                            <span className="inline-block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
+                                                            {prod.quantity}x {prod.name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
 
                                             <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                                 <div>

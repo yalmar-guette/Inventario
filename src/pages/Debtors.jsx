@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 import { supabase } from '../supabase';
 import { User, CheckCircle, Phone, X, DollarSign, Wallet, AlertTriangle, History, Calendar, FileText, Search, Filter, ChevronDown } from 'lucide-react';
 
 const Debtors = () => {
     const { currentUser } = useAuth();
+    const toast = useToast();
     const { rate } = useSystemConfig(currentUser?.assigned_bodega_id ?? null);
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -101,18 +103,18 @@ const Debtors = () => {
         console.log("🟢 Iniciando proceso de pago...");
 
         if (!selectedDebtor) {
-            alert("Error: No hay deudor seleccionado");
+            toast.error("Error: No hay deudor seleccionado"); return;
             return;
         }
 
         if (!paymentAmount) {
-            alert("Por favor ingresa un monto");
+            toast.error("Por favor ingresa un monto"); return;
             return;
         }
 
         const amountInput = parseFloat(paymentAmount);
         if (isNaN(amountInput) || amountInput <= 0) {
-            alert("El monto debe ser un número válido mayor a 0");
+            toast.error("El monto debe ser un nÃºmero vÃ¡lido mayor a 0"); return;
             return;
         }
 
@@ -149,7 +151,7 @@ const Debtors = () => {
 
                 // IMPORTANTE: Ya no borramos el registro del deudor, se queda como cliente
                 console.log("Deuda saldada.");
-                alert('Deuda pagada por completo. El cliente permanecerá en el directorio.');
+                toast.success('Deuda pagada por completo. El cliente permanecerá en el directorio.');
             } else {
                 console.log("Abono parcial. Actualizando saldo...");
                 const { error } = await supabase
@@ -161,7 +163,7 @@ const Debtors = () => {
                     .eq('id', selectedDebtor.id);
 
                 if (error) throw error;
-                alert('Abono registrado exitosamente. Restan: $' + newDebt.toFixed(2));
+                toast.success('Abono registrado exitosamente. Restan: $' + newDebt.toFixed(2));
             }
 
             // 2. Registrar la transacción de pago
@@ -185,7 +187,7 @@ const Debtors = () => {
             setTimeout(fetchDebtors, 300);
         } catch (err) {
             console.error("Error crítico en proceso de pago:", err);
-            alert('Error al registrar abono: ' + (err.message || 'Error desconocido'));
+            toast.error('Error al registrar abono: ' + (err.message || 'Error desconocido'));
         }
     };
 

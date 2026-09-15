@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { X, DollarSign, Wallet, CreditCard, User, Check, Trash2, PlusCircle, Loader2, Search, UserPlus, ChevronRight, Hash, Calendar } from 'lucide-react';
 import clsx from 'clsx';
 import { supabase } from '../supabase';
@@ -307,7 +307,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300 notranslate p-0 md:p-4" translate="no">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl overflow-y-auto md:overflow-hidden md:h-[90vh] md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row transition-colors" style={{maxHeight: '100dvh'}}>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl overflow-hidden h-[100dvh] md:h-[90dvh] md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row transition-colors">
 
                 {/* Left: Summary */}
                 <div className="w-full md:w-1/3 bg-slate-50 dark:bg-slate-800/50 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 p-4 md:p-6 flex flex-col md:shrink-0 transition-colors md:overflow-y-auto">
@@ -388,13 +388,13 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                 </div>
 
                 {/* Right: Multi-Row Form */}
-                <div className="md:flex-1 md:flex md:flex-col relative bg-white dark:bg-slate-900 transition-colors md:min-h-0">
+                <div className="flex-1 flex flex-col relative bg-white dark:bg-slate-900 transition-colors min-h-0">
                     <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all hidden md:block z-10">
                         <X size={24} />
                     </button>
 
                     {/* Scrollable form area */}
-                    <div className="md:flex-1 md:overflow-y-auto p-6 md:p-10">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 pb-32 md:pb-10">
 
                     <div className="flex items-center justify-between mb-8">
                         <div>
@@ -587,7 +587,7 @@ const PaymentModal = ({ isOpen, onClose, totalUSD, exchangeRate, onProcessPaymen
                     {/* End scrollable area */}
 
                     {/* Fixed bottom button */}
-                    <div className="px-6 md:px-10 pt-4 pb-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 md:shrink-0">
+                    <div className="px-6 md:px-10 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0 sticky bottom-0 z-50">
                         <button
                             onClick={handleSubmit}
                             disabled={!canSubmit || isProcessing}
