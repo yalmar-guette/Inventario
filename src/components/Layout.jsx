@@ -167,7 +167,7 @@ const Layout = () => {
                             className="w-full flex items-center gap-3 px-4 py-3 bg-primary-600 hover:bg-primary-700 active:scale-[0.98] text-white rounded-2xl transition-all shadow-lg shadow-primary-500/30 group"
                         >
                             <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                                <RefreshCw, TrendingUp size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+                                <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
                             </div>
                             <div className="text-left">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-primary-200">Nueva versión</p>
@@ -277,7 +277,7 @@ const Layout = () => {
                                     className="w-full flex items-center gap-4 px-4 py-3 mt-4 bg-primary-600 hover:bg-primary-700 active:scale-[0.98] text-white rounded-2xl transition-all shadow-lg shadow-primary-500/30 group"
                                 >
                                     <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                                        <RefreshCw, TrendingUp size={20} className="group-hover:rotate-180 transition-transform duration-500" />
+                                        <RefreshCw size={20} className="group-hover:rotate-180 transition-transform duration-500" />
                                     </div>
                                     <div className="text-left flex-1">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-primary-200">Actualización disponible</p>
